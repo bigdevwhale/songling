@@ -43,6 +43,9 @@ data class Settings(
     val longMinutes: Int = 40,
     /** Players whose listens are left out (podcasts, video). */
     val excluded: Set<String> = emptySet(),
+    /** Only the players in [tracked] are heard, instead of every player but [excluded]. */
+    val only: Boolean = false,
+    val tracked: Set<String> = emptySet(),
     /** Quests whose plectrums were taken: «week:quest». */
     val claimed: Set<String> = emptySet(),
     /** Covers in lists shown as pixels instead of the picture itself. */
@@ -85,7 +88,7 @@ data class Settings(
         .put("bought", JSONArray(bought.toList())).put("hidden", JSONArray(hidden.toList()))
         .put("wall", wall).put("backdrop", backdrop).put("backdropStamp", backdropStamp)
         .put("minSeconds", minSeconds).put("skipLong", skipLong).put("longMinutes", longMinutes)
-        .put("excluded", JSONArray(excluded.toList())).put("claimed", JSONArray(claimed.toList()))
+        .put("excluded", JSONArray(excluded.toList())).put("only", only).put("tracked", JSONArray(tracked.toList())).put("claimed", JSONArray(claimed.toList()))
         .put("pixelCovers", pixelCovers).put("unstuck", unstuck).put("shelfSort", shelfSort).put("statsPeriod", statsPeriod)
         .put("seen", JSONArray(seen.toList())).put("strokes", strokes).put("quiet", quiet).put("earworm", earworm).put("dayStart", dayStart).put("theme", theme).put("look", look).put("posters", JSONArray(posters)).put("own", JSONArray(own.map { it.json() })).put("tips", JSONArray(tips.toList())).put("realWeather", realWeather).put("town", town)
         .put("lat", if (lat.isNaN()) JSONObject.NULL else lat).put("lon", if (lon.isNaN()) JSONObject.NULL else lon).put("outside", outside)
@@ -104,7 +107,7 @@ data class Settings(
                 bought = o.set("bought"), hidden = o.set("hidden"),
                 wall = o.optString("wall", d.wall), backdrop = o.optString("backdrop", d.backdrop), backdropStamp = o.optLong("backdropStamp"),
                 minSeconds = o.optInt("minSeconds", d.minSeconds), skipLong = o.optBoolean("skipLong", d.skipLong), longMinutes = o.optInt("longMinutes", d.longMinutes),
-                excluded = o.set("excluded"), claimed = o.set("claimed"),
+                excluded = o.set("excluded"), only = o.optBoolean("only"), tracked = o.set("tracked"), claimed = o.set("claimed"),
                 pixelCovers = o.optBoolean("pixelCovers"), unstuck = o.optLong("unstuck"),
                 shelfSort = o.optString("shelfSort"), statsPeriod = o.optString("statsPeriod"),
                 seen = o.set("seen"), strokes = o.optInt("strokes"), quiet = o.optBoolean("quiet"), earworm = o.optBoolean("earworm", true),
@@ -119,6 +122,9 @@ data class Settings(
         }
     }
 }
+
+/** Whether music from the player [pkg] is heard at all. */
+fun Settings.hears(pkg: String): Boolean = if (only) pkg in tracked else pkg !in excluded
 
 class SettingsStore(context: Context) {
     private val store = context.applicationContext.dataStore

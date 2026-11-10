@@ -17,7 +17,10 @@ import app.songling.data.Covers
 import app.songling.data.Keys
 import app.songling.data.MIN
 import app.songling.data.Play
+import app.songling.data.Settings
 import app.songling.data.Source
+import app.songling.data.hears
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
@@ -55,6 +58,9 @@ class Tracker(private val ctx: Context) {
     )
 
     private var cur: Cur? = null
+    /** The settings as last seen, so players left out are ignored right away. */
+    @Volatile private var rules = Settings()
+    private var watching: Job? = null
     private var active: MediaController? = null
 
     fun enabled(): Boolean = NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName)
@@ -70,9 +76,23 @@ class Tracker(private val ctx: Context) {
             follow(m.getActiveSessions(listener))
         }
         main.postDelayed(tickRun, 15_000)
+        watching = ctx.container.scope.launch {
+            ctx.container.settings.settings.collect { s ->
+                val was = rules
+                rules = s
+                if (was.only != s.only || was.tracked != s.tracked || was.excluded != s.excluded) main.post { recheck() }
+            }
+        }
+    }
+
+    /** After the choice of players changed: drops a player no longer heard and picks up one now heard. */
+    private fun recheck() {
+        if (cur?.let { rules.hears(it.pkg) } == false) { pause(); close() }
+        for (c in callbacks.keys.toList()) changed(c)
     }
 
     fun stop() {
+        watching?.cancel(); watching = null
         runCatching { manager?.removeOnActiveSessionsChangedListener(sessions) }
         manager = null
         callbacks.forEach { (c, cb) -> c.unregisterCallback(cb) }
@@ -103,6 +123,8 @@ class Tracker(private val ctx: Context) {
     private fun isPlaying(c: MediaController) = c.playbackState?.state == PlaybackState.STATE_PLAYING
 
     private fun changed(c: MediaController) {
+        // A player left out isn't followed at all: it neither counts nor makes the pet dance.
+        if (!rules.hears(c.packageName)) { if (active?.sessionToken == c.sessionToken) { pause(); close() }; return }
         val playing = isPlaying(c)
         // Another player taking over closes what was playing before.
         if (playing && active != null && active?.sessionToken != c.sessionToken) { pause(); close() }
@@ -154,7 +176,7 @@ class Tracker(private val ctx: Context) {
         if (k.id == 0L) k.writing = true
         c.scope.launch {
             val s = c.settings.now()
-            if (k.pkg in s.excluded || (s.skipLong && k.length > s.longMinutes * MIN) || ms < s.minSeconds * 1000L) { k.writing = false; return@launch }
+            if (!s.hears(k.pkg) || (s.skipLong && k.length > s.longMinutes * MIN) || ms < s.minSeconds * 1000L) { k.writing = false; return@launch }
             val whole = k.length > 0 && ms >= k.length * 0.8
             if (k.id == 0L) {
                 val p = Play(at = k.started, ms = ms, title = k.title, artistName = k.artist, albumName = k.album, length = k.length,

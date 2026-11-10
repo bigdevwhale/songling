@@ -145,8 +145,11 @@ fun SettingsPage(st: Studio, nav: Nav) {
             nav.toast(if (n == null) (if (ru) "Это не копия Songling" else "That isn't a Songling backup") else (if (ru) "Восстановлено: ${Words.plays(n, true)}" else "Restored: ${Words.plays(n, false)}"))
         }
     }
-    var apps by remember { mutableStateOf<List<String>>(emptyList()) }
-    LaunchedEffect(Unit) { apps = co.db.dao().apps() }
+    var apps by remember { mutableStateOf<List<app.songling.data.Players.App>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        val used = co.db.dao().apps()
+        apps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.songling.data.Players.list(ctx, used) }
+    }
     var showApps by remember { mutableStateOf(false) }
     var askRestore by remember { mutableStateOf(false) }
     var pickTown by remember { mutableStateOf(false) }
@@ -177,11 +180,33 @@ fun SettingsPage(st: Studio, nav: Nav) {
             Line(t("Новый день", "A new day"), t("музыка до этого часа идёт в вечер накануне", "music before this hour counts to the evening before")) {
                 Small("${s.dayStart}:00") { d -> set { it.copy(dayStart = (it.dayStart + d).coerceIn(0, 8)) } }
             }
-            Line(t("Не слушать приложения", "Leave apps out"), if (s.excluded.isEmpty()) t("все плееры считаются", "every player counts") else t("исключено: ${s.excluded.size}", "left out: ${s.excluded.size}"),
+            val summary = when {
+                s.only && s.tracked.isEmpty() -> t("ни одного – отметь плееры", "none yet – tick the players")
+                s.only -> t("только отмеченные: ${s.tracked.size}", "only the ticked: ${s.tracked.size}")
+                s.excluded.isEmpty() -> t("все плееры", "every player")
+                else -> t("все, кроме отмеченных: ${s.excluded.size}", "all but the ticked: ${s.excluded.size}")
+            }
+            Line(t("Какие приложения слушать", "Which apps to hear"), summary,
                 onClick = { showApps = !showApps }, divider = showApps) { Text(if (showApps) "⌃" else "⌄", style = T.Strong.copy(color = C.faint)) }
-            if (showApps) Flow(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                if (apps.isEmpty()) Text(t("Здесь появятся плееры, которые ты слушал.", "Players you've used show up here."), style = T.Muted)
-                for (a in apps) Chip(a.substringAfterLast('.'), a in s.excluded, { set { it.copy(excluded = if (a in it.excluded) it.excluded - a else it.excluded + a) } }, color = C.coral)
+            if (showApps) {
+                app.songling.ui.components.Segmented(listOf(t("Все, кроме…", "All but…"), t("Только…", "Only…")), if (s.only) 1 else 0,
+                    { i -> set { it.copy(only = i == 1) } }, Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp))
+                Text(if (s.only) t("Питомец слышит только отмеченные приложения. Остальные – соцсети, видео, аудиокниги – он не замечает.",
+                        "The pet hears only the apps ticked here. Everything else – social apps, video, audiobooks – goes unnoticed.")
+                    else t("Питомец слышит всё, что играет, кроме отмеченных приложений.", "The pet hears whatever plays, except the apps ticked here."),
+                    style = T.Small, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
+                Flow(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+                    if (apps.isEmpty()) Text(t("Здесь появятся плееры с телефона.", "The phone's players show up here."), style = T.Muted)
+                    for (a in apps) {
+                        val on = if (s.only) a.pkg in s.tracked else a.pkg in s.excluded
+                        Chip(a.label, on, {
+                            set {
+                                if (it.only) it.copy(tracked = if (a.pkg in it.tracked) it.tracked - a.pkg else it.tracked + a.pkg)
+                                else it.copy(excluded = if (a.pkg in it.excluded) it.excluded - a.pkg else it.excluded + a.pkg)
+                            }
+                        }, color = if (s.only) C.mint else C.coral)
+                    }
+                }
             }
         }
 
