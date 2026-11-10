@@ -26,7 +26,7 @@
 
 ## Your pet hears the music
 
-Songling sees what plays in Spotify, YouTube Music, Apple Music or any other player, so there's nothing to log. Android asks you to give it notification access for that; Songling takes just the song, the artist and the album. A song counts after 30 seconds, and podcasts are left out.
+Songling sees what plays in Spotify, YouTube Music, Apple Music or any other player, so there's nothing to log. Android asks you to give it notification access for that; Songling takes just the song, the artist and the album. A song counts after 30 seconds, and podcasts are left out. You choose which apps it hears: every player but a few, or only the ones you play music in, so video and social apps don't count.
 
 A record, the radio or a concert can be logged by hand – a whole album or a single song.
 
@@ -56,7 +56,7 @@ Set goals on anything: «4 new albums this month», «10 hours of Radiohead this
 
 ## Records or tapes
 
-Albums look like records in sleeves or like tapes with hand-written J-cards – chosen on first start and in Settings. There's a light and a dark theme and a few pixel backgrounds.
+Albums look like records in sleeves or like tapes with hand-written J-cards – chosen on first start and in Settings. There's a light and a dark theme and a few pixel backgrounds. A home-screen widget shows what plays as a record or a tape, with previous, play/pause and next.
 
 ## History and backups
 

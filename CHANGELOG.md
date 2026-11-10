@@ -6,6 +6,23 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.1.0] - 2026-11-10
+
+### Added
+- A player widget: what plays in any player, drawn as a record with the cover for a label or a tape with the cover for a sticker (as chosen in Settings), with previous, play/pause and next (#2).
+- Choose which apps the pet hears: every player but the ticked ones, or only the ticked ones. The list shows the phone's players by name. A player left out no longer makes the pet dance either (#4).
+- Onboarding asks which apps to hear, and its first screen shows records and a tape instead of pets.
+
+### Fixed
+- With three-button navigation the dock covered the den's last lines, and there was nothing to scroll (#1).
+- The cover of the song playing now shows at once, from the player itself, instead of only after the catalogue found it.
+
+<!-- tg
+Новое: виджет плеера – пластинка или кассета с обложкой и кнопками.
+Можно выбрать, какие приложения слушает питомец: все, кроме отмеченных, или только отмеченные.
+Обложка того, что играет, теперь видна сразу, а внизу логова больше ничего не прячется под панелью.
+-->
+
 ## [1.0.0] - 2026-11-10
 
 The first version.
