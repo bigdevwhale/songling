@@ -55,7 +55,7 @@ class Tracker(private val ctx: Context) {
     private class Cur(
         val pkg: String, val title: String, val artist: String, val album: String, val length: Long,
         val started: Long, var playedMs: Long = 0, var since: Long = 0, var id: Long = 0, var lastPos: Long = 0,
-        var art: Bitmap? = null, var cover: String? = null, var writing: Boolean = false,
+        var art: Bitmap? = null, var cover: String? = null, var writing: Boolean = false, var covering: Boolean = false,
     )
 
     private var cur: Cur? = null
@@ -147,11 +147,37 @@ class Tracker(private val ctx: Context) {
         active = c
         val k = cur!!
         if (k.art == null) k.art = md?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: md?.getBitmap(MediaMetadata.METADATA_KEY_ART)
+        if (k.cover == null && !k.covering) showCover(k, md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI) ?: md?.getString(MediaMetadata.METADATA_KEY_ART_URI))
         k.lastPos = c.playbackState?.position ?: k.lastPos
         if (playing && k.since == 0L) k.since = System.currentTimeMillis()
         if (!playing) pause()
         publish()
         tick()
+    }
+
+    /**
+     * Shows the player's own cover right away, while the song is still playing: the picture it gave, or the one
+     * at the address it gave. It's kept under the album's key, so the shelf gets it too if the catalogue has none.
+     */
+    private fun showCover(k: Cur, uri: String?) {
+        val art = k.art
+        if (art == null && uri.isNullOrBlank()) return
+        k.covering = true
+        val key = Keys.album(k.artist, k.album.ifEmpty { k.title })
+        ctx.container.scope.launch {
+            val name = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                when {
+                    art != null -> Covers.keep(ctx, key, art)
+                    uri!!.startsWith("http") -> Covers.download(ctx, key, uri)
+                    else -> runCatching {
+                        ctx.contentResolver.openInputStream(android.net.Uri.parse(uri))?.use { android.graphics.BitmapFactory.decodeStream(it) }
+                    }.getOrNull()?.let { b -> k.art = b; Covers.keep(ctx, key, b) }
+                }
+            }
+            // A failed address isn't tried again for this song; a picture given later still is.
+            if (name == null && art != null) k.covering = false
+            if (name != null && cur === k) { if (k.cover == null) k.cover = name; publish() }
+        }
     }
 
     /** Stops the clock on the current track. */
