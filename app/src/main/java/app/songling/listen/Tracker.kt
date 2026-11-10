@@ -20,6 +20,7 @@ import app.songling.data.Play
 import app.songling.data.Settings
 import app.songling.data.Source
 import app.songling.data.hears
+import app.songling.widget.PlayerWidget
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -102,7 +103,7 @@ class Tracker(private val ctx: Context) {
     }
 
     private val tickRun = object : Runnable {
-        override fun run() { tick(); main.postDelayed(this, 15_000) }
+        override fun run() { tick(); if (cur == null) PlayerWidget.refresh(ctx); main.postDelayed(this, 15_000) }
     }
 
     private fun follow(list: List<MediaController>) {
@@ -165,6 +166,31 @@ class Tracker(private val ctx: Context) {
     private fun publish() {
         val k = cur
         now.value = k?.let { NowPlaying(it.title, it.artist, it.album, it.pkg, it.since > 0, played(it), it.length, it.cover, it.started) }
+        PlayerWidget.refresh(ctx)
+    }
+
+    /** The cover the player itself gave for the song now, if any. */
+    fun art(): Bitmap? = cur?.art
+
+    /** Where the player is in the song now. */
+    fun position(): Long {
+        val st = active?.playbackState ?: return 0
+        if (st.state != PlaybackState.STATE_PLAYING) return st.position
+        return st.position + ((android.os.SystemClock.elapsedRealtime() - st.lastPositionUpdateTime) * st.playbackSpeed).toLong()
+    }
+
+    /** The widget's buttons: sent to the player followed now, or else to the first player heard. */
+    fun control(action: String) {
+        val c = active ?: run {
+            val m = ctx.getSystemService(MediaSessionManager::class.java)
+            runCatching { m?.getActiveSessions(ComponentName(ctx, Listener::class.java)) }.getOrNull().orEmpty().firstOrNull { rules.hears(it.packageName) }
+        } ?: return
+        val t = c.transportControls
+        when (action) {
+            PlayerWidget.PREV -> t.skipToPrevious()
+            PlayerWidget.NEXT -> t.skipToNext()
+            else -> if (isPlaying(c)) t.pause() else t.play()
+        }
     }
 
     /** Writes or grows the row for the current track. */

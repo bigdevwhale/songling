@@ -3,4 +3,10 @@
     <string name="app_name">Songling</string>
     <string name="listener_name">Songling: что играет</string>
     <string name="widget_name">Логово Songling</string>
+    <string name="widget_player_name">Плеер Songling</string>
+    <string name="widget_player_description">Пластинка или кассета с тем, что играет в любом плеере</string>
+    <string name="widget_player_art">Плеер</string>
+    <string name="widget_prev">Назад</string>
+    <string name="widget_toggle">Играть или пауза</string>
+    <string name="widget_next">Дальше</string>
 </resources>
