@@ -187,7 +187,9 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                 BackdropLayer()
                 Column(Modifier.fillMaxSize()) {
                     Header(studio, onPicks = { overlay = Overlay.Shop }, onSettings = { overlay = Overlay.Settings })
-                    Box(Modifier.weight(1f)) {
+                    // The dock sits above the system navigation bar, so the screens end above it too:
+                    // with three-button navigation their last lines would otherwise hide under the dock.
+                    Box(Modifier.weight(1f).navigationBarsPadding()) {
                         when (tab) {
                             Tab.DEN -> DenScreen(studio, playing, nav)
                             Tab.SHELF -> ShelfScreen(studio, nav)
