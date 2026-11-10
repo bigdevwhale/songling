@@ -145,11 +145,7 @@ fun SettingsPage(st: Studio, nav: Nav) {
             nav.toast(if (n == null) (if (ru) "Это не копия Songling" else "That isn't a Songling backup") else (if (ru) "Восстановлено: ${Words.plays(n, true)}" else "Restored: ${Words.plays(n, false)}"))
         }
     }
-    var apps by remember { mutableStateOf<List<app.songling.data.Players.App>>(emptyList()) }
-    LaunchedEffect(Unit) {
-        val used = co.db.dao().apps()
-        apps = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { app.songling.data.Players.list(ctx, used) }
-    }
+    val apps = rememberPlayers()
     var showApps by remember { mutableStateOf(false) }
     var askRestore by remember { mutableStateOf(false) }
     var pickTown by remember { mutableStateOf(false) }
@@ -188,26 +184,7 @@ fun SettingsPage(st: Studio, nav: Nav) {
             }
             Line(t("Какие приложения слушать", "Which apps to hear"), summary,
                 onClick = { showApps = !showApps }, divider = showApps) { Text(if (showApps) "⌃" else "⌄", style = T.Strong.copy(color = C.faint)) }
-            if (showApps) {
-                app.songling.ui.components.Segmented(listOf(t("Все, кроме…", "All but…"), t("Только…", "Only…")), if (s.only) 1 else 0,
-                    { i -> set { it.copy(only = i == 1) } }, Modifier.padding(start = 12.dp, end = 12.dp, top = 4.dp))
-                Text(if (s.only) t("Питомец слышит только отмеченные приложения. Остальные – соцсети, видео, аудиокниги – он не замечает.",
-                        "The pet hears only the apps ticked here. Everything else – social apps, video, audiobooks – goes unnoticed.")
-                    else t("Питомец слышит всё, что играет, кроме отмеченных приложений.", "The pet hears whatever plays, except the apps ticked here."),
-                    style = T.Small, modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp))
-                Flow(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                    if (apps.isEmpty()) Text(t("Здесь появятся плееры с телефона.", "The phone's players show up here."), style = T.Muted)
-                    for (a in apps) {
-                        val on = if (s.only) a.pkg in s.tracked else a.pkg in s.excluded
-                        Chip(a.label, on, {
-                            set {
-                                if (it.only) it.copy(tracked = if (a.pkg in it.tracked) it.tracked - a.pkg else it.tracked + a.pkg)
-                                else it.copy(excluded = if (a.pkg in it.excluded) it.excluded - a.pkg else it.excluded + a.pkg)
-                            }
-                        }, color = if (s.only) C.mint else C.coral)
-                    }
-                }
-            }
+            if (showApps) AppsChoice(s, apps, ::set)
         }
 
         Group(t("Вид", "Look")) {

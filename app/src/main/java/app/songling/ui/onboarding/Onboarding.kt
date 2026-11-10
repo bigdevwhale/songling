@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,13 +54,25 @@ fun Onboarding() {
     var egg by remember { mutableStateOf<Species?>(null) }
     var look by remember { mutableStateOf(app.songling.ui.components.Medium.VINYL) }
     var theme by remember { mutableStateOf("light") }
+    val s by co.settings.settings.collectAsState(initial = app.songling.data.Settings())
+    val players = app.songling.ui.settings.rememberPlayers()
     Box(Modifier.fillMaxSize().background(C.bg)) {
         Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().verticalScroll(rememberScrollState()).padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             when (step) {
                 0 -> {
                     Text("Songling", style = T.Display.copy(color = C.amber))
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        for (sp in listOf(Species.LYREBIRD, Species.PURR, Species.AXOLOTL)) PetView(Look(sp, Stage.ADULT), Modifier.weight(1f))
+                    // A record, a tape and a record: what the shelf will look like.
+                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        val m = app.songling.ui.components.Medium.entries
+                        val shelf = listOf(
+                            Triple(m.first(), (if (ru) "Ночной эфир" else "Night Air") to (if (ru) "Сверчки" else "The Crickets"), app.songling.domain.Genre.JAZZ),
+                            Triple(m.last(), (if (ru) "Летний микс" else "Summer Mix") to (if (ru) "Разные исполнители" else "Various artists"), app.songling.domain.Genre.ROCK),
+                            Triple(m.first(), (if (ru) "Рассвет" else "Daybreak") to (if (ru) "Огоньки" else "Fireflies"), app.songling.domain.Genre.POP),
+                        )
+                        for ((medium, words, genre) in shelf)
+                            androidx.compose.runtime.CompositionLocalProvider(app.songling.ui.components.LocalMedium provides medium) {
+                                app.songling.ui.components.Sleeve(null, words.first, words.second, genre, 92.dp)
+                            }
                     }
                     Text(t("Питомец, который слушает музыку вместе с тобой", "A pet that listens to music with you"), style = T.Title)
                     Text(t("Включай музыку в любом плеере – питомец услышит, будет танцевать и расти. По тому, как ты слушаешь, находятся новые яйца: всего их 18.",
@@ -107,6 +120,13 @@ fun Onboarding() {
                             co.write { settings.update { it.copy(theme = theme) } }
                         })
                     Btn(t("Дальше", "Next"), { step = 3; co.write { settings.update { it.copy(look = look.name) } } }, Modifier.fillMaxWidth(), kind = Kind.AMBER)
+                }
+                3 -> {
+                    Text(t("Где ты слушаешь музыку?", "Where do you listen to music?"), style = T.Title)
+                    Text(t("Питомец может слушать любой плеер или только те приложения, где у тебя музыка. Тогда видео, соцсети и аудиокниги его не собьют. Поменять можно в настройках.",
+                        "The pet can hear any player, or only the apps you play music in, so video, social apps and audiobooks don't throw it off. You can change it in settings."), style = T.Muted)
+                    app.songling.ui.settings.AppsChoice(s, players, { change -> co.write { settings.update(change) } }, pad = 0.dp)
+                    Btn(t("Дальше", "Next"), { step = 4 }, Modifier.fillMaxWidth(), kind = Kind.AMBER, enabled = !s.only || s.tracked.isNotEmpty())
                 }
                 else -> {
                     Text(t("Чтобы питомец слышал музыку", "So your pet can hear the music"), style = T.Title)

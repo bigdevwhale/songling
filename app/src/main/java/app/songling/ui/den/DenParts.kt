@@ -129,7 +129,8 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
                     Text(t("ДАВНО НЕ СЛЫШАЛИ", "LONG UNHEARD"), style = T.Eyebrow.copy(color = C.lilac))
                     Text("«${f.name}» · ${f.artistName}", style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                else -> Text(t("Тишина. Включи музыку в любом плеере – питомец услышит.", "Silence. Play music in any player – your pet will hear it."), style = T.Muted)
+                else -> Text(if (st.s.only) t("Тишина. Включи музыку в отмеченном плеере – питомец услышит.", "Silence. Play music in a ticked player – your pet will hear it.")
+                    else t("Тишина. Включи музыку в любом плеере – питомец услышит.", "Silence. Play music in any player – your pet will hear it."), style = T.Muted)
             }
         }
         if (e != null) Text(t("отлепить", "unstick"), style = T.Small.copy(color = C.coral), modifier = Modifier.clip(CircleShape).clickable {
