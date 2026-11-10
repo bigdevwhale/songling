@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Songling</string>
+    <string name="listener_name">Songling: what is playing</string>
+    <string name="widget_name">Songling den</string>
+</resources>

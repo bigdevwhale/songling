@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Songling</string>
+    <string name="listener_name">Songling: что играет</string>
+    <string name="widget_name">Логово Songling</string>
+</resources>
