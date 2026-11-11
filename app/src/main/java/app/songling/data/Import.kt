@@ -44,7 +44,7 @@ object Import {
     }
 
     fun parse(name: String, text: String): Result {
-        val t = text.trimStart('﻿', ' ', '\n', '\r', '\t')
+        val t = text.trimStart('\uFEFF', ' ', '\n', '\r', '\t')
         return when {
             t.startsWith("[") -> json(JSONArray(t))
             t.startsWith("{") -> {

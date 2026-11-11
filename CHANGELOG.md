@@ -6,6 +6,11 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [Unreleased]
+
+### Changed
+- The first onboarding screen shows three grown pets again, over the records and the tape, and picking an egg shows what it grows into.
+
 ## [1.2.0] - 2026-11-11
 
 ### Changed
