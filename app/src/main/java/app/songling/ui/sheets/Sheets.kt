@@ -232,7 +232,7 @@ fun TrackSheet(st: Studio, key: String, nav: Nav) {
             })
         }
         Section(t("Жанр", "Genre"))
-        GenrePick(st, tr.genre ?: al?.genre, tr.own, { save(tr.copy(genre = it, own = "")) }, { save(tr.copy(own = it)) })
+        GenrePick(st, tr.genre ?: al?.genre, tr.own, { save(tr.copy(genre = it, own = "", pinned = it != null)) }, { save(tr.copy(own = it)) })
         if (tl == null) Btn(t("Убрать с полки", "Remove from the shelf"), { co.write { db.dao().delete(tr) }; nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.GHOST)
     }
 }

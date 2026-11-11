@@ -6,6 +6,24 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.2.0] - 2026-11-11
+
+### Changed
+- All 18 pets are drawn anew, at every stage: a fuller pixel-art look, with what each one loves worn on it – the lyre tail, the saxophone tail, the record shell, the boombox.
+
+### Fixed
+- A listen could grow far past its song – one song showing as 35 minutes – when the player's «stopped» reached the app late or not at all. The clock now stops when the player stopped, the app asks the player itself every 15 seconds, and one listen is never longer than its song; listens already stretched are trimmed to their song (#10).
+- One long listen no longer counts as the whole album: that takes at least two of its songs (#10).
+- An album of two or three songs can be heard whole (all of its songs), and the songs of an album may come in any order with others in between, as long as no more than 40 minutes pass between two of them (#8).
+- A genre set by hand on an album or an artist now shows in the statistics; the catalogue's guess for the song, and its «other» most of all, no longer outranks it. A genre set by hand on a song outranks the album's (#5).
+
+<!-- tg
+Питомцы перерисованы – все 18, на каждой стадии.
+Исправлено: одна песня больше не превращается в 35 минут прослушивания и не засчитывает альбом целиком.
+Альбом из двух-трёх песен теперь засчитывается, а песни альбома можно слушать в любом порядке, вперемешку с другими.
+Жанр, выставленный вручную у альбома или артиста, теперь виден в статистике вместо «другое».
+-->
+
 ## [1.1.0] - 2026-11-10
 
 ### Added

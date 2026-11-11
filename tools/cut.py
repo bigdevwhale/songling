@@ -150,7 +150,7 @@ def find_eyes(img, solid):
         for j in range(i + 1, len(cands)):
             a, b = cands[i], cands[j]
             size = np.sqrt(max(a[0], b[0]))
-            if max(a[0], b[0]) / min(a[0], b[0]) > 2.6 or abs(a[2] - b[2]) > size * 1.6 or abs(a[1] - b[1]) < size * 2.5:
+            if max(a[0], b[0]) / min(a[0], b[0]) > 2.6 or abs(a[2] - b[2]) > size * 2.0 or abs(a[1] - b[1]) < size * 2.5:
                 continue
             score = a[0] + b[0]
             if best is None or score > best[0]:

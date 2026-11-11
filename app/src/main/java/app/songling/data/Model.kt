@@ -118,6 +118,8 @@ data class Track(
     @ColumnInfo(defaultValue = "0") val loved: Boolean = false,
     /** A genre of one's own (its id in Settings.own); overrides [genre] for what's shown. */
     @ColumnInfo(defaultValue = "") val own: String = "",
+    /** The genre was set by hand: it outranks the album's and the artist's. */
+    @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
 )
 
 /** A pet: hatched from an egg of [species], fed by the music played while it was out of the box. */

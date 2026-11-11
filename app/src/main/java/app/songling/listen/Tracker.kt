@@ -103,7 +103,11 @@ class Tracker(private val ctx: Context) {
     }
 
     private val tickRun = object : Runnable {
-        override fun run() { tick(); if (cur == null) PlayerWidget.refresh(ctx); main.postDelayed(this, 15_000) }
+        override fun run() {
+            // A missed callback mustn't keep the clock running: ask the player itself.
+            active?.let { c -> if (cur?.since?.let { it > 0 } == true && !isPlaying(c)) pause(stoppedAt(c)) }
+            tick(); if (cur == null) PlayerWidget.refresh(ctx); main.postDelayed(this, 15_000)
+        }
     }
 
     private fun follow(list: List<MediaController>) {
@@ -150,9 +154,20 @@ class Tracker(private val ctx: Context) {
         if (k.cover == null && !k.covering) showCover(k, md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI) ?: md?.getString(MediaMetadata.METADATA_KEY_ART_URI))
         k.lastPos = c.playbackState?.position ?: k.lastPos
         if (playing && k.since == 0L) k.since = System.currentTimeMillis()
-        if (!playing) pause()
+        if (!playing) pause(stoppedAt(c))
         publish()
         tick()
+    }
+
+    /**
+     * When the player says it stopped, on our clock. A callback can come late (the app was asleep, the
+     * listener restarted), and the time in between wasn't music.
+     */
+    private fun stoppedAt(c: MediaController): Long {
+        val now = System.currentTimeMillis()
+        val upd = c.playbackState?.lastPositionUpdateTime ?: return now
+        if (upd <= 0) return now
+        return now - (android.os.SystemClock.elapsedRealtime() - upd).coerceAtLeast(0)
     }
 
     /**
@@ -180,14 +195,18 @@ class Tracker(private val ctx: Context) {
         }
     }
 
-    /** Stops the clock on the current track. */
-    private fun pause() {
+    /** Stops the clock on the current track, at [at] (now, or when the player said it stopped). */
+    private fun pause(at: Long = System.currentTimeMillis()) {
         val k = cur ?: return
-        if (k.since > 0) { k.playedMs += System.currentTimeMillis() - k.since; k.since = 0 }
+        if (k.since > 0) { k.playedMs += (at - k.since).coerceAtLeast(0); k.since = 0 }
         publish()
     }
 
-    private fun played(k: Cur) = k.playedMs + if (k.since > 0) System.currentTimeMillis() - k.since else 0
+    /** Played of the song so far; one listen is never longer than the song (a repeat is a new listen). */
+    private fun played(k: Cur): Long {
+        val ms = k.playedMs + if (k.since > 0) System.currentTimeMillis() - k.since else 0
+        return if (k.length > 0) ms.coerceAtMost(k.length) else ms
+    }
 
     private fun publish() {
         val k = cur

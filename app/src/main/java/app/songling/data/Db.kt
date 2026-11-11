@@ -43,6 +43,10 @@ interface MusicDao {
     @Query("SELECT COUNT(*) FROM plays")
     suspend fun playCount(): Int
 
+    /** A listen from a player can't be longer than its song: a longer one was clocked while the player had stopped. */
+    @Query("UPDATE plays SET ms = length, whole = 1 WHERE source = 'PLAYER' AND length > 0 AND ms > length")
+    suspend fun trimOverlong()
+
     @Query("SELECT DISTINCT app FROM plays WHERE app != ''")
     suspend fun apps(): List<String>
 
@@ -141,8 +145,8 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 2, exportSchema = true,
-    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2)])
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 3, exportSchema = true,
+    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao

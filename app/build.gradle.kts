@@ -133,4 +133,5 @@ tasks.withType<Test>().configureEach {
     if (!project.hasProperty("render")) exclude("**/Render*")
     systemProperty("render.out", layout.buildDirectory.dir("art").get().asFile.absolutePath)
     (project.findProperty("cover") as String?)?.let { systemProperty("render.cover", it) }
+    (project.findProperty("pets") as String?)?.let { systemProperty("render.pets", it) }
 }

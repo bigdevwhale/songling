@@ -105,7 +105,11 @@ class SonglingApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         if (BuildConfig.DEMO) container.scope.launch { try { DemoSeed.seedIfEmpty(this@SonglingApp, container) } finally { container.seeding.value = false } }
-        else container.kick()
+        else {
+            // Listens clocked longer than their song by an older version (#10).
+            container.scope.launch { runCatching { container.db.dao().trimOverlong() } }
+            container.kick()
+        }
     }
 }
 

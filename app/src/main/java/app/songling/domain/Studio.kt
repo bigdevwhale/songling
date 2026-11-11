@@ -99,8 +99,20 @@ class Studio(
     /** The own genre a listen belongs to: the song's, else the album's, else the artist's. */
     fun ownOf(p: Play): app.songling.data.OwnGenre? = owns[tracks[p.track]?.own?.ifEmpty { null } ?: albums[p.album]?.own?.ifEmpty { null } ?: artists[p.artist]?.own.orEmpty()]
 
-    fun genreOf(p: Play): Genre? = ownOf(p)?.let { o -> Genre.entries.firstOrNull { it.name == o.base } }
-        ?: tracks[p.track]?.genre ?: albums[p.album]?.genre ?: artists[p.artist]?.genre
+    /**
+     * A listen's genre. What was told by hand comes first (one's own genre, then the song's, the album's, the
+     * artist's); the catalogue's guess only after it, and its «other» last of all.
+     */
+    fun genreOf(p: Play): Genre? {
+        ownOf(p)?.let { o -> Genre.entries.firstOrNull { it.name == o.base }?.let { return it } }
+        val t = tracks[p.track]
+        val a = albums[p.album.ifEmpty { t?.album.orEmpty() }]
+        if (t?.pinned == true && t.genre != null) return t.genre
+        if (a?.pinned == true && a.genre != null) return a.genre
+        artists[p.artist]?.genre?.let { return it }
+        val guess = listOfNotNull(t?.genre, a?.genre)
+        return guess.firstOrNull { it != Genre.OTHER } ?: guess.firstOrNull()
+    }
     fun yearOf(p: Play): Int? = tracks[p.track]?.year ?: albums[p.album]?.year
     fun countryOf(artist: String): String = artists[artist]?.country.orEmpty()
 
@@ -139,33 +151,38 @@ class Studio(
         if (n > 0) add(Session(from, to, ms, n))
     }
 
-    /** Albums heard whole: most of their tracks in one sitting. Each as (album key, when). */
+    /**
+     * Albums heard whole: most of their songs in one sitting, in any order and with other songs in between,
+     * as long as no more than 40 minutes pass between two of its songs. Each as (album key, when).
+     */
     val wholeRuns: List<Pair<String, Long>> = buildList {
-        var cur = ""; var start = 0L; var last = 0L
-        val seen = HashSet<String>()
-        var ms = 0L
-        var marked = false
-        fun close() {
-            if (cur.isEmpty()) return
+        class Run(val start: Long) { var last = 0L; var ms = 0L; var marked = false; val seen = HashSet<String>() }
+        val open = HashMap<String, Run>()
+        fun close(key: String, r: Run) {
             // A record or a whole album logged by hand.
-            if (marked) { add(cur to start); return }
-            val a = albums[cur]
+            if (r.marked) { add(key to r.start); return }
+            val a = albums[key]
             val need = when {
                 a == null || a.tracks <= 0 -> 7
-                a.kind == Kind.SINGLE -> Int.MAX_VALUE
+                a.tracks == 1 -> Int.MAX_VALUE
+                // A short release counts only with every song on it.
+                a.tracks <= 3 -> a.tracks
                 else -> max(3, (a.tracks * 0.8f).toInt())
             }
-            val longEnough = a != null && a.length > 0 && ms >= a.length * 0.8 && a.kind != Kind.SINGLE && a.tracks >= 3
-            if (seen.size >= need || longEnough) add(cur to start)
+            // Songs the catalogue spells differently still count by time, but never one song alone.
+            val longEnough = a != null && a.length > 0 && r.ms >= a.length * 0.8 && a.tracks >= 3 && r.seen.size >= 2
+            if (r.seen.size >= need || longEnough) add(key to r.start)
         }
         for (p in plays) {
-            if (p.album.isEmpty() || p.album != cur || p.at - last > 40 * MIN) {
-                close(); cur = p.album; start = p.at; seen.clear(); ms = 0; marked = false
-            }
-            if (cur.isNotEmpty()) { seen += p.track; ms += p.ms; if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT) marked = true }
-            last = p.at + p.ms
+            if (p.album.isEmpty()) continue
+            val was = open[p.album]
+            val r = if (was == null || p.at - was.last > 40 * MIN) { was?.let { close(p.album, it) }; Run(p.at).also { open[p.album] = it } } else was
+            r.seen += p.track; r.ms += p.ms
+            if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT) r.marked = true
+            r.last = max(r.last, p.at + p.ms)
         }
-        close()
+        for ((k, r) in open) close(k, r)
+        sortBy { it.second }
     }
 
     init { for ((k, _) in wholeRuns) byAlbum[k]?.let { it.whole++ } }
