@@ -42,38 +42,39 @@ object DenArt {
     private val OUT = rgb(0x1A0E22)
     private val pet = Buf(PetArt.W, PetArt.H)
     /** The pictures in the two frames, in den pixels: x, y, w, h. */
-    val POSTER_RECTS = listOf(intArrayOf(14, 18, 30, 30), intArrayOf(134, 16, 20, 20))
+    val POSTER_RECTS = listOf(intArrayOf(12, 8, 26, 26), intArrayOf(134, 16, 20, 20))
     /** Where the pet stands in the den, in den pixels. */
     const val PET_X = W / 2 - PetArt.W / 2
     const val PET_Y = H - PetArt.H - 6
 
     fun draw(b: Buf, d: DenLook, tick: Int) {
         b.clear()
-        room(b, d)
+        if (!Drawn.put(b, "wall_" + d.wall.name.lowercase())) room(b, d)
         window(b, d, tick)
         val i = d.items
-        if (Item.STARS in i) stars(b, d, tick)
-        if (Item.GARLAND in i) garland(b, tick)
-        if (Item.POSTER in i) { poster(b, d.posters.getOrNull(0)); band(b, d.posters.getOrNull(1)) }
-        if (Item.CLOCK in i) clock(b, d)
-        if (Item.NEON in i) neon(b, tick)
-        if (Item.HEADPHONES in i) headphones(b)
-        if (Item.RUG in i) rug(b)
-        if (Item.SHELF in i) shelf(b, d.spines)
-        if (Item.CASSETTES in i) cassettes(b)
-        if (Item.LAVA in i) lava(b, tick)
-        if (Item.SPEAKERS in i) speakers(b, d.playing, tick)
-        if (Item.TURNTABLE in i) turntable(b, d, tick)
-        if (Item.PLANT in i) plant(b, tick)
-        if (Item.GRAMOPHONE in i) gramophone(b)
-        if (Item.CANDLES in i) candles(b, tick)
+        // The drawn things (tools/den.py) where there are pictures of them; the ones drawn in code otherwise.
+        if (Item.STARS in i) { val dark = d.hour >= 20 || d.hour < 6; if (!Drawn.each(b, "stars") { k -> if (!dark) .45f else if ((tick / 7 + k) % 5 == 0) .6f else 1f }) stars(b, d, tick) }
+        if (Item.POSTER in i) { if (Drawn.has("poster") && Drawn.has("band")) framed(b, d) else { poster(b, d.posters.getOrNull(0)); band(b, d.posters.getOrNull(1)) } }
+        if (Item.GARLAND in i) { if (Drawn.put(b, "garland")) Drawn.twinkle(b, "garland", tick) else garland(b, tick) }
+        if (Item.CLOCK in i) { val c = Drawn.spot("clock.centre"); if (c != null && Drawn.put(b, "clock")) hands(b, d, c) else clock(b, d) }
+        if (Item.NEON in i) neonDrawn(b, tick)
+        if (Item.HEADPHONES in i) { if (!Drawn.put(b, "headphones")) headphones(b) }
+        if (Item.RUG in i) { if (!Drawn.put(b, "rug")) rug(b) }
+        if (Item.SHELF in i) { if (Drawn.put(b, "shelf")) spines(b, d.spines) else shelf(b, d.spines) }
+        if (Item.CASSETTES in i) { if (!Drawn.put(b, "cassettes")) cassettes(b) }
+        if (Item.LAVA in i) { if (Drawn.put(b, "lava")) wax(b, tick) else lava(b, tick) }
+        if (Item.SPEAKERS in i) { if (Drawn.put(b, "speakers")) cones(b, d.playing, tick) else speakers(b, d.playing, tick) }
+        if (Item.TURNTABLE in i) { if (Drawn.put(b, "turntable")) record(b, d, tick) else turntable(b, d, tick) }
+        if (Item.PLANT in i) { if (!Drawn.sway(b, "plant", if ((tick / 12) % 2 == 0) 0 else 1)) plant(b, tick) }
+        if (Item.GRAMOPHONE in i) { if (!Drawn.put(b, "gramophone")) gramophone(b) }
+        if (Item.CANDLES in i) { if (Drawn.put(b, "candles")) Drawn.glow(b, "candles", rgb(0xFFC060), if ((tick / 3) % 3 == 0) .05f else .035f) else candles(b, tick) }
         // The pet, feet on the rug.
         d.pet?.let { look ->
             shadow(b, W / 2, H - 9, if (look.species.floats) 14 else 20)
             // The pet itself is drawn over the den by the screen, so it can move smoothly; renders draw it here.
             if (d.drawPet) { PetArt.frame(look, tick, pet); b.blit(pet, PET_X, PET_Y) }
         }
-        if (Item.DISCO in i) disco(b, d.playing, tick)
+        if (Item.DISCO in i) { if (Drawn.put(b, "disco")) { Drawn.sparkle(b, "disco", tick); spots(b, d.playing, tick) } else disco(b, d.playing, tick) }
         // Evening light: the room darkens a little at night unless lamps are on.
         val dark = phase(d) == Phase.NIGHT
         if (dark) for (k in b.d.indices) b.d[k] = mix(b.d[k], rgb(0x0C0818), if (Item.LAVA in i || Item.GARLAND in i || Item.CANDLES in i) 0.12f else 0.25f)
@@ -106,7 +107,7 @@ object DenArt {
         thumbs.getOrPut(i.name + wall.name) {
             val full = Buf(W, H)
             draw(full, DenLook(wall = wall, items = setOf(i), hour = 21, minute = 0, spines = SPINES, playing = true), 3)
-            val (x, y, w, h) = spot(i).let { arrayOf(it[0], it[1], it[2], it[3]) }
+            val (x, y, w, h) = (Drawn.box(i) ?: spot(i)).let { arrayOf(it[0], it[1], it[2], it[3]) }
             Buf(w, h).also { b -> for (j in 0 until h) for (k in 0 until w) b.d[j * w + k] = full.get(x + k, y + j) }
         }
     }
@@ -273,7 +274,7 @@ object DenArt {
     }
 
     private fun poster(b: Buf, art: Buf?) {
-        val x0 = 14; val y0 = 18; val s = 30
+        val x0 = POSTER_RECTS[0][0]; val y0 = POSTER_RECTS[0][1]; val s = POSTER_RECTS[0][2]
         b.rect(x0 - 2, y0 - 2, s + 4, s + 4, rgb(0xF4ECDC))
         if (art != null) b.blitScaled(art, x0, y0, s, s)
         else for (y in 0 until s) for (x in 0 until s) b.p(x0 + x, y0 + y, mix(rgb(0xE2584A), rgb(0x6A3A8A), (x + y) / (2f * s)))
@@ -424,9 +425,188 @@ object DenArt {
         val cx = 170; val cy = 14
         b.line(cx, 0, cx, cy - 6, rgb(0x8A8A96))
         for (y in -5..5) for (x in -5..5) if (x * x + y * y <= 26) b.p(cx + x, cy + y, if ((x + y + tick / 3) % 3 == 0) rgb(0xF4F8FF) else rgb(0x9AA0B8))
+        spots(b, playing, tick)
+    }
+
+    /** The disco ball's spots, running over the walls while music plays. */
+    private fun spots(b: Buf, playing: Boolean, tick: Int) {
         if (playing) for (k in 0 until 10) {
             val sx = (hashI("d$k") + tick * (2 + k % 3)) % W; val sy = 10 + hashI("e$k") % 80
             b.p(sx, sy, rgb(0xFFFFFF), .7f); b.p(sx + 1, sy, rgb(0xFFFFFF), .4f)
         }
     }
+
+    // --- What the drawn things need on top: the pictures in the frames, the clock's hands, records on the shelf.
+
+    /** The two frames with their pictures: the picture first, the frame over it. */
+    private fun framed(b: Buf, d: DenLook) {
+        val p = POSTER_RECTS[0]; val q = POSTER_RECTS[1]
+        val art = d.posters.getOrNull(0)
+        if (art != null) b.blitScaled(art, p[0], p[1], p[2], p[3])
+        else for (y in 0 until p[3]) for (x in 0 until p[2]) b.p(p[0] + x, p[1] + y, mix(rgb(0xE2584A), rgb(0x6A3A8A), (x + y) / (2f * p[2])))
+        Drawn.put(b, "poster")
+        val band = d.posters.getOrNull(1)
+        if (band != null) b.blitScaled(band, q[0], q[1], q[2], q[3])
+        else for (y in 0 until q[3]) for (x in 0 until q[2]) b.p(q[0] + x, q[1] + y, mix(rgb(0x3A6A8A), rgb(0x1A1A3A), (y + x * .3f) / q[2]))
+        Drawn.put(b, "band")
+    }
+
+    private fun hands(b: Buf, d: DenLook, c: IntArray) {
+        val cx = c[0]; val cy = c[1]; val r = c[2]
+        val hm = ((d.hour % 12) + d.minute / 60.0) / 12 * 2 * PI - PI / 2
+        val mm = d.minute / 60.0 * 2 * PI - PI / 2
+        b.line(cx, cy, (cx + cos(hm) * r * .45).roundToInt(), (cy + sin(hm) * r * .45).roundToInt(), rgb(0xF4ECDC))
+        b.line(cx, cy, (cx + cos(mm) * r * .75).roundToInt(), (cy + sin(mm) * r * .75).roundToInt(), rgb(0xF4ECDC))
+        b.p(cx, cy, rgb(0xFFF6E0))
+    }
+
+    private fun neonDrawn(b: Buf, tick: Int) {
+        val on = (tick / 3) % 47 != 0
+        if (!Drawn.has("neon")) { neon(b, tick); return }
+        if (on) Drawn.glow(b, "neon", rgb(0xFF5AC8), .06f)
+        Drawn.each(b, "neon") { if (on) 1f else .35f }
+    }
+
+    /** Whole albums as spines on the drawn shelf's rows. */
+    private fun spines(b: Buf, spines: List<Int>) {
+        val xs = Drawn.spot("shelf.x") ?: return
+        val rows = Drawn.spot("shelf.rows") ?: return
+        val per = (xs[1] - xs[0]) / 3
+        for (row in 0 until rows.size / 2) {
+            val y0 = rows[row * 2]; val y1 = rows[row * 2 + 1]
+            for (k in 0 until per) {
+                val idx = row * per + k
+                val col = spines.getOrNull(idx) ?: if (idx < 4) rgb(0x3A3040) else continue
+                val short = if (k % 3 == 0) 1 else 0
+                b.rect(xs[0] + k * 3, y0 + 1 + short, 2, y1 - y0 - 1 - short, col)
+                b.p(xs[0] + k * 3, y0 + 2 + short, mix(col, rgb(0xFFFFFF), .3f))
+            }
+        }
+    }
+
+    /** Wax rising and sinking in the drawn lava lamp. */
+    private fun wax(b: Buf, tick: Int) {
+        val p = Drawn.places("lava").firstOrNull() ?: return
+        val cx = p[0] + p[2] / 2
+        for (k in 0 until 2) {
+            val t = ((tick + k * 31) % 60) / 60.0
+            val yy = p[1] + (p[3] * (.62 - sin(t * PI) * .38)).roundToInt()
+            b.ell(cx + (k * 2 - 1), yy, 1, 1, rgb(0xFFD040), .85f)
+        }
+        Drawn.glow(b, "lava", rgb(0xFF9A50), .04f)
+    }
+
+    /** The speakers' cones push out on the beat. */
+    private fun cones(b: Buf, playing: Boolean, tick: Int) {
+        if (!playing || (tick / 2) % 2 != 0) return
+        val c = Drawn.spot("speakers.cone") ?: return
+        val r0 = c[2] * c[2]; val r1 = (c[2] + 1) * (c[2] + 1)
+        for (p in Drawn.places("speakers")) {
+            val cx = if (p[4] == 1) p[0] + p[2] - 1 - c[0] else p[0] + c[0]
+            val cy = p[1] + c[1]
+            for (y in -c[2] - 1..c[2] + 1) for (x in -c[2] - 1..c[2] + 1) if (x * x + y * y in r0..r1) b.p(cx + x, cy + y, rgb(0x6A6676), .55f)
+        }
+    }
+
+    /** The drawn turntable's record: the label in the colour of what plays, and a glint turning while it plays. */
+    private fun record(b: Buf, d: DenLook, tick: Int) {
+        val l = Drawn.spot("turntable.label") ?: return
+        d.label?.let { b.rect(l[0], l[1], l[2], l[3], it) }
+        if (d.playing) {
+            val gx = l[0] - 10 + (tick % 8) * 3; val gy = l[1] + l[3] / 2
+            val under = b.get(gx, gy)
+            if (under ushr 24 != 0 && Buf.ch(under, 16) + Buf.ch(under, 8) + Buf.ch(under, 0) < 200) b.p(gx, gy, rgb(0x8A8A9A))
+        }
+    }
+
+    /**
+     * The drawn den: the pictures tools/den.py cut from the Codex sheets (resources/den) and where each stands
+     * (den.txt). A picture that isn't there leaves that thing to the code above.
+     */
+    private object Drawn {
+        private val table: List<Pair<String, IntArray>> by lazy {
+            (DenArt::class.java.getResourceAsStream("/den/den.txt")?.bufferedReader()?.use { it.readText() }.orEmpty())
+                .lines().filter { it.isNotBlank() && !it.startsWith("#") }.map { line ->
+                    val p = line.trim().split(' ').filter { it.isNotEmpty() }
+                    p[0] to p.drop(1).map { if (it == "flip") 1 else it.toInt() }.toIntArray()
+                }
+        }
+        private val bufs = HashMap<String, Buf?>()
+
+        /** Where [name] stands: x, y, w, h, flipped (1 or 0), once for each place. */
+        fun places(name: String): List<IntArray> = table.filter { it.first == name }.map { (_, v) -> if (v.size >= 5) v else v + 0 }
+        fun spot(name: String): IntArray? = table.firstOrNull { it.first == name }?.second
+        fun has(name: String) = buf(name) != null
+
+        private fun buf(name: String): Buf? = synchronized(bufs) {
+            bufs.getOrPut(name) {
+                runCatching {
+                    val bmp = DenArt::class.java.getResourceAsStream("/den/$name.png")?.use { android.graphics.BitmapFactory.decodeStream(it) } ?: return@runCatching null
+                    Buf(bmp.width, bmp.height).also { bmp.getPixels(it.d, 0, bmp.width, 0, 0, bmp.width, bmp.height); bmp.recycle() }
+                }.getOrNull()
+            }
+        }
+
+        private fun flipped(name: String): Buf? = synchronized(bufs) {
+            bufs.getOrPut("$name~") { buf(name)?.let { o -> Buf(o.w, o.h).also { f -> for (y in 0 until o.h) for (x in 0 until o.w) f.d[y * o.w + x] = o.d[y * o.w + o.w - 1 - x] } } }
+        }
+
+        /** Draws [name] in each of its places (a wall fills the room); false when there's no picture of it. */
+        fun put(b: Buf, name: String): Boolean = each(b, name) { 1f }
+
+        fun each(b: Buf, name: String, alpha: (Int) -> Float): Boolean {
+            val o = buf(name) ?: return false
+            val ps = places(name)
+            if (ps.isEmpty()) { b.blit(o, 0, 0, alpha(0)); return true }
+            for ((k, p) in ps.withIndex()) b.blit(if (p[4] == 1) flipped(name) ?: o else o, p[0], p[1], alpha(k))
+            return true
+        }
+
+        /** The plant: its top half leans by [lean] pixels, as in a draught. */
+        fun sway(b: Buf, name: String, lean: Int): Boolean {
+            val o = buf(name) ?: return false
+            for (p in places(name)) for (y in 0 until o.h) {
+                val dx = if (y < o.h * 0.55) lean else 0
+                for (x in 0 until o.w) { val c = o.d[y * o.w + x]; val a = (c ushr 24) / 255f; if (a > 0f) b.p(p[0] + x + dx, p[1] + y, c, a) }
+            }
+            return true
+        }
+
+        /** Some of the bright bulbs go dim in turn. */
+        fun twinkle(b: Buf, name: String, tick: Int) {
+            val o = buf(name) ?: return
+            for (p in places(name)) for (y in 0 until o.h) for (x in 0 until o.w) {
+                val c = o.d[y * o.w + x]
+                if (c ushr 24 == 0) continue
+                val hi = maxOf(Buf.ch(c, 16), Buf.ch(c, 8), Buf.ch(c, 0)); val lo = minOf(Buf.ch(c, 16), Buf.ch(c, 8), Buf.ch(c, 0))
+                if (hi > 150 && hi - lo > 70 && ((p[0] + x) / 5 + tick / 5) % 3 == 0) b.p(p[0] + x, p[1] + y, OUT, .45f)
+            }
+        }
+
+        /** A glint running over the disco ball. */
+        fun sparkle(b: Buf, name: String, tick: Int) {
+            val o = buf(name) ?: return
+            val p = places(name).firstOrNull() ?: return
+            for (k in 0 until 2) {
+                val x = hashI("g$k${tick / 4}") % o.w; val y = o.h / 3 + hashI("h$k${tick / 4}") % (o.h * 2 / 3)
+                if (o.get(x, y) ushr 24 != 0) b.p(p[0] + x, p[1] + y, rgb(0xFFFFFF), .9f)
+            }
+        }
+
+        /** Soft light around [name]. */
+        fun glow(b: Buf, name: String, col: Int, a: Float) {
+            for (p in places(name)) for (y in p[1] - 8 until p[1] + p[3] + 6) for (x in p[0] - 8 until p[0] + p[2] + 8) b.p(x, y, col, a)
+        }
+
+        /** The box a thing takes in the den, for its shop picture. */
+        fun box(i: Item): IntArray? {
+            val names = if (i == Item.POSTER) listOf("poster", "band") else listOf(i.name.lowercase())
+            if (names.any { !has(it) }) return null
+            val ps = names.mapNotNull { places(it).firstOrNull() }.ifEmpty { return null }
+            val x0 = (ps.minOf { it[0] } - 2).coerceAtLeast(0); val y0 = (ps.minOf { it[1] } - 2).coerceAtLeast(0)
+            val x1 = (ps.maxOf { it[0] + it[2] } + 2).coerceAtMost(W); val y1 = (ps.maxOf { it[1] + it[3] } + 2).coerceAtMost(H)
+            return intArrayOf(x0, y0, x1 - x0, y1 - y0)
+        }
+    }
 }
+

@@ -8,8 +8,26 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-11
+
+### Added
+- A listen can be taken out of the history: hold it down in the history and remove it – it leaves the statistics, the pet's time and the goals too (#12).
+- The player widget shows how far into the song it is and how long the song is; the time runs on its own while it plays (#6).
+
 ### Changed
+- The den is drawn anew: all eight wallpapers and every thing in it, in the same pixel-art look as the pets. The clock, the shelf's spines, the turntable's label, the speakers, the lights and the lava lamp still move and change as before; the lava lamp and the tapes stand on the shelf, the posters hang higher.
 - The first onboarding screen shows three grown pets again, over the records and the tape, and picking an egg shows what it grows into.
+
+### Fixed
+- A whole album could count as a third of its time: when a song change reached the app late or not at all, the next songs were folded into one listen, which was then cut to the first song's length. The app now asks the players every 15 seconds what they play, and catches a missed song change, pause or new player there (#13).
+- A song played again on repeat without a pause counts as a new listen again.
+
+<!-- tg
+Время прослушивания больше не теряется: целый альбом засчитывается целиком, а не на треть.
+Логово перерисовано – новые обои и все предметы.
+Прослушивание можно убрать из истории: удерживай его в истории.
+В виджете плеера – сколько прошло и сколько длится песня.
+-->
 
 ## [1.2.0] - 2026-11-11
 

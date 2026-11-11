@@ -3,6 +3,8 @@ package app.songling.ui.shelf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import app.songling.container
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -283,11 +285,29 @@ private fun Line(st: Studio, e: Entry, nav: Nav) {
     }
 }
 
+/** Takes one listen out of the history, and with it out of every count. */
+@Composable
+private fun ForgetSheet(st: Studio, p: app.songling.data.Play, close: () -> Unit) {
+    val co = androidx.compose.ui.platform.LocalContext.current.container
+    val ru = LocalRu.current
+    app.songling.ui.Floating { Sheet(onDismiss = close) {
+        Text(t("Убрать из истории?", "Remove from the history?"), style = T.Title)
+        Text("«${p.title}» · ${p.artistName}", style = T.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text(date(p.at, ru) + String.format(java.util.Locale.ROOT, ", %02d:%02d · ", st.hour(p.at), java.time.Instant.ofEpochMilli(p.at).atZone(st.zone).minute) + Words.dur(p.ms.coerceAtLeast(60_000), ru), style = T.Small)
+        Text(t("Это прослушивание пропадёт из статистики, времени питомца и заданий.", "This listen leaves the statistics, the pet's time and the goals."), style = T.Muted)
+        Btn(t("Убрать", "Remove"), { co.write { db.dao().delete(p) }; close() }, Modifier.fillMaxWidth())
+        Btn(t("Оставить", "Keep it"), close, Modifier.fillMaxWidth(), kind = app.songling.ui.components.Kind.GHOST)
+    } }
+}
+
 @Composable
 private fun History(st: Studio, nav: Nav) {
     val ru = LocalRu.current
     var shown by remember { mutableIntStateOf(150) }
     val rev = remember(st) { st.plays.asReversed() }
+    // A listen held down: asked whether to take it out of the history (a stray video, a misheard song).
+    var gone by remember { mutableStateOf<app.songling.data.Play?>(null) }
+    gone?.let { p -> ForgetSheet(st, p) { gone = null } }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (rev.isEmpty()) item { Text(t("Пока ни одного прослушивания.", "No listens yet."), style = T.Muted) }
         var lastDay: java.time.LocalDate? = null
@@ -306,7 +326,7 @@ private fun History(st: Studio, nav: Nav) {
             }
             item(key = "p${p.id}") {
                 val al = st.albums[p.album]
-                Row(Modifier.fillMaxWidth().clip(R8.Sm).clickable { nav.go(Overlay.TrackOf(p.track)) }.padding(vertical = 4.dp),
+                Row(Modifier.fillMaxWidth().clip(R8.Sm).combinedClickable(onLongClick = { gone = p }) { nav.go(Overlay.TrackOf(p.track)) }.padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Cover(al?.cover, p.albumName.ifEmpty { p.title }, al?.genre, 36.dp, round = 6.dp)
                     Column(Modifier.weight(1f)) {

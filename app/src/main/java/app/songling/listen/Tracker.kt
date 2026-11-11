@@ -63,6 +63,7 @@ class Tracker(private val ctx: Context) {
     @Volatile private var rules = Settings()
     private var watching: Job? = null
     private var active: MediaController? = null
+    private var listener: ComponentName? = null
 
     fun enabled(): Boolean = NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName)
 
@@ -72,6 +73,7 @@ class Tracker(private val ctx: Context) {
         if (manager != null) return
         val m = ctx.getSystemService(MediaSessionManager::class.java) ?: return
         manager = m
+        this.listener = listener
         runCatching {
             m.addOnActiveSessionsChangedListener(sessions, listener)
             follow(m.getActiveSessions(listener))
@@ -104,8 +106,13 @@ class Tracker(private val ctx: Context) {
 
     private val tickRun = object : Runnable {
         override fun run() {
-            // A missed callback mustn't keep the clock running: ask the player itself.
-            active?.let { c -> if (cur?.since?.let { it > 0 } == true && !isPlaying(c)) pause(stoppedAt(c)) }
+            // A missed callback mustn't cost or add time: ask the players themselves what they play now. Without this
+            // a missed track change folds the next songs into one listen, which is then cut to the first song's length.
+            val m = manager; val l = listener
+            if (m != null && l != null) runCatching { follow(m.getActiveSessions(l)) }
+            // The player followed first; another one only when it has gone quiet, so two playing at once don't take turns.
+            active?.let(::changed)
+            if (active?.let(::isPlaying) != true) for (c in callbacks.keys.toList()) if (c.sessionToken != active?.sessionToken) changed(c)
             tick(); if (cur == null) PlayerWidget.refresh(ctx); main.postDelayed(this, 15_000)
         }
     }
@@ -143,7 +150,7 @@ class Tracker(private val ctx: Context) {
         val c0 = cur
         val same = c0 != null && c0.pkg == c.packageName && c0.title == title && c0.artist == artist
         // The same song started over counts as a new listen.
-        val restarted = same && c0!!.playedMs > 30_000 && (c.playbackState?.position ?: 0) < 3_000 && c0.lastPos > 10_000
+        val restarted = same && played(c0!!) > 30_000 && pos(c) < 3_000 && c0.lastPos > 10_000
         if (!same || restarted) {
             pause(); close()
             cur = Cur(c.packageName, title, artist, album, length, System.currentTimeMillis())
@@ -152,7 +159,7 @@ class Tracker(private val ctx: Context) {
         val k = cur!!
         if (k.art == null) k.art = md?.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART) ?: md?.getBitmap(MediaMetadata.METADATA_KEY_ART)
         if (k.cover == null && !k.covering) showCover(k, md?.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI) ?: md?.getString(MediaMetadata.METADATA_KEY_ART_URI))
-        k.lastPos = c.playbackState?.position ?: k.lastPos
+        k.lastPos = if (c.playbackState != null) pos(c) else k.lastPos
         if (playing && k.since == 0L) k.since = System.currentTimeMillis()
         if (!playing) pause(stoppedAt(c))
         publish()
@@ -198,7 +205,8 @@ class Tracker(private val ctx: Context) {
     /** Stops the clock on the current track, at [at] (now, or when the player said it stopped). */
     private fun pause(at: Long = System.currentTimeMillis()) {
         val k = cur ?: return
-        if (k.since > 0) { k.playedMs += (at - k.since).coerceAtLeast(0); k.since = 0 }
+        // A stop stamped before our clock started is the player's stale stamp, not a stop: count up to now.
+        if (k.since > 0) { val end = if (at < k.since) System.currentTimeMillis() else at; k.playedMs += end - k.since; k.since = 0 }
         publish()
     }
 
@@ -218,8 +226,11 @@ class Tracker(private val ctx: Context) {
     fun art(): Bitmap? = cur?.art
 
     /** Where the player is in the song now. */
-    fun position(): Long {
-        val st = active?.playbackState ?: return 0
+    fun position(): Long = active?.let(::pos) ?: 0
+
+    /** Where [c] is in its song now: the position it last gave, moved on by the time it has played since. */
+    private fun pos(c: MediaController): Long {
+        val st = c.playbackState ?: return 0
         if (st.state != PlaybackState.STATE_PLAYING) return st.position
         return st.position + ((android.os.SystemClock.elapsedRealtime() - st.lastPositionUpdateTime) * st.playbackSpeed).toLong()
     }

@@ -1,0 +1,11 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references: the first is a pet from this game, the second is the room the objects will stand in. Match the pet's style: chunky pixel art, crisp thick dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood.
+
+Sprite sheet of FOUR separate objects for a tiny pet's cosy music room in a 2D side-view game. All four in a single horizontal row, left to right in the order listed, evenly spaced, with clear empty space between them: they must not touch or overlap. Each object seen from the front with a slight top-down angle, like furniture in a side-view room. Each object is drawn complete and alone.
+Transparent background. No floor, no wall, no ground shadow, no text, no labels, no frames around them, no grid, nothing else in the picture.
+
+1. A monstera plant with big split leaves in a terracotta pot. Taller than wide.
+2. A retro lava lamp: silver cone base and cap, glass full of glowing orange-pink wax blobs. Tall and narrow.
+3. A small leaning stack of five colourful audio cassette tapes. About square.
+4. Three white candles of different heights on a small brass dish, lit, with warm orange flames. Wider than tall.
+
+Save the image to: art/den/sheets/items_small.png

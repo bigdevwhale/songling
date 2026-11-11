@@ -1,0 +1,11 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references: the first is a pet from this game, the second is the room the objects will stand in. Match the pet's style: chunky pixel art, crisp thick dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood.
+
+Sprite sheet of FOUR separate objects for a tiny pet's cosy music room in a 2D side-view game. All four in a single horizontal row, left to right in the order listed, evenly spaced, with clear empty space between them: they must not touch or overlap. Each object seen from the front with a slight top-down angle, like furniture in a side-view room. Each object is drawn complete and alone.
+Transparent background. No floor, no wall, no ground shadow, no text, no labels, no frames around them, no grid, nothing else in the picture.
+
+1. A turntable on a low wooden cabinet with two short legs: black plinth, a black vinyl record on top (seen almost edge-on), a silver tone arm. About as wide as it is tall.
+2. A brass gramophone with a big flared horn on a small wooden box. Taller than wide.
+3. One tall black floor speaker: a narrow wooden cabinet with a small tweeter on top and a big woofer below. About three times taller than wide.
+4. A wooden bookcase for vinyl records, three shelves, all shelves EMPTY (no records, no books), slightly taller than wide.
+
+Save the image to: art/den/sheets/items_floor.png

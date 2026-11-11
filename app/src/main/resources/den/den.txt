@@ -1,0 +1,26 @@
+# Made by tools/den.py: name x y w h [flip] (where a sprite stands), then the spots the app draws into.
+turntable 150 81 46 39
+gramophone 22 80 23 40
+speakers 55 78 14 41
+speakers 131 78 14 41 flip
+shelf 9 62 37 58
+plant 168 80 30 40
+lava 32 36 10 26
+cassettes 11 44 15 18
+candles 80 48 15 16
+clock 46 64 14 14
+neon 159 14 27 34
+headphones 177 20 22 23
+disco 162 0 18 27
+rug 44 112 112 20
+garland 4 0 58 13
+garland 71 0 58 13
+garland 138 0 58 13
+stars 153 44 29 14 flip
+poster 5 1 39 38
+band 128 10 32 37
+turntable.label 170 86 4 3
+speakers.cone 7 25 4
+shelf.x 13 42
+shelf.rows 69 80 85 96 101 111
+clock.centre 53 71 7

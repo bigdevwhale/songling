@@ -61,13 +61,19 @@ class PlayerWidget : AppWidgetProvider() {
                     views.setTextViewText(R.id.title, if (ru) "Ничего не играет" else "Nothing playing")
                     views.setTextViewText(R.id.artist, if (ru) "Включи музыку – питомец услышит" else "Play some music – your pet will hear")
                     views.setViewVisibility(R.id.progress, View.INVISIBLE)
+                    views.setViewVisibility(R.id.times, View.INVISIBLE)
                     views.setImageViewResource(R.id.toggle, R.drawable.wp_play)
                 } else {
                     views.setTextViewText(R.id.eyebrow, if (np.playing) (if (ru) "СЕЙЧАС ИГРАЕТ" else "NOW PLAYING") else (if (ru) "НА ПАУЗЕ" else "PAUSED"))
                     views.setTextViewText(R.id.title, np.title)
                     views.setTextViewText(R.id.artist, np.artist + if (np.album.isNotEmpty()) " · ${np.album}" else "")
                     views.setViewVisibility(R.id.progress, if (np.length > 0) View.VISIBLE else View.INVISIBLE)
-                    if (np.length > 0) views.setProgressBar(R.id.progress, 1000, (tracker.position() * 1000 / np.length).toInt().coerceIn(0, 1000), false)
+                    val at = tracker.position().let { if (np.length > 0) it.coerceIn(0, np.length) else it.coerceAtLeast(0) }
+                    if (np.length > 0) views.setProgressBar(R.id.progress, 1000, (at * 1000 / np.length).toInt(), false)
+                    // Where the song is and how long it is; the launcher's chronometer runs on its own while it plays.
+                    views.setViewVisibility(R.id.times, View.VISIBLE)
+                    views.setChronometer(R.id.elapsed, android.os.SystemClock.elapsedRealtime() - at, null, np.playing)
+                    views.setTextViewText(R.id.length, if (np.length > 0) clock(np.length) else "")
                     views.setImageViewResource(R.id.toggle, if (np.playing) R.drawable.wp_pause else R.drawable.wp_play)
                 }
                 views.setOnClickPendingIntent(R.id.prev, action(ctx, PREV, 1))
@@ -82,6 +88,8 @@ class PlayerWidget : AppWidgetProvider() {
                 manager.updateAppWidget(ids, views)
             }
         }
+
+        private fun clock(ms: Long): String { val s = ms / 1000; return if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s / 60 % 60, s % 60) else "%d:%02d".format(s / 60, s % 60) }
 
         private fun action(ctx: Context, what: String, code: Int): PendingIntent =
             PendingIntent.getBroadcast(ctx, code, Intent(ctx, PlayerWidget::class.java).setAction(what), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)

@@ -1,0 +1,11 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references: the first is a pet from this game, the second is the room the objects will stand in. Match the pet's style: chunky pixel art, crisp thick dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood.
+
+Sprite sheet of FOUR separate objects for a tiny pet's cosy music room in a 2D side-view game. All four in a single horizontal row, left to right in the order listed, evenly spaced, with clear empty space between them: they must not touch or overlap. Each object seen from the front with a slight top-down angle, like furniture in a side-view room. Each object is drawn complete and alone.
+Transparent background. No floor, no wall, no ground shadow, no text, no labels, no frames around them, no grid, nothing else in the picture.
+
+1. A round woven rug seen in strong perspective from above at an angle, a wide flat oval, warm orange, red and cream rings with a fringe. About five times wider than tall.
+2. A string of colourful fairy lights (warm bulbs in red, yellow, blue, green) hanging in two shallow loops on a thin dark wire. About four times wider than tall.
+3. A loose cluster of seven small glow-in-the-dark star stickers, pale yellow-green with a soft glow, different sizes. About four times wider than tall.
+4. Two EMPTY picture frames side by side: a larger square light cream wooden frame, and a smaller dark frame with a red strip below the picture area. The insides of both frames are pure flat magenta #FF00FF.
+
+Save the image to: art/den/sheets/items_deco.png

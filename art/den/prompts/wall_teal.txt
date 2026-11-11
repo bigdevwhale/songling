@@ -1,0 +1,7 @@
+Use your image generation tool to create ONE image, landscape 3:2, then save it as PNG to the path given at the end (create folders if needed). The attached picture is the room from this game, as a style reference: chunky pixel art with crisp dark outlines, soft cel shading with 3-4 tones per colour, cosy lamp-lit evening mood.
+
+The EMPTY back wall and floor of a tiny cosy music room in a 2D side-view game, seen straight from the front, flat and orthographic, no perspective, filling the whole picture edge to edge. The wall fills the top 73% of the picture; a thin light skirting board, then a wooden plank floor fills the bottom 27%, seen from slightly above. Completely empty: no window, no door, no furniture, no lamps, no pictures, no plants, no people or animals, no text. Keep the middle of the wall calm and even (a window will be placed there). A slightly darker band along the very top edge, like a shadow under the ceiling.
+
+Wall: deep teal sea-green wallpaper with a subtle pattern of small wave lines. Floor: light grey-brown driftwood planks.
+
+Save the image to: art/den/sheets/wall_teal.png

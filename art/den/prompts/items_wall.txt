@@ -1,0 +1,11 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references: the first is a pet from this game, the second is the room the objects will stand in. Match the pet's style: chunky pixel art, crisp thick dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood.
+
+Sprite sheet of FOUR separate objects for a tiny pet's cosy music room in a 2D side-view game. All four in a single horizontal row, left to right in the order listed, evenly spaced, with clear empty space between them: they must not touch or overlap. Each object seen from the front with a slight top-down angle, like furniture in a side-view room. Each object is drawn complete and alone.
+Transparent background. No floor, no wall, no ground shadow, no text, no labels, no frames around them, no grid, nothing else in the picture.
+
+1. A wall clock made from a black vinyl record with a red centre label, with NO clock hands. Round.
+2. A glowing pink neon sign shaped like a double eighth music note (two joined notes), thin neon tubes, soft glow. Taller than wide.
+3. Big over-ear headphones in warm orange and dark grey hanging on a small brass wall hook. About square.
+4. A mirrored disco ball hanging from a short silver chain, little sparkles on its tiles. Taller than wide.
+
+Save the image to: art/den/sheets/items_wall.png

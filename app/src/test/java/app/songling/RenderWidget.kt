@@ -32,6 +32,8 @@ class RenderWidget {
         v.findViewById<TextView>(R.id.title).text = title
         v.findViewById<TextView>(R.id.artist).text = artist
         v.findViewById<ProgressBar>(R.id.progress).progress = 420
+        v.findViewById<android.widget.Chronometer>(R.id.elapsed).base = android.os.SystemClock.elapsedRealtime() - 101_000
+        v.findViewById<TextView>(R.id.length).text = "4:01"
         v.findViewById<ImageView>(R.id.toggle).setImageResource(R.drawable.wp_pause)
         val d = ctx.resources.displayMetrics.density
         val w = (340 * d).toInt(); val h = (150 * d).toInt()
