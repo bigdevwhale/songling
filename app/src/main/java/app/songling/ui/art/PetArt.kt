@@ -352,6 +352,16 @@ object Motion {
     /** A soft bounce: 0 on the floor, 1 at the top, easing in and out. */
     private fun bounce(t: Float, hz: Float): Float { val x = kotlin.math.abs(wave(t, hz / 2)); return x * x * (3 - 2 * x) }
 
+    /**
+     * A slow, soft sway for showing pets off (the onboarding): about one lean each way in four seconds and a gentle
+     * rise in between, every curve a plain sine, so nothing snaps. [phase] keeps neighbours out of step.
+     */
+    fun gentle(t: Float, phase: Float = 0f): Pose {
+        val a = t + phase
+        val lift = (1 - kotlin.math.cos(2 * PI * 0.32 * a).toFloat()) / 2
+        return Pose(-lift * 0.018f, wave(a, 0.16f) * 3.2f, 1f + lift * 0.008f, 1f - lift * 0.008f + wave(a, 0.32f) * 0.006f)
+    }
+
     /** [dy] is a share of the picture's height (negative is up), [rot] degrees. */
     fun at(look: Look, t: Float): Pose {
         if (look.windup >= 1f || look.stage == Stage.EGG) return Pose(0f, if (look.stage == Stage.EGG && look.hatch > 0.3f) wave(t, 1.5f) * 2.5f * look.hatch else 0f, 1f, 1f)

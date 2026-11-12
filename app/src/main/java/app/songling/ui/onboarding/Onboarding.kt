@@ -63,7 +63,7 @@ fun Onboarding() {
                     Text("Songling", style = T.Display.copy(color = C.amber))
                     // The three you can start with, grown up, dancing.
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.Bottom) {
-                        for (sp in listOf(Species.LYREBIRD, Species.PURR, Species.AXOLOTL)) PetView(Look(sp, Stage.ADULT, dancing = true), Modifier.weight(1f))
+                        for (sp in listOf(Species.LYREBIRD, Species.PURR, Species.AXOLOTL)) PetView(Look(sp, Stage.ADULT, dancing = true), Modifier.weight(1f), gentle = true)
                     }
                     // A record, a tape and a record: what the shelf will look like.
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
@@ -92,9 +92,9 @@ fun Onboarding() {
                         val on = egg == sp
                         Row(Modifier.fillMaxWidth().clip(R8.Lg).background(C.surface).border(if (on) 2.dp else 1.dp, if (on) C.amber else C.line, R8.Lg).clickable { egg = sp }.padding(10.dp),
                             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            PetView(Look(sp, Stage.EGG), Modifier.weight(0.26f))
+                            PetView(Look(sp, Stage.EGG), Modifier.weight(0.26f), gentle = true)
                             // What it grows into.
-                            PetView(Look(sp, Stage.ADULT, dancing = on), Modifier.weight(0.3f))
+                            PetView(Look(sp, Stage.ADULT, dancing = on), Modifier.weight(0.3f), gentle = true)
                             Column(Modifier.weight(0.44f)) {
                                 Text(Words.species(sp, ru), style = T.Name)
                                 Text(t("Любит ", "Loves ") + Words.loves(sp, ru), style = T.Small)

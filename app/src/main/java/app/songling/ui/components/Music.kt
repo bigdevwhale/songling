@@ -128,14 +128,14 @@ fun Says(text: String, who: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** A pet, alive: blinking, dancing to what plays. */
+/** A pet, alive: blinking, dancing to what plays; [gentle] sways it slowly and softly instead. */
 @Composable
-fun PetView(look: Look, modifier: Modifier = Modifier) {
+fun PetView(look: Look, modifier: Modifier = Modifier, gentle: Boolean = false) {
     val buf = remember { Buf(PetArt.W, PetArt.H, Buf.FINE) }
     val time = rememberSeconds()
     // The pixels stay still; the whole picture bobs, sways and breathes smoothly, every frame.
     Box(modifier.aspectRatio(PetArt.W / PetArt.H.toFloat()).graphicsLayer {
-        val p = app.songling.ui.art.Motion.at(look, time.floatValue)
+        val p = if (gentle) app.songling.ui.art.Motion.gentle(time.floatValue, look.species.ordinal * 0.9f) else app.songling.ui.art.Motion.at(look, time.floatValue)
         translationY = p.dy * size.height
         rotationZ = p.rot
         scaleX = p.sx; scaleY = p.sy
