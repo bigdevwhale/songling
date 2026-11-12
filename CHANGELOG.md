@@ -8,6 +8,15 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-12
+
+### Changed
+- The pets on the first screens sway slowly and softly instead of dancing, each one in its own time.
+
+<!-- tg
+Питомцы на первых экранах теперь покачиваются медленно и плавно.
+-->
+
 ## [1.4.0] - 2026-11-12
 
 ### Added
