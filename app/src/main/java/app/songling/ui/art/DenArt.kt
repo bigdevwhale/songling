@@ -40,7 +40,7 @@ object DenArt {
     const val H = 132
     private const val FLOOR = 96
     private val OUT = rgb(0x1A0E22)
-    private val pet = Buf(PetArt.W, PetArt.H)
+    private val pet = Buf(PetArt.W, PetArt.H, Buf.FINE)
     /** The pictures in the two frames, in den pixels: x, y, w, h. */
     val POSTER_RECTS = listOf(intArrayOf(12, 8, 26, 26), intArrayOf(134, 16, 20, 20))
     /** Where the pet stands in the den, in den pixels. */
@@ -105,10 +105,11 @@ object DenArt {
     /** One thing alone, cut out of an evening den with that thing in it, for the shop. */
     fun thumb(i: Item, wall: Wall): Buf = synchronized(thumbs) {
         thumbs.getOrPut(i.name + wall.name) {
-            val full = Buf(W, H)
+            val full = Buf(W, H, Buf.FINE)
             draw(full, DenLook(wall = wall, items = setOf(i), hour = 21, minute = 0, spines = SPINES, playing = true), 3)
             val (x, y, w, h) = (Drawn.box(i) ?: spot(i)).let { arrayOf(it[0], it[1], it[2], it[3]) }
-            Buf(w, h).also { b -> for (j in 0 until h) for (k in 0 until w) b.d[j * w + k] = full.get(x + k, y + j) }
+            val s = full.s
+            Buf(w, h, s).also { b -> for (j in 0 until h * s) for (k in 0 until w * s) b.d[j * b.fw + k] = full.getF(x * s + k, y * s + j) }
         }
     }
 
@@ -542,13 +543,15 @@ object DenArt {
             bufs.getOrPut(name) {
                 runCatching {
                     val bmp = DenArt::class.java.getResourceAsStream("/den/$name.png")?.use { android.graphics.BitmapFactory.decodeStream(it) } ?: return@runCatching null
-                    Buf(bmp.width, bmp.height).also { bmp.getPixels(it.d, 0, bmp.width, 0, 0, bmp.width, bmp.height); bmp.recycle() }
+                    // tools/den.py draws them FINE times finer than the den's pixels.
+                    val s = Buf.FINE
+                    Buf(bmp.width / s, bmp.height / s, s).also { bmp.getPixels(it.d, 0, it.fw, 0, 0, it.fw, it.fh); bmp.recycle() }
                 }.getOrNull()
             }
         }
 
         private fun flipped(name: String): Buf? = synchronized(bufs) {
-            bufs.getOrPut("$name~") { buf(name)?.let { o -> Buf(o.w, o.h).also { f -> for (y in 0 until o.h) for (x in 0 until o.w) f.d[y * o.w + x] = o.d[y * o.w + o.w - 1 - x] } } }
+            bufs.getOrPut("$name~") { buf(name)?.let { o -> Buf(o.w, o.h, o.s).also { f -> for (y in 0 until o.fh) for (x in 0 until o.fw) f.d[y * o.fw + x] = o.d[y * o.fw + o.fw - 1 - x] } } }
         }
 
         /** Draws [name] in each of its places (a wall fills the room); false when there's no picture of it. */
@@ -565,9 +568,9 @@ object DenArt {
         /** The plant: its top half leans by [lean] pixels, as in a draught. */
         fun sway(b: Buf, name: String, lean: Int): Boolean {
             val o = buf(name) ?: return false
-            for (p in places(name)) for (y in 0 until o.h) {
-                val dx = if (y < o.h * 0.55) lean else 0
-                for (x in 0 until o.w) { val c = o.d[y * o.w + x]; val a = (c ushr 24) / 255f; if (a > 0f) b.p(p[0] + x + dx, p[1] + y, c, a) }
+            for (p in places(name)) for (y in 0 until o.fh) {
+                val dx = if (y < o.fh * 0.55) lean * o.s else 0
+                for (x in 0 until o.fw) { val c = o.d[y * o.fw + x]; val a = (c ushr 24) / 255f; if (a > 0f) b.pfs(p[0] * o.s + x + dx, p[1] * o.s + y, o.s, c, a) }
             }
             return true
         }
@@ -575,11 +578,11 @@ object DenArt {
         /** Some of the bright bulbs go dim in turn. */
         fun twinkle(b: Buf, name: String, tick: Int) {
             val o = buf(name) ?: return
-            for (p in places(name)) for (y in 0 until o.h) for (x in 0 until o.w) {
-                val c = o.d[y * o.w + x]
+            for (p in places(name)) for (y in 0 until o.fh) for (x in 0 until o.fw) {
+                val c = o.d[y * o.fw + x]
                 if (c ushr 24 == 0) continue
                 val hi = maxOf(Buf.ch(c, 16), Buf.ch(c, 8), Buf.ch(c, 0)); val lo = minOf(Buf.ch(c, 16), Buf.ch(c, 8), Buf.ch(c, 0))
-                if (hi > 150 && hi - lo > 70 && ((p[0] + x) / 5 + tick / 5) % 3 == 0) b.p(p[0] + x, p[1] + y, OUT, .45f)
+                if (hi > 150 && hi - lo > 70 && ((p[0] + x / o.s) / 5 + tick / 5) % 3 == 0) b.pfs(p[0] * o.s + x, p[1] * o.s + y, o.s, OUT, .45f)
             }
         }
 

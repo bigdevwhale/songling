@@ -1,0 +1,16 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 9 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. A retro microphone with a small speech bubble that holds a star.
+2. An open songbook with a ribbon bookmark and notes on its pages.
+3. A vinyl record half out of its sleeve, with a golden ribbon tied around the sleeve.
+4. A neat stack of five vinyl records seen from the side, each spine a different colour.
+5. A small globe on a stand with music notes orbiting it.
+6. A vintage radio receiver with a big round dial and a glowing tuning window.
+7. A painter's palette whose paint blobs are shaped like music notes, in many colours.
+8. A bento box with compartments holding a small guitar, a drum, a saxophone and a keyboard key.
+9. Two hands in a handshake with music notes around them.
+
+Save the image to: art/icons/sheets/feats2.png

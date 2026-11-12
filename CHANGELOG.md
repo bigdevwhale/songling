@@ -8,6 +8,27 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-12
+
+### Added
+- Awards: 51 of them, most with several steps (155 in all) – hours, days and streaks, new artists and whole albums, countries and decades, night and morning listening, songs on repeat, songs by two artists or more (#11), Christmas and New Year songs and music at New Year's midnight (#9), concerts and vinyl, pets and the den. Every step pays 5 plectrums. They live on a tab of their own in the Saga, which counts the new ones.
+- Postcards to share: the den, the pet, your music over a period, top artists, albums and songs, the song on repeat, genres, when you listen, the year as a square a day, countries and decades, awards and all your pets. Each one as a post (4:5) or a story (9:16), sent anywhere from the share menu or kept in the gallery. In the Saga, at the top.
+- A tap on a bar of any chart in the Saga says what it stands for: the day or month and how much music it had (#14).
+
+### Changed
+- The pets, their eggs and the den are drawn twice as fine. The eggs are drawn anew, each keeping its colours and pattern.
+- The bottom menu and the den's buttons have plain one-colour icons in the theme's colours.
+
+### Fixed
+- The app could stop hearing music although its access was still on: Android dropped the link to the players (after an update, or when it closed the app) and didn't bring it back. The app now asks for it back by itself, and if the players still can't be heard, the den says so and a tap reconnects (#7).
+
+<!-- tg
+Награды: 51 штука со ступенями, за каждую ступень – медиаторы. Есть за новогодние песни и за песни нескольких артистов.
+Открытки для соцсетей: логово, питомец, итоги, топы, жанры, год и награды – в «Саге».
+Нажми на столбик графика – покажет, сколько музыки было в тот день.
+Приложение снова само подключается к плеерам, если система его отключила. Питомцы, яйца и логово нарисованы детальнее.
+-->
+
 ## [1.3.0] - 2026-11-11
 
 ### Added

@@ -8,21 +8,36 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * A small ARGB pixel buffer every picture is painted into, one art pixel per cell. Screens scale it
- * up with nearest-neighbour filtering. Colours are 0xAARRGGBB ints; drawing past the edges is ignored.
+ * A small ARGB pixel buffer every picture is painted into. Drawing goes by art pixels ([w]×[h]); each art pixel
+ * is [s]×[s] fine pixels underneath ([fw]×[fh], held in [d]), so pictures drawn ahead of time (pets, the den)
+ * keep their finer detail while what the code draws stays on the art grid. Screens scale it up with
+ * nearest-neighbour filtering. Colours are 0xAARRGGBB ints; drawing past the edges is ignored.
  */
-class Buf(val w: Int, val h: Int) {
-    val d = IntArray(w * h)
+class Buf(val w: Int, val h: Int, val s: Int = 1) {
+    val fw = w * s
+    val fh = h * s
+    val d = IntArray(fw * fh)
 
     fun copyFrom(o: Buf) = System.arraycopy(o.d, 0, d, 0, d.size)
 
-    fun get(x: Int, y: Int): Int = if (x < 0 || y < 0 || x >= w || y >= h) 0 else d[y * w + x]
+    fun get(x: Int, y: Int): Int = if (x < 0 || y < 0 || x >= w || y >= h) 0 else d[y * s * fw + x * s]
     fun filled(x: Int, y: Int): Boolean = get(x, y) ushr 24 != 0
+    fun getF(x: Int, y: Int): Int = if (x < 0 || y < 0 || x >= fw || y >= fh) 0 else d[y * fw + x]
 
-    /** Paints a pixel, blending by [a] (0..1) over what is there. */
+    /** Paints an art pixel, blending by [a] (0..1) over what is there. */
     fun p(x: Int, y: Int, c: Int, a: Float = 1f) {
         if (x < 0 || y < 0 || x >= w || y >= h || a <= 0f) return
-        val i = y * w + x
+        if (s == 1) { pf(x, y, c, a); return }
+        for (j in 0 until s) for (i in 0 until s) pf(x * s + i, y * s + j, c, a)
+    }
+
+    /** Paints a fine pixel of a picture [from] fine pixels to the art pixel, whatever this buffer's own grain. */
+    fun pfs(x: Int, y: Int, from: Int, c: Int, a: Float = 1f) = if (from == s) pf(x, y, c, a) else pf(x * s / from, y * s / from, c, a)
+
+    /** Paints a fine pixel. */
+    fun pf(x: Int, y: Int, c: Int, a: Float = 1f) {
+        if (x < 0 || y < 0 || x >= fw || y >= fh || a <= 0f) return
+        val i = y * fw + x
         if (a >= 1f || d[i] ushr 24 == 0) {
             d[i] = if (a >= 1f) c or OPAQUE else (c and 0xFFFFFF) or ((a * 255).toInt() shl 24)
             return
@@ -35,30 +50,43 @@ class Buf(val w: Int, val h: Int) {
     }
 
     fun clearAt(x: Int, y: Int, w: Int = 1, h: Int = 1) {
-        for (j in y until y + h) for (i in x until x + w) if (i in 0 until this.w && j in 0 until this.h) d[j * this.w + i] = 0
+        for (j in y * s until (y + h) * s) for (i in x * s until (x + w) * s) if (i in 0 until fw && j in 0 until fh) d[j * fw + i] = 0
     }
 
     fun clear() = d.fill(0)
 
-    /** Draws [o] at (x, y), skipping its empty pixels; [alpha] fades the whole of it. */
+    /** Draws [o] at art pixel (x, y), skipping its empty pixels; [alpha] fades the whole of it. Keeps as much of [o]'s detail as this one holds. */
     fun blit(o: Buf, x: Int, y: Int, alpha: Float = 1f) {
-        for (j in 0 until o.h) for (i in 0 until o.w) {
-            val c = o.d[j * o.w + i]
+        if (o.s == 1 && s > 1) {
+            for (j in 0 until o.h) for (i in 0 until o.w) {
+                val c = o.d[j * o.w + i]
+                val a = (c ushr 24) / 255f * alpha
+                if (a > 0f) p(x + i, y + j, c, a)
+            }
+            return
+        }
+        // Each fine pixel here takes the one of [o] under it.
+        val tw = o.w * s; val th = o.h * s
+        for (j in 0 until th) for (i in 0 until tw) {
+            val c = o.d[(j * o.s / s) * o.fw + i * o.s / s]
             val a = (c ushr 24) / 255f * alpha
-            if (a > 0f) p(x + i, y + j, c, a)
+            if (a > 0f) pf(x * s + i, y * s + j, c, a)
         }
     }
 
-    /** Draws [o] squeezed or stretched into w×h, nearest neighbour. */
+    /** Draws [o] squeezed or stretched into w×h art pixels, nearest neighbour. */
     fun blitScaled(o: Buf, x: Int, y: Int, w: Int, h: Int) {
-        for (j in 0 until h) for (i in 0 until w) {
-            val c = o.get(i * o.w / w, j * o.h / h)
-            if (c ushr 24 != 0) p(x + i, y + j, c)
+        val tw = w * s; val th = h * s
+        for (j in 0 until th) for (i in 0 until tw) {
+            val c = o.d[(j * o.fh / th) * o.fw + i * o.fw / tw]
+            if (c ushr 24 != 0) pf(x * s + i, y * s + j, c)
         }
     }
 
     companion object {
         const val OPAQUE = 0xFF000000.toInt()
+        /** Fine pixels to an art pixel in the pets and the den. */
+        const val FINE = 2
         fun ch(c: Int, sh: Int) = (c shr sh) and 0xFF
     }
 }
@@ -125,23 +153,23 @@ fun Buf.line(x0: Int, y0: Int, x1: Int, y1: Int, c: Int) {
 
 /** Rings everything drawn with a one-pixel line of [col]. */
 fun Buf.outline(col: Int) {
-    val src = BooleanArray(w * h) { d[it] ushr 24 != 0 }
-    for (y in 0 until h) for (x in 0 until w) {
-        val i = y * w + x
+    val src = BooleanArray(fw * fh) { d[it] ushr 24 != 0 }
+    for (y in 0 until fh) for (x in 0 until fw) {
+        val i = y * fw + x
         if (src[i]) continue
-        if ((x > 0 && src[i - 1]) || (x < w - 1 && src[i + 1]) || (y > 0 && src[i - w]) || (y < h - 1 && src[i + w])) d[i] = col or Buf.OPAQUE
+        if ((x > 0 && src[i - 1]) || (x < fw - 1 && src[i + 1]) || (y > 0 && src[i - fw]) || (y < fh - 1 && src[i + fw])) d[i] = col or Buf.OPAQUE
     }
 }
 
 /** Recolours a one-colour mask into a lit shape: light on top and left, shade on the bottom and right. */
 fun Buf.shade(r: Ramp) {
-    val m = BooleanArray(w * h) { d[it] ushr 24 != 0 }
-    fun f(x: Int, y: Int) = x in 0 until w && y in 0 until h && m[y * w + x]
-    for (y in 0 until h) for (x in 0 until w) {
+    val m = BooleanArray(fw * fh) { d[it] ushr 24 != 0 }
+    fun f(x: Int, y: Int) = x in 0 until fw && y in 0 until fh && m[y * fw + x]
+    for (y in 0 until fh) for (x in 0 until fw) {
         if (!f(x, y)) continue
         val dk = !f(x + 1, y) || !f(x, y + 1) || !f(x + 1, y + 1)
         val lt = !f(x - 1, y) || !f(x, y - 1) || !f(x - 1, y - 1)
-        d[y * w + x] = if (dk) r.d else if (lt) r.l else r.b
+        d[y * fw + x] = if (dk) r.d else if (lt) r.l else r.b
     }
 }
 

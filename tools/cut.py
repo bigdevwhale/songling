@@ -24,9 +24,12 @@ DEBUG = os.path.join(ROOT, "app", "build", "art", "sheets.png")
 SPECIES = ["lyrebird", "musicbox", "longear", "basilisk", "conductor", "purr", "axolotl", "raccoon", "wanderer",
            "cricket", "lark", "snail", "parrot", "tortoise", "whale", "echo", "firefly", "potpourri"]
 STAGES = ["baby", "young", "adult", "ancient"]
-SIZE = 80
-GROUND = 77          # the bottom row a familiar stands on
-MAX_W, MAX_H = 78, 76
+# The app's pets are 80x80 art pixels; their pictures are FINE times finer (the app's Buf.FINE), and so are
+# the eye boxes in faces.txt.
+FINE = 2
+SIZE = 80 * FINE
+GROUND = 77 * FINE + 1   # the bottom row a familiar stands on
+MAX_W, MAX_H = 78 * FINE, 76 * FINE
 
 # Eyes the finder gets wrong, by hand: (x0, y0, x1, y1) of each eye in sprite pixels.
 EYES = {}
@@ -450,7 +453,7 @@ def main():
     for line in faces:
         old[line.split()[0]] = line
     with open(fp, "w", encoding="utf-8") as f:
-        f.write("# sprite  left eye x0 y0 x1 y1  right eye x0 y0 x1 y1 (written by tools/cut.py)\n")
+        f.write("# sprite  left eye x0 y0 x1 y1  right eye x0 y0 x1 y1, in fine pixels (written by tools/cut.py)\n")
         f.write("\n".join(old[k] for k in sorted(old)) + "\n")
     sheet.save(DEBUG)
 

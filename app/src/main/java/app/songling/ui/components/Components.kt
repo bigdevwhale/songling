@@ -135,7 +135,7 @@ fun Flow(modifier: Modifier = Modifier, gap: Dp = 6.dp, content: @Composable Flo
 fun BufImage(buf: Buf, modifier: Modifier = Modifier, scale: Dp = 2.dp, smooth: Boolean = false) {
     val image = remember(buf) { buf.toBitmap().asImageBitmap() }
     Canvas(modifier.size(scale * buf.w, scale * buf.h)) {
-        drawImage(image, srcOffset = IntOffset.Zero, srcSize = IntSize(buf.w, buf.h), dstOffset = IntOffset.Zero,
+        drawImage(image, srcOffset = IntOffset.Zero, srcSize = IntSize(buf.fw, buf.fh), dstOffset = IntOffset.Zero,
             dstSize = IntSize(size.width.roundToInt(), size.height.roundToInt()), filterQuality = if (smooth) FilterQuality.Medium else FilterQuality.None)
     }
 }

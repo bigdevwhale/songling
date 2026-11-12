@@ -89,6 +89,8 @@ sealed class Overlay {
     data object Import : Overlay()
     data object How : Overlay()
     data class Hatched(val pet: Long) : Overlay()
+    /** Postcards to share. */
+    data object Cards : Overlay()
 }
 
 @Stable
@@ -219,6 +221,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                     Overlay.Import -> app.songling.ui.settings.ImportPage(studio, nav)
                     Overlay.How -> app.songling.ui.settings.HowPage(nav)
                     is Overlay.Hatched -> app.songling.ui.den.HatchSheet(studio, o.pet, nav)
+                    Overlay.Cards -> app.songling.ui.cards.CardsPage(studio, nav)
                     null -> Unit
                 }
                 nav.floating?.invoke()

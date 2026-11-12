@@ -38,6 +38,8 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         container.kick()
         container.refreshOutside()
+        // Access on but nothing heard: the system dropped the listener and didn't bind it again (#7).
+        if (!BuildConfig.DEMO && container.tracker.enabled() && !container.tracker.connected.value) app.songling.listen.Listener.rebind(this)
         app.songling.widget.DenWidget.refresh(this)
     }
 }

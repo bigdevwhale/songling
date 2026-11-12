@@ -76,13 +76,13 @@ private fun RowScope.Slot(me: Tab, tab: Tab, label: String, icon: Int, onTab: (T
     val on = me == tab
     val patch by animateColorAsState(if (on) C.amber.copy(alpha = .14f) else Color.Transparent, tween(220), label = "patch")
     val ink by animateColorAsState(if (on) C.amber else C.faint, tween(220), label = "ink")
-    val size by animateDpAsState(if (on) 28.dp else 25.dp, tween(220), label = "size")
+    val size by animateDpAsState(if (on) 26.dp else 24.dp, tween(220), label = "size")
     Column(
         Modifier.weight(1f).clip(RoundedCornerShape(18.dp)).clickable(remember { MutableInteractionSource() }, null) { onTab(me) }.padding(vertical = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Box(Modifier.width(52.dp).height(34.dp).clip(RoundedCornerShape(17.dp)).background(patch), contentAlignment = Alignment.Center) {
-            Image(ImageBitmap.imageResource(icon), null, Modifier.size(size), filterQuality = FilterQuality.None, alpha = if (on) 1f else .7f)
+            Image(ImageBitmap.imageResource(icon), null, Modifier.size(size), filterQuality = FilterQuality.Low, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(ink))
         }
         Text(label, style = T.Small.copy(color = ink, fontSize = T.Small.fontSize * .95f), maxLines = 1)
     }

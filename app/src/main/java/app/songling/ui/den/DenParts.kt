@@ -16,6 +16,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -97,6 +103,28 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
             Column(Modifier.weight(1f)) {
                 Text(t("Питомец пока не слышит музыку", "Your pet can't hear the music yet"), style = T.Strong)
                 Text(t("Нажми и разреши доступ к уведомлениям – Songling возьмёт оттуда только песню и артиста.", "Tap to allow notification access – Songling takes just the song and the artist."), style = T.Small)
+            }
+            Text("›", style = T.Title.copy(color = C.coral))
+        }
+        return
+    }
+    // Access is on, yet the system hasn't bound the listener (again): nothing would be counted (#7).
+    val connected by co.tracker.connected.collectAsState()
+    var settled by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { kotlinx.coroutines.delay(5_000); settled = true }
+    if (!connected && settled && !app.songling.BuildConfig.DEMO) {
+        var tries by remember { mutableStateOf(0) }
+        Row(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(C.coralSoft)
+            .clickable {
+                tries++
+                if (tries == 1) app.songling.listen.Listener.rebind(ctx)
+                else ctx.startActivity(Intent(AndroidSettings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            }
+            .padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(t("Питомец перестал слышать музыку", "Your pet stopped hearing the music"), style = T.Strong)
+                Text(if (tries == 0) t("Система отключила Songling от плееров. Нажми – попробуем подключиться снова.", "The system cut Songling off from the players. Tap to reconnect.")
+                    else t("Не вышло? Нажми ещё раз и в настройках выключи и снова включи доступ для Songling.", "Didn't help? Tap again, then turn Songling's access off and on in settings."), style = T.Small)
             }
             Text("›", style = T.Title.copy(color = C.coral))
         }
@@ -186,7 +214,7 @@ private fun androidx.compose.foundation.layout.RowScope.Action(icon: Int, label:
     Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Box(Modifier.size(46.dp).clip(CircleShape).background(C.surface2), contentAlignment = Alignment.Center) {
-            Image(ImageBitmap.imageResource(icon), null, Modifier.size(28.dp), filterQuality = FilterQuality.None)
+            Image(ImageBitmap.imageResource(icon), null, Modifier.size(24.dp), filterQuality = FilterQuality.Low, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(C.muted))
         }
         Text(label + (badge?.let { " $it" } ?: ""), style = T.Small.copy(color = C.muted), maxLines = 1, textAlign = TextAlign.Center)
     }

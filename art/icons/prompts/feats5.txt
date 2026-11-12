@@ -1,0 +1,16 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 9 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. A skateboard with a boombox standing on it.
+2. An acoustic guitar with a wheat stalk and leaves growing around its neck.
+3. A round glass potion flask with swirling colourful liquid and music notes bubbling out.
+4. A small decorated Christmas tree with a golden star, baubles shaped like music notes.
+5. Two champagne glasses clinking, with a clock face showing midnight behind them.
+6. A small concert stage with red curtains and spotlights.
+7. A vinyl record on a turntable platter with the tone arm resting on it.
+8. A radio antenna tower sending out curved signal waves with music notes in them.
+9. A nest with three colourful speckled eggs in it.
+
+Save the image to: art/icons/sheets/feats5.png

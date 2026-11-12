@@ -36,10 +36,12 @@ class RenderPets {
                 val looks = listOf(Look(sp, st) to 1, Look(sp, st) to blinkTick(sp, st), Look(sp, st, sleeping = true) to 1)
                 for ((col, lt) in looks.withIndex()) {
                     val b = PetArt.frame(lt.first, lt.second, motion = false)
-                    for (y in 0 until PetArt.H) for (x in 0 until PetArt.W) {
-                        val c = b.get(x, y)
+                    // Fine pixels, k / s screen pixels each.
+                    val f = k / b.s
+                    for (y in 0 until b.fh) for (x in 0 until b.fw) {
+                        val c = b.getF(x, y)
                         if (c ushr 24 == 0) continue
-                        for (dy in 0 until k) for (dx in 0 until k) img.setPixel((col * PetArt.W + x) * k + dx, (row * PetArt.H + y) * k + dy, c)
+                        for (dy in 0 until f) for (dx in 0 until f) img.setPixel(col * PetArt.W * k + x * f + dx, row * PetArt.H * k + y * f + dy, c)
                     }
                 }
             }
@@ -50,6 +52,6 @@ class RenderPets {
     /** The first tick at which the pet's eyes are shut by a blink. */
     private fun blinkTick(sp: Species, st: Stage): Int {
         val open = PetArt.frame(Look(sp, st), 1, motion = false).d
-        return (2 until 2000).firstOrNull { t -> PetArt.frame(Look(sp, st), t, motion = false).d.let { f -> !f.contentEquals(open) && f.indices.count { f[it] != open[it] } in 1..60 } } ?: 1
+        return (2 until 2000).firstOrNull { t -> PetArt.frame(Look(sp, st), t, motion = false).d.let { f -> !f.contentEquals(open) && f.indices.count { f[it] != open[it] } in 1..60 * PetArt.FINE * PetArt.FINE } } ?: 1
     }
 }

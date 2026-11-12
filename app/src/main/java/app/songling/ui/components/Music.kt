@@ -24,6 +24,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -127,7 +131,7 @@ fun Says(text: String, who: String, modifier: Modifier = Modifier) {
 /** A pet, alive: blinking, dancing to what plays. */
 @Composable
 fun PetView(look: Look, modifier: Modifier = Modifier) {
-    val buf = remember { Buf(PetArt.W, PetArt.H) }
+    val buf = remember { Buf(PetArt.W, PetArt.H, Buf.FINE) }
     val time = rememberSeconds()
     // The pixels stay still; the whole picture bobs, sways and breathes smoothly, every frame.
     Box(modifier.aspectRatio(PetArt.W / PetArt.H.toFloat()).graphicsLayer {
@@ -137,7 +141,7 @@ fun PetView(look: Look, modifier: Modifier = Modifier) {
         scaleX = p.sx; scaleY = p.sy
         transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0.5f, (PetArt.H - 5f) / PetArt.H)
     }) {
-        PixelCanvas(PetArt.W, PetArt.H, Modifier.fillMaxSize()) { b, tick -> PetArt.frame(look, tick, buf, motion = false); b.copyFrom(buf) }
+        PixelCanvas(PetArt.W, PetArt.H, Modifier.fillMaxSize(), fine = Buf.FINE) { b, tick -> PetArt.frame(look, tick, buf, motion = false); b.copyFrom(buf) }
     }
 }
 
@@ -157,7 +161,7 @@ fun rememberSeconds(): androidx.compose.runtime.MutableFloatState {
 fun DenView(den: app.songling.ui.art.DenLook, modifier: Modifier = Modifier) {
     androidx.compose.foundation.layout.BoxWithConstraints(modifier.fillMaxWidth()) {
         val k = maxWidth / app.songling.ui.art.DenArt.W
-        PixelCanvas(app.songling.ui.art.DenArt.W, app.songling.ui.art.DenArt.H, Modifier.fillMaxWidth()) { b, tick -> app.songling.ui.art.DenArt.draw(b, den, tick) }
+        PixelCanvas(app.songling.ui.art.DenArt.W, app.songling.ui.art.DenArt.H, Modifier.fillMaxWidth(), fine = Buf.FINE) { b, tick -> app.songling.ui.art.DenArt.draw(b, den, tick) }
         // Posters as they are, over their pixel frames, unless covers are meant to be pixels.
         if (!LocalPixelCovers.current && app.songling.domain.Item.POSTER in den.items) {
             val ctx = LocalContext.current
@@ -184,18 +188,31 @@ fun Stat(value: String, label: String, modifier: Modifier = Modifier, color: Col
     }
 }
 
-/** Bars over labels: minutes per day, hour or month. [labels] can skip some to stay readable. */
+/**
+ * Bars over labels: minutes per day, hour or month. [labels] can skip some to stay readable. With [describe], a tap
+ * on a bar says what it stands for (#14) and the others step back; a second tap puts it away.
+ */
 @Composable
-fun Bars(values: List<Long>, labels: List<String>, modifier: Modifier = Modifier, color: Color = C.amber, highlight: Int = -1, every: Int = 1, wide: Boolean = false) {
+fun Bars(values: List<Long>, labels: List<String>, modifier: Modifier = Modifier, color: Color = C.amber, highlight: Int = -1, every: Int = 1, wide: Boolean = false, describe: ((Int) -> String)? = null) {
     val max = (values.maxOrNull() ?: 0L).coerceAtLeast(1L)
+    var picked by remember(values) { mutableIntStateOf(-1) }
     Column(modifier.fillMaxWidth()) {
-        Canvas(Modifier.fillMaxWidth().height(110.dp)) {
+        if (describe != null) Text(if (picked in values.indices) describe(picked) else t("Нажми на столбик", "Tap a bar"),
+            style = T.Small.copy(color = if (picked in values.indices) C.ink else C.faint), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(bottom = 4.dp))
+        val tap = if (describe == null) Modifier else Modifier.pointerInput(values) {
+            detectTapGestures { o -> val i = (o.x / (size.width / values.size.coerceAtLeast(1).toFloat())).toInt().coerceIn(0, values.size - 1); picked = if (picked == i) -1 else i }
+        }
+        Canvas(Modifier.fillMaxWidth().height(110.dp).then(tap)) {
             val n = values.size.coerceAtLeast(1)
             val w = size.width / n
             values.forEachIndexed { i, v ->
                 val h = (v.toFloat() / max) * (size.height - 4)
                 val c = if (i == highlight) C.coral else color
-                drawRoundRect(if (v == 0L) C.line else c, Offset(i * w + w * .15f, size.height - h.coerceAtLeast(2f)), Size(w * .7f, h.coerceAtLeast(2f)), CornerRadius(w * .2f))
+                val dim = picked >= 0 && i != picked
+                drawRoundRect((if (v == 0L) C.line else c).let { if (dim) it.copy(alpha = it.alpha * .35f) else it },
+                    Offset(i * w + w * .15f, size.height - h.coerceAtLeast(2f)), Size(w * .7f, h.coerceAtLeast(2f)), CornerRadius(w * .2f))
+                // The picked one gets a dot on top, so a short bar is still found.
+                if (i == picked) drawCircle(C.ink, (w * .22f).coerceIn(2.5f, 6f), Offset(i * w + w / 2, size.height - h.coerceAtLeast(2f) - 7f))
             }
         }
         // Few long labels (dates): spread across the width, left, middle, right.

@@ -5,6 +5,8 @@ the den shows it.
 
     python tools/den.py
 
+Pictures are FINE times finer than the den's pixels (the app's Buf.FINE); den.txt stays in den pixels.
+
 Writes app/src/main/resources/den/wall_<name>.png, <item>.png and den.txt (where each sprite stands, and
 the spots the app draws into: the shelf's rows, the turntable's label, the speaker's cone, the clock's middle),
 and a look at the whole den with everything in it to app/build/art/den.png.
@@ -23,6 +25,7 @@ SRC = os.path.join(ROOT, "art", "den", "sheets")
 OUT = os.path.join(ROOT, "app", "src", "main", "resources", "den")
 LOOK = os.path.join(ROOT, "app", "build", "art", "den.png")
 W, H = 200, 132
+FINE = 2
 
 WALLS = ["plum", "night", "forest", "brick", "teal", "rose", "cream", "vinyl"]
 SHEETS = {
@@ -58,12 +61,12 @@ FRAMES = [("poster", (12, 8, 26, 26)), ("band", (134, 16, 20, 20))]
 
 def wall(name):
     im = Image.open(os.path.join(SRC, f"wall_{name}.png")).convert("RGB")
-    k = W / im.width
+    k = W * FINE / im.width
     h = round(im.height * k)
     a = np.array(im.convert("RGBA"))
-    small = crisp(a, W, h, colors=48)
-    top = (h - H) // 2
-    Image.fromarray(small[top:top + H], "RGBA").save(os.path.join(OUT, f"wall_{name}.png"))
+    small = crisp(a, W * FINE, h, colors=64)
+    top = (h - H * FINE) // 2
+    Image.fromarray(small[top:top + H * FINE], "RGBA").save(os.path.join(OUT, f"wall_{name}.png"))
 
 
 def parts(sheet):
@@ -98,6 +101,11 @@ def shrink(part, sw, sh, line=True):
     return outline(s) if line else s
 
 
+def fine(part, sw, sh, line=True):
+    """The picture the app shows: FINE times the den's pixels."""
+    return shrink(part, sw * FINE, sh * FINE, line)
+
+
 def runs_of(mask):
     out, x = [], 0
     while x < len(mask):
@@ -115,7 +123,7 @@ def main():
     os.makedirs(OUT, exist_ok=True)
     for w in WALLS:
         wall(w)
-    table, extra, sprites = [], [], {}
+    table, extra, sprites, shown = [], [], {}, {}
     for sheet, names in SHEETS.items():
         for name, part in zip(names, parts(sheet)):
             if name == "frames":
@@ -131,10 +139,11 @@ def main():
                     k = tw / (hx1 - hx0)
                     sw, sh = round(f.shape[1] * k), round(f.shape[0] * k)
                     sx, sy = round(tx - hx0 * k), round(ty - hy0 * k)
-                    spr = shrink(f, sw, sh)
+                    spr = fine(f, sw, sh)
                     # The picture fills the hole exactly: nothing of the frame may cover it.
-                    spr[ty - sy:ty - sy + th, tx - sx:tx - sx + tw] = 0
+                    spr[(ty - sy) * FINE:(ty - sy + th) * FINE, (tx - sx) * FINE:(tx - sx + tw) * FINE] = 0
                     sprites[fname] = spr
+                    shown[fname] = spr
                     table.append((fname, sx, sy, sw, sh, ""))
                 continue
             for place in PLACES[name]:
@@ -142,10 +151,12 @@ def main():
                 flip = len(place) > 2
                 sw, sh, sx, sy = fit(part, box, how)
                 if name not in sprites:
+                    # Measured on the den's pixels; shown finer.
                     sprites[name] = shrink(part, sw, sh, line=name not in ("neon", "stars"))
+                    shown[name] = fine(part, sw, sh, line=name not in ("neon", "stars"))
                     if name == "stars":
                         # Shrunk, their soft glow turns olive: they're glow stickers, so make them glow.
-                        s = sprites[name]
+                        s = shown[name]
                         s[..., :3] = (s[..., :3] * 0.35 + np.array([214, 255, 168]) * 0.65).astype(np.uint8)
                 table.append((name, sx, sy, sw, sh, "flip" if flip else ""))
             spr = sprites[name]
@@ -177,7 +188,7 @@ def main():
                 extra.append(("speakers.cone", sw // 2, round(sh * 0.6), max(2, sw // 3)))
             if name == "clock":
                 extra.append(("clock.centre", sx + sw // 2, sy + sh // 2, sw // 2))
-    for name, spr in sprites.items():
+    for name, spr in shown.items():
         Image.fromarray(spr, "RGBA").save(os.path.join(OUT, f"{name}.png"))
     with open(os.path.join(OUT, "den.txt"), "w", encoding="utf-8") as f:
         f.write("# Made by tools/den.py: name x y w h [flip] (where a sprite stands), then the spots the app draws into.\n")
@@ -188,10 +199,10 @@ def main():
     # A look at the den with everything in it, on the plum wall.
     room = Image.open(os.path.join(OUT, "wall_plum.png")).convert("RGBA")
     for name, sx, sy, sw, sh, flag in table:
-        im = Image.fromarray(sprites[name], "RGBA")
+        im = Image.fromarray(shown[name], "RGBA")
         if flag == "flip":
             im = im.transpose(Image.FLIP_LEFT_RIGHT)
-        room.alpha_composite(im, (sx, sy))
+        room.alpha_composite(im, (sx * FINE, sy * FINE))
     os.makedirs(os.path.dirname(LOOK), exist_ok=True)
     room.resize((W * 4, H * 4), Image.NEAREST).save(LOOK)
     print("den:", len(sprites), "sprites,", len(WALLS), "walls ->", OUT)

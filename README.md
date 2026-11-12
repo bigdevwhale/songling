@@ -54,6 +54,8 @@ Stats for a week, a month, a year and all time: top artists, albums, songs and g
 
 Set goals on anything: «4 new albums this month», «10 hours of Radiohead this year», «music from three new countries». And every week brings three small tasks for plectrums.
 
+51 awards with steps to climb – hours, streaks, night listening, songs by two artists, New Year songs and more – each step paying plectrums. And postcards for a social feed: the den, the pet, your month, top artists and albums, genres, the year as squares, awards and all your pets, as a post or a story.
+
 ## Records or tapes
 
 Albums look like records in sleeves or like tapes with hand-written J-cards – chosen on first start and in Settings. There's a light and a dark theme and a few pixel backgrounds. A home-screen widget shows what plays as a record or a tape, with previous, play/pause and next.

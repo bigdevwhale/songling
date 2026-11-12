@@ -69,15 +69,21 @@ class Tracker(private val ctx: Context) {
 
     private val sessions = MediaSessionManager.OnActiveSessionsChangedListener { list -> main.post { follow(list.orEmpty()) } }
 
+    /** Whether the players can be heard now: the listener is bound and the sessions came through. */
+    val connected = MutableStateFlow(false)
+
     fun start(listener: ComponentName) {
         if (manager != null) return
         val m = ctx.getSystemService(MediaSessionManager::class.java) ?: return
+        // Refused (the system not ready yet, or access just taken away): stay stopped, so the next connect tries again
+        // instead of being taken for one already done (#7).
+        val ok = runCatching { m.addOnActiveSessionsChangedListener(sessions, listener) }.isSuccess
+        if (!ok) return
         manager = m
         this.listener = listener
-        runCatching {
-            m.addOnActiveSessionsChangedListener(sessions, listener)
-            follow(m.getActiveSessions(listener))
-        }
+        connected.value = true
+        runCatching { follow(m.getActiveSessions(listener)) }
+        main.removeCallbacks(tickRun)
         main.postDelayed(tickRun, 15_000)
         watching = ctx.container.scope.launch {
             ctx.container.settings.settings.collect { s ->
@@ -95,6 +101,7 @@ class Tracker(private val ctx: Context) {
     }
 
     fun stop() {
+        connected.value = false
         watching?.cancel(); watching = null
         runCatching { manager?.removeOnActiveSessionsChangedListener(sessions) }
         manager = null
@@ -109,7 +116,10 @@ class Tracker(private val ctx: Context) {
             // A missed callback mustn't cost or add time: ask the players themselves what they play now. Without this
             // a missed track change folds the next songs into one listen, which is then cut to the first song's length.
             val m = manager; val l = listener
-            if (m != null && l != null) runCatching { follow(m.getActiveSessions(l)) }
+            if (m != null && l != null) runCatching { m.getActiveSessions(l) }.onSuccess(::follow).onFailure {
+                // The system stopped answering us without saying so: start over and ask to be bound again (#7).
+                if (it is SecurityException) { stop(); Listener.rebind(ctx); return }
+            }
             // The player followed first; another one only when it has gone quiet, so two playing at once don't take turns.
             active?.let(::changed)
             if (active?.let(::isPlaying) != true) for (c in callbacks.keys.toList()) if (c.sessionToken != active?.sessionToken) changed(c)

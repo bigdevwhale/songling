@@ -369,6 +369,10 @@ class Studio(
     /** Whole albums (with the time of the run) heard by the player, not imported. */
     private val liveWhole: Int get() = wholeRuns.count { (k, t) -> plays.any { it.album == k && it.at >= t && it.at < t + 3_600_000L && it.source != Source.IMPORT } }
 
+    /** Achievements and how far each one got. */
+    val feats: List<FeatState> by lazy { Feats.of(this) }
+    val featSteps: Int get() = feats.sumOf { it.level }
+
     val goalsDone: Int get() = goals.count { Goals.progress(this, it).done && it.period == app.songling.data.Period.ONCE }
 
     val earned: Int get() {
@@ -376,7 +380,7 @@ class Studio(
         for (p in plays) if (p.source == Source.IMPORT) imported += p.ms else live += p.ms
         val questPlectrums = quests.filter { "$weekId:${it.q.name}" in s.claimed }.sumOf { it.q.reward } +
             s.claimed.count { !it.startsWith("$weekId:") } * 15
-        return (live / (10 * MIN)).toInt() + (imported / (100 * MIN)).toInt() + liveWhole * 5 + questPlectrums + goalsDone * 15 + pets.sumOf { it.bonus }
+        return (live / (10 * MIN)).toInt() + (imported / (100 * MIN)).toInt() + liveWhole * 5 + questPlectrums + goalsDone * 15 + pets.sumOf { it.bonus } + featSteps * Feats.REWARD
     }
 
     val plectrums: Int get() = max(0, earned - s.spent)

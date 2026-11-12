@@ -1,0 +1,13 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 6 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. A friendly small dragon proudly standing, wearing headphones round its neck.
+2. A golden crown with a music note on its front jewel.
+3. A sparkling iridescent egg surrounded by twinkles.
+4. A small sofa with a cushion and a lit lava lamp beside it.
+5. A clipboard with a checklist of three ticked boxes and a music note.
+6. A chequered finish flag crossed with a golden trophy cup.
+
+Save the image to: art/icons/sheets/feats6.png

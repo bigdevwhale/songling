@@ -1,0 +1,16 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 9 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. An archery target with an arrow in the bullseye, and a small music note on the arrow's feathers.
+2. A pair of headphones around a small glowing planet, like a tiny private world.
+3. A long unrolled parchment scroll covered in music notes.
+4. A wooden boomerang with music notes trailing behind it.
+5. A smartphone showing a play button, with a cassette and a vinyl record beside it.
+6. A lightning bolt striking an electric guitar.
+7. A glowing neon tube sign shaped like a music note, cyan and pink.
+8. A saxophone resting on a deep purple velvet cushion.
+9. A crescent moon and stars with a small choir of three singing candles beneath.
+
+Save the image to: art/icons/sheets/feats4.png

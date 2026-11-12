@@ -30,35 +30,52 @@ data class Look(
 )
 
 /**
- * The pets, painted ahead of time by tools/pets.py (one 80×80 picture per species and stage, with the
- * eyes marked) and brought to life here: blinking, dancing to what plays, sleeping, winding down,
+ * The pets, painted ahead of time (one 80×80 picture per species and stage, [FINE] times finer: tools/cut.py
+ * from the drawn sheets, tools/pets.py for the eggs, with the eyes marked) and brought to life here: blinking, dancing to what plays, sleeping, winding down,
  * a rare colouring and the colours of a grown form.
  */
 object PetArt {
     const val SIZE = 80
+    /** Fine pixels to an art pixel: the frame a pet is drawn into must be as fine. */
+    const val FINE = Buf.FINE
+    private const val FS = SIZE * FINE
     /** The frame around the sprite, for notes, hearts and the aura. */
     const val W = 100
     const val H = 96
     private const val OX = 10
     private const val OY = 14
 
-    /** [lids]: the exact eye pixels of a drawn sheet (tools/cut.py), painted over when the eyes close. */
+    /**
+     * [buf] is [SIZE] art pixels a side, [FINE] times finer; [eyes] are boxes in fine pixels; [lids]: the exact eye
+     * pixels of a drawn sheet (tools/cut.py), painted over when the eyes close.
+     */
     class Sprite(val buf: Buf, val eyes: List<IntArray>, val lids: BooleanArray? = null) {
-        val top: Int = (0 until SIZE).firstOrNull { y -> (0 until SIZE).any { buf.filled(it, y) } } ?: 0
-        val left: Int = (0 until SIZE).firstOrNull { x -> (0 until SIZE).any { buf.filled(x, it) } } ?: 0
-        val right: Int = (SIZE - 1 downTo 0).firstOrNull { x -> (0 until SIZE).any { buf.filled(x, it) } } ?: SIZE - 1
+        private fun any(x: Int, y: Int) = buf.getF(x, y) ushr 24 != 0
+        /** The first fine row with anything in it. */
+        val fineTop: Int = (0 until FS).firstOrNull { y -> (0 until FS).any { any(it, y) } } ?: 0
+        val top: Int get() = fineTop / FINE
+        val left: Int = ((0 until FS).firstOrNull { x -> (0 until FS).any { any(x, it) } } ?: 0) / FINE
+        val right: Int = ((FS - 1 downTo 0).firstOrNull { x -> (0 until FS).any { any(x, it) } } ?: (FS - 1)) / FINE
     }
 
     private val cache = HashMap<String, Sprite?>()
 
-    /** Eye boxes: the drawn sheets' (faces.txt, tools/cut.py) over the painted ones' (eyes.txt, tools/pets.py). */
+    /** Eye boxes in fine pixels: the drawn sheets' (faces.txt, tools/cut.py, fine) over the painted ones' (eyes.txt, tools/pets.py, art pixels). */
     private val eyeTable: Map<String, List<IntArray>> by lazy {
-        fun read(name: String) = (PetArt::class.java.getResourceAsStream("/pets/$name")?.bufferedReader()?.use { it.readText() }.orEmpty())
+        fun read(name: String, k: Int) = (PetArt::class.java.getResourceAsStream("/pets/$name")?.bufferedReader()?.use { it.readText() }.orEmpty())
             .lines().filter { it.isNotBlank() && !it.startsWith("#") }.associate { line ->
                 val p = line.trim().split(Regex("\\s+"))
-                p[0] to p.drop(1).map { it.toInt() }.chunked(4).filter { it.size == 4 }.map { it.toIntArray() }
+                p[0] to p.drop(1).map { it.toInt() * k }.chunked(4).filter { it.size == 4 }.map { it.toIntArray() }
             }
-        read("eyes.txt") + read("faces.txt")
+        read("eyes.txt", FINE) + read("faces.txt", 1)
+    }
+
+    /** A picture's pixels at [FS]×[FS]: taken as they are, or blown up from an older 80×80 one. */
+    private fun fine(bmp: android.graphics.Bitmap): IntArray {
+        val n = bmp.width
+        val src = IntArray(n * bmp.height).also { bmp.getPixels(it, 0, n, 0, 0, n, bmp.height) }
+        if (n == FS && bmp.height == FS) return src
+        return IntArray(FS * FS) { i -> val x = (i % FS) * n / FS; val y = (i / FS) * bmp.height / FS; src[y * n + x] }
     }
 
     fun key(sp: Species, st: Stage) = sp.file + "_" + st.name.lowercase()
@@ -67,14 +84,13 @@ object PetArt {
         cache.getOrPut(key(sp, st)) {
             runCatching {
                 val bmp = PetArt::class.java.getResourceAsStream("/pets/${key(sp, st)}.png")?.use { BitmapFactory.decodeStream(it) } ?: return@runCatching null
-                val b = Buf(SIZE, SIZE)
-                if (bmp.width == SIZE && bmp.height == SIZE) bmp.getPixels(b.d, 0, SIZE, 0, 0, SIZE, SIZE)
+                val b = Buf(SIZE, SIZE, FINE)
+                fine(bmp).copyInto(b.d)
                 bmp.recycle()
                 val lids = PetArt::class.java.getResourceAsStream("/pets/${key(sp, st)}_eyes.png")?.use { BitmapFactory.decodeStream(it) }?.let { m ->
-                    val e = IntArray(SIZE * SIZE)
-                    if (m.width == SIZE && m.height == SIZE) m.getPixels(e, 0, SIZE, 0, 0, SIZE, SIZE)
+                    val e = fine(m)
                     m.recycle()
-                    BooleanArray(SIZE * SIZE) { e[it] ushr 24 != 0 }
+                    BooleanArray(FS * FS) { e[it] ushr 24 != 0 }
                 }
                 Sprite(b, eyeTable[key(sp, st)].orEmpty(), lids)
             }.getOrNull()
@@ -133,11 +149,11 @@ object PetArt {
      * [motion] false leaves the body still in the buffer (eyes, notes and hearts still animate):
      * the caller then moves the whole picture smoothly (see [Motion]) instead of a pixel at a time.
      */
-    fun frame(look: Look, tick: Int, into: Buf = Buf(W, H), motion: Boolean = true): Buf {
+    fun frame(look: Look, tick: Int, into: Buf = Buf(W, H, FINE), motion: Boolean = true): Buf {
         into.clear()
         if (look.stage == Stage.EGG) { egg(into, look, tick); return into }
         val sp = sprite(look.species, look.stage) ?: return into
-        val b = Buf(SIZE, SIZE).also { it.copyFrom(sp.buf) }
+        val b = Buf(SIZE, SIZE, FINE).also { it.copyFrom(sp.buf) }
         if (look.form != null && look.stage >= Stage.ADULT) tint(b, look.form)
         if (look.shiny) shine(b, look.species)
         // Eyes: blink now and then, shut when asleep, wound down or stroked.
@@ -165,27 +181,27 @@ object PetArt {
         }
         if (look.mood == Mood.SWAY && !look.dancing && !still) shear = s * 1.2f
         if (!motion) { dy = 0f; shear = 0f; squash = 0f }
-        // Lay it down row by row, so it can lean and squash.
-        val top = sp.top
-        val h = SIZE - top
-        for (y in 0 until SIZE) {
-            val fromBottom = SIZE - 1 - y
-            val lean = (shear * (1f - y.toFloat() / SIZE)).roundToInt()
-            val sy = (SIZE - 1 - fromBottom * (1f + squash)).roundToInt()
-            val ty = OY + sy + dy.roundToInt()
-            if (y < top - 1) continue
-            for (x in 0 until SIZE) {
-                val c = b.d[y * SIZE + x]
+        // Lay it down fine row by fine row, so it can lean and squash.
+        val top = sp.fineTop
+        val h = FS - top
+        for (y in 0 until FS) {
+            val fromBottom = FS - 1 - y
+            val lean = (shear * FINE * (1f - y.toFloat() / FS)).roundToInt()
+            val sy = (FS - 1 - fromBottom * (1f + squash)).roundToInt()
+            val ty = OY * FINE + sy + (dy * FINE).roundToInt()
+            if (y < top - FINE) continue
+            for (x in 0 until FS) {
+                val c = b.d[y * FS + x]
                 if (c ushr 24 == 0) continue
-                into.p(OX + x + lean, ty, c)
-                if (squash > 0f && h > 0) into.p(OX + x + lean, ty - 1, c)
+                into.pfs(OX * FINE + x + lean, ty, FINE, c)
+                if (squash > 0f && h > 0) for (k in 1 until FINE + 1) into.pfs(OX * FINE + x + lean, ty - k, FINE, c)
             }
         }
         // The key on its back while it winds down.
         if (look.windup > 0.05f) key(into, OX + sp.right - 4, OY + SIZE - 30, tick, still)
         if (look.stage == Stage.ANCIENT && !still) aura(into, tick)
-        val eyeY = sp.eyes.firstOrNull()?.let { OY + it[1] } ?: (OY + top + 12)
-        val headX = sp.eyes.takeIf { it.size >= 2 }?.let { OX + (it[0][0] + it[1][2]) / 2 } ?: (OX + SIZE / 2)
+        val eyeY = sp.eyes.firstOrNull()?.let { OY + it[1] / FINE } ?: (OY + sp.top + 12)
+        val headX = sp.eyes.takeIf { it.size >= 2 }?.let { OX + (it[0][0] + it[1][2]) / 2 / FINE } ?: (OX + SIZE / 2)
         when {
             look.sleeping && !still -> zzz(into, headX + 10, eyeY - 8, tick)
             look.happy || look.mood == Mood.HEARTS && look.dancing -> heart(into, headX + 12, eyeY - 10 - (tick % 12) / 2)
@@ -195,30 +211,33 @@ object PetArt {
         return into
     }
 
-    /** Shuts an eye: the lid takes the colour just above it, with a dark line along the middle. */
+    /** Shuts an eye (a box in fine pixels): the lid takes the colour just around it, with a dark line along the middle. */
     private fun closeEye(b: Buf, e: IntArray, happy: Boolean, mask: BooleanArray?) {
         val (x0, y0, x1, y1) = e
         // The lid: the commonest colour just around the eye.
         val around = HashMap<Int, Int>()
-        for (y in y0 - 2..y1 + 1) for (x in x0 - 2..x1 + 1) {
+        for (y in y0 - 2 * FINE..y1 + FINE - 1) for (x in x0 - 2 * FINE..x1 + FINE - 1) {
             if (x in x0 until x1 && y in y0 until y1) continue
-            if (x !in 0 until SIZE || y !in 0 until SIZE) continue
-            if (mask != null && mask[y * SIZE + x]) continue
-            val c = b.get(x, y)
+            if (x !in 0 until FS || y !in 0 until FS) continue
+            if (mask != null && mask[y * FS + x]) continue
+            val c = b.getF(x, y)
             if (c ushr 24 == 0) continue
             val l = Buf.ch(c, 16) * 0.3f + Buf.ch(c, 8) * 0.59f + Buf.ch(c, 0) * 0.11f
             if (l < 40) continue
             around[c] = (around[c] ?: 0) + 1
         }
-        val lid = around.maxByOrNull { it.value }?.key ?: b.get((x0 + x1) / 2, max(0, y0 - 1))
+        val lid = around.maxByOrNull { it.value }?.key ?: b.getF((x0 + x1) / 2, max(0, y0 - 1))
         for (y in y0 until y1) for (x in x0 until x1) {
-            if (mask != null && !mask[y * SIZE + x]) continue
-            if (b.filled(x, y)) b.d[y * SIZE + x] = lid
+            if (x !in 0 until FS || y !in 0 until FS) continue
+            if (mask != null && !mask[y * FS + x]) continue
+            if (b.getF(x, y) ushr 24 != 0) b.d[y * FS + x] = lid
         }
+        // The line: as thick as an art pixel, curved up in the middle when happy.
         val mid = (y0 + y1) / 2
         for (x in x0 until x1) {
-            val yy = if (happy) mid - if (x == x0 || x == x1 - 1) 0 else 1 else mid
-            if (b.filled(x, yy) || happy) b.p(x, yy, OUT)
+            val edge = x - x0 < FINE || x1 - 1 - x < FINE
+            val yy = if (happy) mid - if (edge) 0 else FINE else mid
+            for (k in 0 until FINE) if (b.getF(x, yy + k) ushr 24 != 0 || happy) b.pf(x, yy + k, OUT)
         }
     }
 
@@ -295,9 +314,9 @@ object PetArt {
         val shake = look.hatch.coerceIn(0f, 1f)
         val phase = (tick % 40)
         val rock = if (phase < 8 && shake > 0.3f) ((if (phase % 4 < 2) 1 else -1) * (1 + (shake * 2).toInt())) else 0
-        for (y in 0 until SIZE) {
-            val lean = (rock * (1f - y.toFloat() / SIZE)).roundToInt()
-            for (x in 0 until SIZE) { val c = img.d[y * SIZE + x]; if (c ushr 24 != 0) b.p(OX + x + lean, OY + y, c) }
+        for (y in 0 until FS) {
+            val lean = (rock * FINE * (1f - y.toFloat() / FS)).roundToInt()
+            for (x in 0 until FS) { val c = img.d[y * FS + x]; if (c ushr 24 != 0) b.pfs(OX * FINE + x + lean, OY * FINE + y, FINE, c) }
         }
         // Cracks.
         val cracks = (shake * 4).toInt()

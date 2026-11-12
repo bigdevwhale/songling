@@ -1,0 +1,16 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 9 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. An hourglass whose falling sand is made of tiny golden music notes.
+2. Big round over-ear headphones with a small heart floating above them.
+3. A tear-off desk calendar page with a music note instead of the date number.
+4. A flame shaped like a treble clef, orange and yellow.
+5. A smiling sun wearing small headphones.
+6. A comfy armchair with a vinyl record resting on its seat.
+7. A running sneaker with motion lines and music notes trailing behind it.
+8. An old pocket watch with a music note on its face.
+9. A round wreath made of four parts: a snowflake, a spring flower, a sun, and an autumn leaf.
+
+Save the image to: art/icons/sheets/feats1.png

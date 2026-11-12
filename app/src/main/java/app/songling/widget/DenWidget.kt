@@ -37,7 +37,7 @@ class DenWidget : AppWidgetProvider() {
                 if (p != null) {
                     val look = Look(p.species, p.stage, p.pet.shiny, p.form, sleeping = st.sleeping, windup = st.windup, hatch = if (p.egg) p.fed / Stage.BABY.from.toFloat() else 0f)
                     val b = PetArt.frame(look, 0)
-                    val bmp = Bitmap.createBitmap(b.d, b.w, b.h, Bitmap.Config.ARGB_8888)
+                    val bmp = Bitmap.createBitmap(b.d, b.fw, b.fh, Bitmap.Config.ARGB_8888)
                     views.setImageViewBitmap(R.id.pet, Bitmap.createScaledBitmap(bmp, b.w * 4, b.h * 4, false))
                     views.setTextViewText(R.id.line, p.pet.title(ru) + " · " + Words.dur(st.byDay[st.today] ?: 0L, ru))
                 } else views.setTextViewText(R.id.line, if (ru) "Выбери яйцо" else "Pick an egg")

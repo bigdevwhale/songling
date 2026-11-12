@@ -26,7 +26,7 @@ object Art {
     const val FRAME_MS = 90L
 }
 
-fun Buf.toBitmap(): Bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).also { it.setPixels(d, 0, w, 0, 0, w, h) }
+fun Buf.toBitmap(): Bitmap = Bitmap.createBitmap(fw, fh, Bitmap.Config.ARGB_8888).also { it.setPixels(d, 0, fw, 0, 0, fw, fh) }
 
 /** A frame counter that ticks while on screen (or sits at a fixed frame for renders). */
 @Composable
@@ -41,18 +41,18 @@ fun rememberTick(): Int {
     return tick
 }
 
-/** Paints [draw] into a w×h buffer every tick and shows it with hard pixels, width filling. */
+/** Paints [draw] into a w×h buffer ([fine] fine pixels to an art pixel) every tick and shows it with hard pixels, width filling. */
 @Composable
-fun PixelCanvas(w: Int, h: Int, modifier: Modifier = Modifier, fitHeight: Boolean = false, draw: (Buf, Int) -> Unit) {
-    val frame = remember(w, h) { Buf(w, h) }
-    val bitmap = remember(w, h) { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) }
+fun PixelCanvas(w: Int, h: Int, modifier: Modifier = Modifier, fitHeight: Boolean = false, fine: Int = 1, draw: (Buf, Int) -> Unit) {
+    val frame = remember(w, h, fine) { Buf(w, h, fine) }
+    val bitmap = remember(w, h, fine) { Bitmap.createBitmap(frame.fw, frame.fh, Bitmap.Config.ARGB_8888) }
     val image = remember(bitmap) { bitmap.asImageBitmap() }
     val tick = rememberTick()
     Canvas(modifier.aspectRatio(w.toFloat() / h, matchHeightConstraintsFirst = fitHeight)) {
         draw(frame, tick)
-        bitmap.setPixels(frame.d, 0, w, 0, 0, w, h)
+        bitmap.setPixels(frame.d, 0, frame.fw, 0, 0, frame.fw, frame.fh)
         val scale = size.width / w
-        drawImage(image, srcOffset = IntOffset.Zero, srcSize = IntSize(w, h), dstOffset = IntOffset.Zero,
+        drawImage(image, srcOffset = IntOffset.Zero, srcSize = IntSize(frame.fw, frame.fh), dstOffset = IntOffset.Zero,
             dstSize = IntSize(size.width.roundToInt(), (h * scale).roundToInt()), filterQuality = FilterQuality.None)
     }
 }

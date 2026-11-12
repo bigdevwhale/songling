@@ -71,12 +71,24 @@ import java.util.Locale
 fun SagaScreen(st: Studio, nav: Nav) {
     var page by rememberSaveable { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
-        Tabs(listOf(t("Статистика", "Stats"), t("Календарь", "Calendar")), page, { page = it }, Modifier.padding(horizontal = 16.dp))
+        val fresh = remember(st) { FeatsPage.fresh(st) }
+        Tabs(listOf(t("Статистика", "Stats"), t("Календарь", "Calendar"), t("Награды", "Awards")), page, { page = it }, Modifier.padding(horizontal = 16.dp),
+            counts = listOf(null, null, fresh.size.takeIf { it > 0 }))
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SAGA, st.s)
+            // Postcards of all this, for a social feed.
+            Row(Modifier.fillMaxWidth().clip(R8.Md).background(C.amberSoft).clickable { nav.go(Overlay.Cards) }.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(t("Открытки для соцсетей", "Postcards to share"), style = T.Strong)
+                    Text(t("Логово, питомец, итоги, награды – одной картинкой", "Your den, pet, stats and awards as a picture"), style = T.Small)
+                }
+                Text("›", style = T.Title.copy(color = C.amber))
+            }
             when (page) {
                 0 -> StatsPage(st, nav)
-                else -> CalendarPage(st, nav)
+                1 -> CalendarPage(st, nav)
+                else -> FeatsPage.Page(st)
             }
         }
     }
@@ -155,7 +167,13 @@ private fun StatsPage(st: Studio, nav: Nav) {
                 else -> ""
             }
         }
-        Bars(series.map { it.second }, labels, Modifier.padding(top = 8.dp), highlight = if (!s.monthly) series.size - 1 else -1, wide = !s.monthly && f.span != Span.WEEK)
+        Bars(series.map { it.second }, labels, Modifier.padding(top = 8.dp), highlight = if (!s.monthly) series.size - 1 else -1, wide = !s.monthly && f.span != Span.WEEK,
+            describe = { i ->
+                val (d, ms) = series[i]
+                val whenText = if (s.monthly) d.month.getDisplayName(TextStyle.FULL_STANDALONE, loc).replaceFirstChar { it.uppercase() } + " " + d.year
+                    else "${d.dayOfMonth} ${d.month.getDisplayName(TextStyle.FULL, loc)}, ${d.dayOfWeek.getDisplayName(TextStyle.SHORT, loc)}"
+                "$whenText – " + if (ms == 0L) Words.t(ru, "без музыки", "no music") else Words.dur(ms, ru)
+            })
     }
     Section(t("Больше всего", "Top"))
     Tabs(listOf(t("Артисты", "Artists"), t("Альбомы", "Albums"), t("Песни", "Songs"), t("Жанры", "Genres")), topTab, { topTab = it })
@@ -192,13 +210,15 @@ private fun StatsPage(st: Studio, nav: Nav) {
     Card {
         Text(t("По часам", "By hour"), style = T.Eyebrow)
         val h = s.hours
-        Bars(h.toList(), (0 until 24).map { "$it" }, Modifier.padding(top = 8.dp), color = C.lilac, every = 3, highlight = s.peakHour ?: -1)
+        Bars(h.toList(), (0 until 24).map { "$it" }, Modifier.padding(top = 8.dp), color = C.lilac, every = 3, highlight = s.peakHour ?: -1,
+            describe = { i -> "$i:00–${(i + 1) % 24}:00 – " + Words.dur(h[i], ru) })
     }
     Card {
         Text(t("По дням недели", "By weekday"), style = T.Eyebrow)
         val w = s.weekdays
         Bars(w.toList(), (1..7).map { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, if (ru) Locale("ru") else Locale.ENGLISH) }, Modifier.padding(top = 8.dp), color = C.mint,
-            highlight = s.favouriteWeekday?.let { it.value - 1 } ?: -1)
+            highlight = s.favouriteWeekday?.let { it.value - 1 } ?: -1,
+            describe = { i -> DayOfWeek.of(i + 1).getDisplayName(TextStyle.FULL_STANDALONE, if (ru) Locale("ru") else Locale.ENGLISH).replaceFirstChar { it.uppercase() } + " – " + Words.dur(w[i], ru) })
     }
     val countries = s.countries
     if (countries.isNotEmpty()) {
@@ -209,7 +229,8 @@ private fun StatsPage(st: Studio, nav: Nav) {
     val decades = s.decades
     if (decades.isNotEmpty()) {
         Section(t("Десятилетия", "Decades"))
-        Card { Bars(decades.map { it.second }, decades.map { "’${(it.first % 100).toString().padStart(2, '0')}" }, color = C.coral) }
+        Card { Bars(decades.map { it.second }, decades.map { "’${(it.first % 100).toString().padStart(2, '0')}" }, color = C.coral,
+            describe = { i -> Words.t(ru, "${decades[i].first}-е", "${decades[i].first}s") + " – " + Words.dur(decades[i].second, ru) }) }
     }
     val apps = s.apps
     if (apps.size > 1) {

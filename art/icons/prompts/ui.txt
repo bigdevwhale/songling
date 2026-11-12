@@ -1,0 +1,13 @@
+Use your image generation tool to create ONE image. A sheet of 9 minimalist app icons for the bottom menu and buttons of a calm, cosy music app, in a 3x3 grid, read left to right, row by row, in the order listed. Each icon centred in its own cell, all the same size and visual weight, wide empty space between them.
+
+Style: very simple, flat, monochrome glyphs: solid near-black (#2A1E1A) shapes and thick even strokes only, like a clean hand-tuned pixel icon set (each icon reads at 24x24), rounded friendly corners, at most 2-3 simple shapes per icon, no inner detail, no shading, no gradients, no colour, no outline of another colour, no background, no frames, no text. Pure white background.
+
+1. A house with a small music note above its roof.
+2. A shelf with three record sleeves standing on it.
+3. An open book with three bars of a bar chart on its right page.
+4. A pennant flag on a pole.
+5. A circle (a record) with a small plus sign at its lower right.
+6. A notepad with a pencil.
+7. A stage microphone on a short stand.
+8. An egg with a small music note on it.
+9. A table lamp.
