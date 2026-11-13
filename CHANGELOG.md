@@ -8,6 +8,25 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-11-13
+
+### Added
+- Your own albums: «songs and cover» on any album, or «Make your own album» when the search finds nothing. Title, artist, year, a cover from the gallery, and the songs in order – typed in or picked from what you heard by that artist. Renaming folds the old one in: a player's «Unnamed» becomes the real album, its listens move along, and new listens under the old name land there too.
+- Delete a song or an album together with its listens (after asking) – for a compilation in one file, a stray recording, a wrong album.
+- «Only songs heard to the end»: a song counts in its last ten seconds.
+- The «long track» limit (podcasts, compilations in one file) is yours to set, 10 to 90 minutes.
+- Which tab the shelf opens on: albums, singles, songs, artists, to hear or history (Settings → Counting).
+
+### Fixed
+- Marking an album «heard whole» right after it played in a player no longer adds its time again: it only marks it whole. An album without a list of songs is filled in first, instead of making up one long «song» named after the album.
+- The history says how to take a listen out: hold the line.
+
+<!-- tg
+Новое: свои альбомы – название, обложка из галереи и песни в нужном порядке; «Unnamed» можно превратить в настоящий альбом, и прослушивания переедут туда.
+Песню или альбом теперь можно удалить вместе с прослушиваниями. В настройках – «только дослушанные», порог длинных треков и вкладка, с которой открывается полка.
+Исправлено: отметка «прослушал целиком» больше не прибавляет лишнее время и не создаёт песню на 40 минут.
+-->
+
 ## [1.5.0] - 2026-11-13
 
 ### Added
