@@ -6,6 +6,8 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [Unreleased]
+
 ## [1.5.0] - 2026-11-13
 
 ### Added
@@ -19,8 +21,6 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 Новое: питомец Ворон – хранитель песен ушедших музыкантов. Яйцо открывается после трёх часов их музыки.
 Исправлено: песня нескольких артистов теперь засчитывается каждому, а не только первому. Подпись «до следующей стадии» больше не застревает от прошлого питомца.
 -->
-
-## [Unreleased]
 
 ## [1.4.1] - 2026-11-12
 
