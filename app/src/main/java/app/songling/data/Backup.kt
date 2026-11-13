@@ -26,7 +26,7 @@ object Backup {
         o.put("albums", JSONArray(dao.albumList().map { a ->
             JSONObject().put("key", a.key).put("title", a.title).put("artist", a.artistName).put("kind", a.kind.name).put("year", a.year ?: 0).put("genre", a.genre?.name ?: "")
                 .put("genreName", a.genreName).put("cover", a.cover ?: "").put("tracks", a.tracks).put("length", a.length).put("checked", a.checked).put("stars", a.stars)
-                .put("wish", a.wish).put("added", a.added).put("pinned", a.pinned).put("note", a.note).put("own", a.own)
+                .put("wish", a.wish).put("added", a.added).put("pinned", a.pinned).put("note", a.note).put("own", a.own).put("aliases", a.aliases)
         }))
         o.put("artists", JSONArray(dao.artists().first().map { a ->
             JSONObject().put("key", a.key).put("name", a.name).put("country", a.country).put("genre", a.genre?.name ?: "").put("checked", a.checked).put("stars", a.stars).put("wish", a.wish).put("added", a.added).put("own", a.own).put("gone", a.gone)
@@ -75,7 +75,7 @@ object Backup {
         for (a in arr("albums")) dao.upsert(Album(a.getString("key"), a.getString("title"), a.getString("artist"), kind = Kind.entries.firstOrNull { it.name == a.optString("kind") } ?: Kind.ALBUM,
             year = a.optInt("year").takeIf { it > 0 }, genre = g(a.optString("genre")), genreName = a.optString("genreName"), cover = a.optString("cover").ifBlank { null },
             tracks = a.optInt("tracks"), length = a.optLong("length"), checked = a.optLong("checked"), stars = a.optInt("stars"), wish = a.optBoolean("wish"),
-            added = a.optLong("added"), pinned = a.optBoolean("pinned"), note = a.optString("note"), own = a.optString("own")))
+            added = a.optLong("added"), pinned = a.optBoolean("pinned"), note = a.optString("note"), own = a.optString("own"), aliases = a.optString("aliases")))
         for (a in arr("artists")) dao.upsert(Artist(a.getString("key"), a.getString("name"), a.optString("country"), g(a.optString("genre")), a.optLong("checked"), a.optInt("stars"), a.optBoolean("wish"), a.optLong("added"), a.optString("own"), a.optInt("gone")))
         for (t in arr("tracks")) dao.upsert(Track(t.getString("key"), t.getString("title"), t.getString("artist"), album = t.optString("album"), albumName = t.optString("albumName"),
             number = t.optInt("number"), length = t.optLong("length"), year = t.optInt("year").takeIf { it > 0 }, genre = g(t.optString("genre")), checked = t.optLong("checked"),

@@ -51,6 +51,10 @@ fun MarkSheet(st: Studio, album: String?, track: String?, nav: Nav) {
             st.plays.filter { it.album == k }.map { Triple(it.track, it.title, st.tracks[it.track]?.number ?: 0) })
             .distinctBy { it.first }.sortedBy { if (it.third > 0) it.third else 999 }
     }.orEmpty()
+    // Heard in a player today: marking it whole only marks it, the time is already counted.
+    val heardToday = album != null && track == null && st.plays.any { it.album == album && it.source == Source.PLAYER && st.now - (it.at + it.ms) < 12 * 3_600_000L }
+    // No list of songs: nothing to spread the time over, so it's filled in first instead of inventing one long «song».
+    val needList = album != null && track == null && songs.size < 3
     Sheet(onDismiss = nav::close) {
         Text(t("Отметить прослушивание", "Log a listen"), style = T.Title)
         Text(if (track != null) "«$songTitle» · $artist" else "«$albumTitle» · $artist", style = T.Name.copy(color = C.amber))
@@ -60,6 +64,21 @@ fun MarkSheet(st: Studio, album: String?, track: String?, nav: Nav) {
             songs.size >= 3 -> t("Весь альбом целиком: ${songs.size} ${Words.plural(songs.size, "песня", "песни", "песен")} подряд.", "The whole album: ${songs.size} songs in a row.")
             else -> t("Весь альбом целиком.", "The whole album.")
         }, style = T.Muted)
+        if (heardToday && daysAgo == 0) {
+            Text(t("Сегодня он уже звучал в плеере: отметим его целиком, а время не прибавится.",
+                "It played in a player today: it's marked whole and no time is added."), style = T.Body.copy(color = C.mint))
+            Btn(t("Засчитать целиком", "Count it whole"), {
+                co.write { val dao = db.dao(); dao.lastOfAlbum(album!!)?.let { p -> dao.update(p.copy(ref = "whole:${p.id}")) } }
+                nav.toast(if (ru) "Альбом засчитан целиком" else "Counted whole"); nav.close()
+            }, Modifier.fillMaxWidth(), kind = Kind.AMBER)
+            Text(t("Или отметь как отдельное прослушивание:", "Or log it as a listen of its own:"), style = T.Small)
+        }
+        if (needList) {
+            Text(t("У этого альбома пока нет списка песен. Заполни его – и отметка разложит время по песням.",
+                "This album has no list of songs yet. Fill it in, and the mark will spread the time over the songs."), style = T.Muted)
+            Btn(t("Заполнить альбом", "Fill in the album"), { nav.go(app.songling.ui.Overlay.AlbumEdit(album)) }, Modifier.fillMaxWidth(), kind = Kind.SOFT)
+            return@Sheet
+        }
         Section(t("Как", "How"))
         Flow { for (s in listOf(Source.MANUAL, Source.VINYL, Source.RADIO)) Chip(Words.source(s, ru), s == source, { source = s }) }
         Section(t("Когда", "When"))
@@ -75,14 +94,10 @@ fun MarkSheet(st: Studio, album: String?, track: String?, nav: Nav) {
                     dao.insert(p); meta.note(p)
                 } else if (album != null) {
                     var at = if (daysAgo == 0) now - songs.sumOf { (st.tracks[it.first]?.length ?: 210_000L) } else st.startOf(st.today.minusDays(daysAgo.toLong())) + 19 * 3_600_000L
-                    if (songs.size >= 3) for ((k, title, _) in songs) {
+                    for ((k, title, _) in songs) {
                         val len = st.tracks[k]?.length?.takeIf { it > 0 } ?: 210_000L
                         val p = Play(at = at, ms = len, title = title, artistName = artist, albumName = albumTitle, length = len, source = source, whole = true)
                         dao.insert(p); meta.note(p); at += len + 2_000
-                    } else {
-                        val len = a?.length?.takeIf { it > 0 } ?: 40 * MIN
-                        val p = Play(at = at, ms = len, title = albumTitle, artistName = artist, albumName = albumTitle, source = source, whole = true)
-                        dao.insert(p); meta.note(p)
                     }
                 }
             }

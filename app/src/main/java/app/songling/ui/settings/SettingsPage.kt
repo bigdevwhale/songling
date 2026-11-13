@@ -172,7 +172,17 @@ fun SettingsPage(st: Studio, nav: Nav) {
             Line(t("Песня засчитывается", "A song counts"), t("после стольких секунд", "after this many seconds")) {
                 Small(if (ru) "${s.minSeconds} с" else "${s.minSeconds} s") { d -> set { it.copy(minSeconds = (it.minSeconds + d * 10).coerceIn(10, 120)) } }
             }
-            Line(t("Без подкастов", "No podcasts"), t("не считать треки длиннее ${s.longMinutes} минут", "skip tracks over ${s.longMinutes} minutes")) { Toggle(s.skipLong) { v -> set { it.copy(skipLong = v) } } }
+            Line(t("Только дослушанные", "Only songs heard to the end"), t("песня засчитывается за 10 секунд до конца", "a song counts in its last ten seconds")) { Toggle(s.onlyWhole) { v -> set { it.copy(onlyWhole = v) } } }
+            Line(t("Без длинных треков", "No long tracks"), t("подкасты, сборники одним файлом – длиннее ${s.longMinutes} минут", "podcasts, compilations in one file – over ${s.longMinutes} minutes")) { Toggle(s.skipLong) { v -> set { it.copy(skipLong = v) } } }
+            if (s.skipLong) Line(t("Длинный трек", "A long track"), t("от стольких минут", "from this many minutes")) {
+                Small(if (ru) "${s.longMinutes} мин" else "${s.longMinutes} min") { d -> set { it.copy(longMinutes = (it.longMinutes + d * 5).coerceIn(10, 90)) } }
+            }
+            Line(t("Полка открывается", "The shelf opens on"), null) {}
+            app.songling.ui.components.Flow {
+                for ((id, n) in listOf("ALBUMS" to t("Альбомы", "Albums"), "SINGLES" to t("Синглы", "Singles"), "SONGS" to t("Песни", "Songs"),
+                    "ARTISTS" to t("Артисты", "Artists"), "WISH" to t("Хочу послушать", "To hear"), "HISTORY" to t("История", "History")))
+                    app.songling.ui.components.Chip(n, s.shelfFirst == id, { set { it.copy(shelfFirst = id) } })
+            }
             Line(t("Новый день", "A new day"), t("музыка до этого часа идёт в вечер накануне", "music before this hour counts to the evening before")) {
                 Small("${s.dayStart}:00") { d -> set { it.copy(dayStart = (it.dayStart + d).coerceIn(0, 8)) } }
             }

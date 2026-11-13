@@ -80,6 +80,8 @@ sealed class Overlay {
     data object Quests : Overlay()
     /** «I listened to this»: an album whole ([track] null) or one song. */
     data class Mark(val album: String?, val track: String?) : Overlay()
+    /** An album made or put right by hand ([key] null: a new one). */
+    data class AlbumEdit(val key: String?) : Overlay()
     /** Hang an album («album:key») or a band («artist:key») in the den. */
     data class Poster(val choice: String) : Overlay()
     data object Bestiary : Overlay()
@@ -214,6 +216,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                     Overlay.PetInfo -> app.songling.ui.den.PetSheet(studio, nav)
                     Overlay.Quests -> app.songling.ui.den.QuestsSheet(studio, nav)
                     is Overlay.Mark -> app.songling.ui.sheets.MarkSheet(studio, o.album, o.track, nav)
+                    is Overlay.AlbumEdit -> app.songling.ui.sheets.AlbumEditSheet(studio, o.key, nav)
                     is Overlay.Poster -> app.songling.ui.den.PosterSheet(studio, o.choice, nav)
                     Overlay.Bestiary -> app.songling.ui.den.BestiaryPage(studio, nav)
                     Overlay.Shop -> app.songling.ui.den.ShopPage(studio, nav)

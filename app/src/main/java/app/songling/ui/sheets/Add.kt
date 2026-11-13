@@ -128,7 +128,10 @@ fun AddSheet(st: Studio, wish0: Boolean, nav: Nav) {
                 Btn(if (busy) "…" else t("Найти", "Find"), ::search, kind = BtnKind.AMBER, small = true, enabled = !busy)
             }
             albums?.let { list ->
-                if (list.isEmpty()) Text(t("Ничего не нашлось. Можно ввести вручную.", "Nothing found. You can type it in."), style = T.Muted)
+                if (list.isEmpty()) {
+                    Text(t("Ничего не нашлось. Можно ввести вручную или собрать свой альбом – с обложкой и песнями.", "Nothing found. Type it in, or make your own album – with a cover and songs."), style = T.Muted)
+                    Btn(t("Собрать свой альбом", "Make your own album"), { nav.go(app.songling.ui.Overlay.AlbumEdit(null)) }, Modifier.fillMaxWidth(), kind = BtnKind.SOFT)
+                }
                 for (f in list) Row(Modifier.fillMaxWidth().clip(R8.Md).background(C.surface2).clickable {
                     addAlbum(co, f.title, f.artist, f.kind, f.year, f.genreName, f.tracks, f.art, wish)
                     if (heard) logHeard(f.title, f.artist, f.title, (f.tracks.coerceAtLeast(1) * 3.5 * MIN).toLong(), f.kind != Kind.SINGLE)

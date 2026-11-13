@@ -54,6 +54,23 @@ interface MusicDao {
     @Query("UPDATE plays SET album = :to, albumName = :name WHERE track = :track AND album = ''")
     suspend fun placeTrack(track: String, to: String, name: String)
 
+    /** Every listen of one album moved to another (an album renamed or folded into one made by hand). */
+    @Query("UPDATE plays SET album = :to, albumName = :name WHERE album = :from")
+    suspend fun moveAlbum(from: String, to: String, name: String)
+
+    /** Every listen of a song put on an album, wherever it was before. */
+    @Query("UPDATE plays SET album = :to, albumName = :name WHERE track = :track")
+    suspend fun moveTrack(track: String, to: String, name: String)
+
+    @Query("DELETE FROM plays WHERE album = :album")
+    suspend fun forgetAlbum(album: String)
+
+    @Query("DELETE FROM plays WHERE track = :track")
+    suspend fun forgetTrack(track: String)
+
+    @Query("SELECT * FROM plays WHERE album = :album ORDER BY at DESC LIMIT 1")
+    suspend fun lastOfAlbum(album: String): Play?
+
     // --- albums
     @Query("SELECT * FROM albums")
     fun albums(): Flow<List<Album>>
@@ -67,6 +84,16 @@ interface MusicDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertAlbum(a: Album): Long
     @Upsert suspend fun upsert(a: Album)
     @Delete suspend fun delete(a: Album)
+
+    /** The album a key was folded into, if any. */
+    @Query("SELECT * FROM albums WHERE ',' || aliases || ',' LIKE '%,' || :key || ',%' LIMIT 1")
+    suspend fun albumByAlias(key: String): Album?
+
+    @Query("UPDATE tracks SET album = :to, albumName = :name WHERE album = :from")
+    suspend fun moveTracks(from: String, to: String, name: String)
+
+    @Query("DELETE FROM tracks WHERE album = :album")
+    suspend fun forgetTracks(album: String)
 
     @Query("SELECT * FROM albums WHERE checked = 0 LIMIT :n")
     suspend fun uncheckedAlbums(n: Int): List<Album>
@@ -146,8 +173,9 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 4, exportSchema = true,
-    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4)])
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 5, exportSchema = true,
+    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4),
+        androidx.room.AutoMigration(from = 4, to = 5)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao

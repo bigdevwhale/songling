@@ -185,6 +185,8 @@ class Studio(
             val r = if (was == null || p.at - was.last > 40 * MIN) { was?.let { close(p.album, it) }; Run(p.at).also { open[p.album] = it } } else was
             r.seen += p.track; r.ms += p.ms
             if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT) r.marked = true
+            // The album just heard in a player, marked whole by hand without adding any time.
+            if (p.ref?.startsWith("whole:") == true) r.marked = true
             r.last = max(r.last, p.at + p.ms)
         }
         for ((k, r) in open) close(k, r)

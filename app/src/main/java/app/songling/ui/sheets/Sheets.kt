@@ -97,6 +97,7 @@ fun AlbumSheet(st: Studio, key: String, nav: Nav) {
                 nav.go(Overlay.GoalEdit(draft = Goal(kind = GoalKind.ALBUM, target = 1, period = Period.ONCE, ref = key, label = a.title)))
             })
             Chip(t("изменить", "edit"), edit, { edit = !edit })
+            Chip(t("песни и обложка", "songs and cover"), false, { nav.go(Overlay.AlbumEdit(key)) })
         }
         if (edit) {
             Section(t("Жанр", "Genre"))
@@ -130,6 +131,14 @@ fun AlbumSheet(st: Studio, key: String, nav: Nav) {
             }
         }
         if (tl == null) Btn(t("Убрать с полки", "Remove from the shelf"), { co.write { db.dao().delete(a) }; nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.GHOST)
+        else {
+            // Listened to already: it goes with its listens, after asking.
+            var sure by remember(key) { mutableStateOf(false) }
+            Btn(if (sure) t("Удалить вместе с прослушиваниями (${tl.plays})?", "Delete it with its listens (${tl.plays})?") else t("Удалить альбом", "Delete the album"), {
+                if (!sure) sure = true else { co.write { val dao = db.dao(); dao.forgetAlbum(key); dao.forgetTracks(key); dao.album(key)?.let { dao.delete(it) } }; nav.close() }
+            }, Modifier.fillMaxWidth(), kind = if (sure) BtnKind.CORAL else BtnKind.GHOST)
+            if (sure) Text(t("Прослушивания пропадут из статистики, времени питомца и заданий.", "The listens leave the statistics, the pet's time and the goals."), style = T.Small)
+        }
     }
 }
 
@@ -234,6 +243,14 @@ fun TrackSheet(st: Studio, key: String, nav: Nav) {
         Section(t("Жанр", "Genre"))
         GenrePick(st, tr.genre ?: al?.genre, tr.own, { save(tr.copy(genre = it, own = "", pinned = it != null)) }, { save(tr.copy(own = it)) })
         if (tl == null) Btn(t("Убрать с полки", "Remove from the shelf"), { co.write { db.dao().delete(tr) }; nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.GHOST)
+        else {
+            var sure by remember(key) { mutableStateOf(false) }
+            Btn(if (sure) t("Удалить вместе с прослушиваниями (${tl.plays})?", "Delete it with its listens (${tl.plays})?") else t("Удалить песню", "Delete the song"), {
+                if (!sure) sure = true else { co.write { val dao = db.dao(); dao.forgetTrack(key); dao.track(key)?.let { dao.delete(it) } }; nav.close() }
+            }, Modifier.fillMaxWidth(), kind = if (sure) BtnKind.CORAL else BtnKind.GHOST)
+            if (sure) Text(t("Например, сборник одним файлом: прослушивания пропадут из статистики, времени питомца и заданий.",
+                "A compilation in one file, say: the listens leave the statistics, the pet's time and the goals."), style = T.Small)
+        }
     }
 }
 

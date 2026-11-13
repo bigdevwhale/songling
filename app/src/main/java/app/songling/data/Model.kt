@@ -98,6 +98,11 @@ data class Album(
     @ColumnInfo(defaultValue = "") val note: String = "",
     /** A genre of one's own (its id in Settings.own); overrides [genre] for what's shown. */
     @ColumnInfo(defaultValue = "") val own: String = "",
+    /**
+     * Other album keys whose listens belong here, comma-separated: a player's «Unnamed» or a misspelt name the user
+     * folded into this album. New listens under those keys are put here as they come.
+     */
+    @ColumnInfo(defaultValue = "") val aliases: String = "",
 )
 
 /** A song: what the catalogue knows, and what you think of it. */

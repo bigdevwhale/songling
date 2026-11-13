@@ -41,6 +41,10 @@ data class Settings(
     /** Tracks longer than [longMinutes] (podcasts, audiobooks) are left out. */
     val skipLong: Boolean = true,
     val longMinutes: Int = 40,
+    /** Count a song only when it was played to within ten seconds of its end (when its length is known). */
+    val onlyWhole: Boolean = false,
+    /** The shelf's tab that opens first: a ShelfTab name. */
+    val shelfFirst: String = "ALBUMS",
     /** Players whose listens are left out (podcasts, video). */
     val excluded: Set<String> = emptySet(),
     /** Only the players in [tracked] are heard, instead of every player but [excluded]. */
@@ -89,7 +93,7 @@ data class Settings(
         .put("onboarded", onboarded).put("pet", pet ?: -1).put("spent", spent)
         .put("bought", JSONArray(bought.toList())).put("hidden", JSONArray(hidden.toList()))
         .put("wall", wall).put("backdrop", backdrop).put("backdropStamp", backdropStamp)
-        .put("minSeconds", minSeconds).put("skipLong", skipLong).put("longMinutes", longMinutes)
+        .put("minSeconds", minSeconds).put("skipLong", skipLong).put("longMinutes", longMinutes).put("onlyWhole", onlyWhole).put("shelfFirst", shelfFirst)
         .put("excluded", JSONArray(excluded.toList())).put("only", only).put("tracked", JSONArray(tracked.toList())).put("claimed", JSONArray(claimed.toList()))
         .put("pixelCovers", pixelCovers).put("unstuck", unstuck).put("shelfSort", shelfSort).put("statsPeriod", statsPeriod)
         .put("seen", JSONArray(seen.toList())).put("strokes", strokes).put("quiet", quiet).put("earworm", earworm).put("dayStart", dayStart).put("theme", theme).put("look", look).put("posters", JSONArray(posters)).put("own", JSONArray(own.map { it.json() })).put("tips", JSONArray(tips.toList())).put("realWeather", realWeather).put("town", town)
@@ -109,7 +113,7 @@ data class Settings(
                 spent = o.optInt("spent"),
                 bought = o.set("bought"), hidden = o.set("hidden"),
                 wall = o.optString("wall", d.wall), backdrop = o.optString("backdrop", d.backdrop), backdropStamp = o.optLong("backdropStamp"),
-                minSeconds = o.optInt("minSeconds", d.minSeconds), skipLong = o.optBoolean("skipLong", d.skipLong), longMinutes = o.optInt("longMinutes", d.longMinutes),
+                minSeconds = o.optInt("minSeconds", d.minSeconds), skipLong = o.optBoolean("skipLong", d.skipLong), longMinutes = o.optInt("longMinutes", d.longMinutes), onlyWhole = o.optBoolean("onlyWhole", d.onlyWhole), shelfFirst = o.optString("shelfFirst", d.shelfFirst),
                 excluded = o.set("excluded"), only = o.optBoolean("only"), tracked = o.set("tracked"), claimed = o.set("claimed"),
                 pixelCovers = o.optBoolean("pixelCovers"), unstuck = o.optLong("unstuck"),
                 shelfSort = o.optString("shelfSort"), statsPeriod = o.optString("statsPeriod"),

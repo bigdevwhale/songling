@@ -268,11 +268,16 @@ class Tracker(private val ctx: Context) {
         if (k.id == 0L) k.writing = true
         c.scope.launch {
             val s = c.settings.now()
-            if (!s.hears(k.pkg) || (s.skipLong && k.length > s.longMinutes * MIN) || ms < s.minSeconds * 1000L) { k.writing = false; return@launch }
+            // «Only songs heard to the end»: nothing is written until the last ten seconds.
+            val early = s.onlyWhole && k.length > 0 && ms < k.length - 10_000L
+            if (!s.hears(k.pkg) || (s.skipLong && k.length > s.longMinutes * MIN) || ms < s.minSeconds * 1000L || (k.id == 0L && early)) { k.writing = false; return@launch }
             val whole = k.length > 0 && ms >= k.length * 0.8
             if (k.id == 0L) {
-                val p = Play(at = k.started, ms = ms, title = k.title, artistName = k.artist, albumName = k.album, length = k.length,
+                val p0 = Play(at = k.started, ms = ms, title = k.title, artistName = k.artist, albumName = k.album, length = k.length,
                     source = Source.PLAYER, app = k.pkg, whole = whole, headphones = headphones())
+                // An album the user folded into one of their own («Unnamed» → the real one) takes it in.
+                val home = if (p0.album.isEmpty()) null else c.db.dao().albumByAlias(p0.album)
+                val p = if (home != null) p0.copy(album = home.key, albumName = home.title) else p0
                 k.id = c.db.dao().insert(p)
                 // Closed while it was being written: give it its final length now.
                 if (cur !== k) { val end = played(k); c.db.dao().grow(k.id, end, k.length > 0 && end >= k.length * 0.8, k.length > 60_000 && end < k.length * 0.5) }

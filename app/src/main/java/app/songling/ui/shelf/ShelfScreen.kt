@@ -94,7 +94,9 @@ fun entries(st: Studio, tab: ShelfTab): List<Entry> = when (tab) {
 @Composable
 fun ShelfScreen(st: Studio, nav: Nav) {
     val ru = LocalRu.current
-    var tab by rememberSaveable { mutableStateOf(ShelfTab.ALBUMS) }
+    // The tab the shelf opens on is the user's choice (Settings → the shelf).
+    val first = remember(st.s.shelfFirst) { ShelfTab.entries.firstOrNull { it.name == st.s.shelfFirst } ?: ShelfTab.ALBUMS }
+    var tab by rememberSaveable { mutableStateOf(first) }
     var q by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(Sort.MINUTES) }
     var genres by remember { mutableStateOf(emptySet<Genre>()) }
@@ -129,7 +131,7 @@ fun ShelfScreen(st: Studio, nav: Nav) {
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         val names = listOf(t("Альбомы", "Albums"), t("Синглы", "Singles"), t("Песни", "Songs"), t("Артисты", "Artists"), t("Хочу послушать", "To hear"), t("История", "History"))
         Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (tb in ShelfTab.entries) {
+            for (tb in listOf(first) + ShelfTab.entries.filter { it != first }) {
                 val n = counts[tb.ordinal]
                 Chip(names[tb.ordinal] + if (n != null && n > 0) " $n" else "", tb == tab, { tab = tb }, color = if (tb == tab) C.lilac else null)
             }
@@ -310,6 +312,7 @@ private fun History(st: Studio, nav: Nav) {
     gone?.let { p -> ForgetSheet(st, p) { gone = null } }
     LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
         if (rev.isEmpty()) item { Text(t("Пока ни одного прослушивания.", "No listens yet."), style = T.Muted) }
+        else item { Text(t("Подержи строку пальцем, чтобы убрать прослушивание из истории.", "Hold a line to take the listen out of the history."), style = T.Small) }
         var lastDay: java.time.LocalDate? = null
         val slice = rev.take(shown)
         for (p in slice) {
