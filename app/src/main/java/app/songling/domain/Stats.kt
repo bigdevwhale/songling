@@ -65,7 +65,13 @@ class Stats(val st: Studio, val f: Filter) {
         plays.groupBy(by).filterKeys { it.isNotEmpty() }.map { (k, l) -> Row(k, name(k), sub(k), l.sumOf { it.ms }, l.size) }
             .sortedByDescending { it.ms }.take(n)
 
-    val artists get() = top({ it.artist }, st::artistName)
+    val artists get() = topArtists()
+
+    /** Artists by time, each one billed on a track counted (#20). */
+    fun topArtists(n: Int = 10): List<Row> =
+        plays.flatMap { p -> app.songling.data.Keys.artists(p.artistName).map { it to p } }.groupBy({ it.first }, { it.second })
+            .filterKeys { it.isNotEmpty() }.map { (k, l) -> Row(k, st.artistName(k), "", l.sumOf { it.ms }, l.size) }
+            .sortedByDescending { it.ms }.take(n)
     val albums get() = top({ it.album }, st::albumTitle, { k -> st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty() })
     val tracks get() = top({ it.track }, st::trackTitle, { k -> st.byTrack[k]?.artistName.orEmpty() })
 
@@ -101,7 +107,7 @@ class Stats(val st: Studio, val f: Filter) {
     val apps: List<Pair<String, Long>> get() = plays.groupBy { it.app.ifEmpty { it.source.name } }.map { it.key to it.value.sumOf { p -> p.ms } }.sortedByDescending { it.second }
 
     val whole: Int get() = st.wholeRuns.count { it.second in from until to }
-    val newArtists: Int get() = plays.map { it.artist }.toSet().count { (st.byArtist[it]?.first ?: 0) in from until to }
+    val newArtists: Int get() = plays.flatMap { app.songling.data.Keys.artists(it.artistName) }.toSet().count { (st.byArtist[it]?.first ?: 0) in from until to }
     val skips: Int get() = plays.count { it.skipped }
     val longest get() = st.sessions.filter { it.from in from until to }.maxByOrNull { it.ms }
     val busiestDay: Pair<LocalDate, Long>? get() = plays.groupBy { st.day(it.at) }.mapValues { it.value.sumOf { p -> p.ms } }.maxByOrNull { it.value }?.toPair()

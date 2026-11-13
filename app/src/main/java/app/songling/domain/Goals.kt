@@ -19,7 +19,7 @@ class Window(val st: Studio, val from: Long, val to: Long) {
     val ms: Long get() = plays.sumOf { it.ms }
     val minutes: Int get() = (ms / MIN).toInt()
     val whole: List<Pair<String, Long>> get() = st.wholeRuns.filter { it.second in from until to }
-    val newArtists: Set<String> get() = plays.map { it.artist }.filter { (st.byArtist[it]?.first ?: 0) in from until to }.toSet()
+    val newArtists: Set<String> get() = plays.flatMap { app.songling.data.Keys.artists(it.artistName) }.filter { (st.byArtist[it]?.first ?: 0) in from until to }.toSet()
     val newTracks: Set<String> get() = plays.map { it.track }.filter { (st.byTrack[it]?.first ?: 0) in from until to }.toSet()
     /** Albums heard for the first time in the window. */
     val newAlbums: Set<String> get() = plays.map { it.album }.filter { it.isNotEmpty() && (st.byAlbum[it]?.first ?: 0) in from until to }.toSet()
@@ -68,7 +68,7 @@ object Goals {
             GoalKind.ALBUMS -> w.whole.map { it.first }.toSet().size
             GoalKind.NEW_ARTISTS -> w.newArtists.size
             GoalKind.NEW_TRACKS -> w.newTracks.size
-            GoalKind.ARTIST -> (w.plays.filter { it.artist == g.ref }.sumOf { it.ms } / MIN).toInt()
+            GoalKind.ARTIST -> (w.plays.filter { g.ref in app.songling.data.Keys.artists(it.artistName) }.sumOf { it.ms } / MIN).toInt()
             GoalKind.ALBUM -> w.whole.count { it.first == g.ref }
             GoalKind.TRACK -> w.plays.count { it.track == g.ref }
             GoalKind.GENRE -> (if (g.ref.startsWith("own:")) w.plays.filter { st.ownOf(it)?.id == g.ref.removePrefix("own:") }.sumOf { it.ms }

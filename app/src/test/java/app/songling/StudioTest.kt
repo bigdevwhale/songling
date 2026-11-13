@@ -40,4 +40,15 @@ class StudioTest {
         assertEquals(Genre.ROCK, studio(listOf(p), listOf(duo), listOf(Artist(p.artist, "A", genre = Genre.ROCK)), listOf(song)).genreOf(p))
         assertEquals(Genre.FOLK, studio(listOf(p), listOf(duo.copy(genre = Genre.JAZZ, pinned = true)), tracks = listOf(song.copy(genre = Genre.FOLK, pinned = true))).genreOf(p))
     }
+    /** A song by two artists counts for both (#20); names with «ft» or a slash inside stay whole. */
+    @Test fun everyBilledArtistGetsTheListen() {
+        assertEquals(listOf("Баста", "Скриптонит"), Keys.allArtists("Баста, Скриптонит"))
+        assertEquals(listOf("Daft Punk", "Pharrell Williams"), Keys.allArtists("Daft Punk feat. Pharrell Williams"))
+        assertEquals(listOf("AC/DC"), Keys.allArtists("AC/DC"))
+        val p = Play(at = t0, ms = 3 * MIN, title = "Song", artistName = "Баста, Скриптонит")
+        val st = studio(listOf(p))
+        assertEquals(3 * MIN, st.byArtist[Keys.norm("Баста")]?.ms)
+        assertEquals(3 * MIN, st.byArtist[Keys.norm("Скриптонит")]?.ms)
+        assertEquals("Скриптонит", st.artistName(Keys.norm("Скриптонит")))
+    }
 }

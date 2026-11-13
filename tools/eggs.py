@@ -43,6 +43,7 @@ def main():
     x0, y0, x1, y1 = (v * FINE for v in PAINTED)
     w, h = x1 - x0, y1 - y0
     for n in range(2):
+        if len(sys.argv) > 1 and "--one" in sys.argv: break
         im, solid = load_white(os.path.join(SRC, f"eggs{n + 1}.png"))
         for sp, (a, b, c, d) in zip(SPECIES[n * 9:n * 9 + 9], boxes(solid, 9)):
             part = im[b:d, a:c].copy()
@@ -54,6 +55,23 @@ def main():
             outline(sprite)
             Image.fromarray(sprite, "RGBA").save(os.path.join(OUT, f"{sp}_egg.png"))
             print(sp, sw, sh)
+    # Species added later have an egg of their own: art/eggs/sheets/<species>_egg.png, one egg on white.
+    for sp in SPECIES[18:]:
+        f = os.path.join(SRC, f"{sp}_egg.png")
+        if not os.path.exists(f):
+            continue
+        im, solid = load_white(f)
+        ys, xs = np.nonzero(solid)
+        a, b, c, d = xs.min(), ys.min(), xs.max() + 1, ys.max() + 1
+        part = im[b:d, a:c].copy()
+        k = min(w / (c - a), h / (d - b))
+        sw, sh = round((c - a) * k), round((d - b) * k)
+        sprite = np.zeros((SIZE, SIZE, 4), np.uint8)
+        ox, oy = x0 + (w - sw) // 2, y1 - sh
+        sprite[oy:oy + sh, ox:ox + sw] = crisp(part, sw, sh)
+        outline(sprite)
+        Image.fromarray(sprite, "RGBA").save(os.path.join(OUT, f"{sp}_egg.png"))
+        print(sp, sw, sh)
 
 
 if __name__ == "__main__":

@@ -150,8 +150,12 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
             ?: o?.optJSONObject("area")?.optJSONArray("iso-3166-1-codes")?.optString(0)?.takeIf { it.length == 2 }
             ?: o?.optJSONObject("begin-area")?.optJSONArray("iso-3166-1-codes")?.optString(0)?.takeIf { it.length == 2 }
             ?: ""
+        // A person whose life-span has ended (MusicBrainz): the raven listens for them (#15). Bands that broke up don't count.
+        val life = o?.optJSONObject("life-span")
+        val gone = if (o?.optString("type") == "Person" && life?.optBoolean("ended") == true) (life.optString("end").take(4).toIntOrNull() ?: 1) else -1
         val now = dao.artist(a.key) ?: a
-        dao.upsert(now.copy(checked = if (o == null) System.currentTimeMillis() - (System.currentTimeMillis() % RETRY) else System.currentTimeMillis(), country = now.country.ifBlank { country }))
+        dao.upsert(now.copy(checked = if (o == null) System.currentTimeMillis() - (System.currentTimeMillis() % RETRY) else System.currentTimeMillis(),
+            country = now.country.ifBlank { country }, gone = gone))
     }
 
     /** Makes sure the catalogue rows exist for a new listen, so they get looked up. */

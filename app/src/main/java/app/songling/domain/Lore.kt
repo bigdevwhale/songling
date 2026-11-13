@@ -84,7 +84,7 @@ enum class Species(val starter: Boolean = false, val floats: Boolean = false) {
     LYREBIRD(true), MUSICBOX(true), LONGEAR(true),
     BASILISK, CONDUCTOR, PURR, AXOLOTL, RACCOON, WANDERER,
     CRICKET, LARK, SNAIL, PARROT, TORTOISE,
-    WHALE(floats = true), ECHO(floats = true), FIREFLY(floats = true), POTPOURRI;
+    WHALE(floats = true), ECHO(floats = true), FIREFLY(floats = true), POTPOURRI, RAVEN;
 
     val file get() = name.lowercase()
 }

@@ -180,7 +180,7 @@ private fun StatsPage(st: Studio, nav: Nav) {
     var all by remember(topTab, f) { mutableStateOf(false) }
     when (topTab) {
         0, 1, 2 -> {
-            val rows = remember(s, topTab) { when (topTab) { 0 -> s.top({ it.artist }, st::artistName, n = 50); 1 -> s.albums.let { s.top({ it.album }, st::albumTitle, { k -> st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty() }, n = 50) }; else -> s.top({ it.track }, st::trackTitle, { k -> st.byTrack[k]?.artistName.orEmpty() }, n = 50) } }
+            val rows = remember(s, topTab) { when (topTab) { 0 -> s.topArtists(50); 1 -> s.albums.let { s.top({ it.album }, st::albumTitle, { k -> st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty() }, n = 50) }; else -> s.top({ it.track }, st::trackTitle, { k -> st.byTrack[k]?.artistName.orEmpty() }, n = 50) } }
             val top = rows.firstOrNull()?.ms?.coerceAtLeast(1) ?: 1
             if (rows.isEmpty()) Text(t("Пока пусто.", "Nothing yet."), style = T.Muted)
             rows.take(if (all) 50 else 10).forEachIndexed { i, r ->

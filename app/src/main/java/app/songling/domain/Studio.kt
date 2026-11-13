@@ -129,7 +129,13 @@ class Studio(
 
     init {
         for (p in plays) {
+            // Every artist on the track gets the listen, not only the first-billed one (#20).
             byArtist.getOrPut(p.artist) { Tally(p.artist).also { it.name = artists[p.artist]?.name ?: app.songling.data.Keys.mainArtist(p.artistName) } }.add(p)
+            for (n in app.songling.data.Keys.allArtists(p.artistName)) {
+                val k = app.songling.data.Keys.norm(n)
+                if (k.isEmpty() || k == p.artist) continue
+                byArtist.getOrPut(k) { Tally(k).also { it.name = artists[k]?.name ?: n } }.add(p)
+            }
             if (p.album.isNotEmpty()) byAlbum.getOrPut(p.album) { Tally(p.album).also { it.name = p.albumName; it.artistName = p.artistName } }.add(p)
             byTrack.getOrPut(p.track) { Tally(p.track).also { it.name = p.title; it.artistName = p.artistName; it.albumName = p.albumName } }.add(p)
             genreOf(p)?.let { byGenre[it] = (byGenre[it] ?: 0L) + p.ms }
@@ -230,6 +236,9 @@ class Studio(
     val longSessions: Int get() = sessions.count { it.ms >= 45 * MIN }
     val maxRepeats: Int get() = byTrack.values.maxOfOrNull { it.plays } ?: 0
 
+    /** Hours of music by artists who have passed away (#15). */
+    val goneHours: Int by lazy { (plays.filter { (artists[it.artist]?.gone ?: 0) > 0 }.sumOf { it.ms } / 3_600_000L).toInt() }
+
     val oldAlbums: Int get() = byAlbum.values.count { t ->
         val y = albums[t.key]?.year ?: return@count false
         t.ms >= 20 * MIN && day(t.first).year - y >= 30
@@ -267,6 +276,7 @@ class Studio(
                 Species.ECHO -> Hint(sp, comebacks, 1)
                 Species.FIREFLY -> Hint(sp, concerts, 1)
                 Species.POTPOURRI -> Hint(sp, mostGenresInADay, 4)
+                Species.RAVEN -> Hint(sp, goneHours, 3)
             }
         }
     }
@@ -295,6 +305,7 @@ class Studio(
         Species.ECHO -> false
         Species.FIREFLY -> p.source == Source.CONCERT
         Species.POTPOURRI -> false
+        Species.RAVEN -> (artists[p.artist]?.gone ?: 0) > 0
         else -> g != null && g in sp.genres
     }
 

@@ -55,6 +55,10 @@ raccoon_adult 36 61 51 77 60 65 77 81
 raccoon_ancient 29 36 46 54 56 41 74 59
 raccoon_baby 57 106 67 118 75 108 86 121
 raccoon_young 45 84 58 97 66 86 80 101
+raven_adult 51 59 64 71 75 52 86 65
+raven_ancient 41 42 59 55 66 35 81 50
+raven_baby 70 121 80 130 86 116 98 127
+raven_young 62 86 73 96 81 80 92 93
 snail_adult 30 50 44 64 56 55 68 70
 snail_ancient 16 29 33 46 42 36 59 54
 snail_baby 53 116 62 128 68 121 77 131

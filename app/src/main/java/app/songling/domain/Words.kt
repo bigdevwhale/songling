@@ -26,6 +26,7 @@ object Words {
         Species.SNAIL -> t(ru, "Улитка", "Vinyl snail")
         Species.PARROT -> t(ru, "Попугай", "Parrot")
         Species.TORTOISE -> t(ru, "Черепаха", "Tortoise")
+        Species.RAVEN -> t(ru, "Ворон", "Raven")
         Species.WHALE -> t(ru, "Кит", "Whale")
         Species.ECHO -> t(ru, "Эхо", "Echo")
         Species.FIREFLY -> t(ru, "Светлячок", "Firefly")
@@ -48,6 +49,7 @@ object Words {
         Species.SNAIL -> t(ru, "долгие сессии, от 45 минут", "long sittings, 45 minutes and more")
         Species.PARROT -> t(ru, "песни на повторе", "songs on repeat")
         Species.TORTOISE -> t(ru, "музыку старше тридцати лет", "music over thirty years old")
+        Species.RAVEN -> t(ru, "песни тех, кого уже нет", "songs by those who are gone")
         Species.WHALE -> t(ru, "эмбиент, lo-fi и тишину", "ambient, lo-fi and quiet things")
         Species.ECHO -> t(ru, "возвращения после тишины", "coming back after a silence")
         Species.FIREFLY -> t(ru, "живые концерты", "live concerts")
@@ -69,6 +71,7 @@ object Words {
         Species.SNAIL -> t(ru, "$need сессии от 45 минут без перерыва", "$need sittings of 45 minutes on end")
         Species.PARROT -> t(ru, "Одна песня $need раз", "One song $need times")
         Species.TORTOISE -> t(ru, "$need альбомов старше тридцати лет", "$need albums over thirty years old")
+        Species.RAVEN -> t(ru, "$need ч музыки ушедших артистов", "$need h of music by artists who are gone")
         Species.ECHO -> t(ru, "Вернуться к музыке после недели тишины", "Come back to music after a silent week")
         Species.FIREFLY -> t(ru, "Отметить живой концерт", "Log a live concert")
         Species.POTPOURRI -> t(ru, "$need жанра за один день", "$need genres in one day")
@@ -122,6 +125,7 @@ object Words {
         Species.SNAIL -> t(ru, "Раковина-пластинка, у древней – золотая.", "A record for a shell; a golden one when ancient.")
         Species.PARROT -> t(ru, "Хохолок-повтор, ноты на крыльях, у древнего – поёт.", "A repeat-sign crest, notes on its wings; sings when ancient.")
         Species.TORTOISE -> t(ru, "Панцирь из этикеток разных лет, у древней – граммофон.", "A shell of labels from every decade; a gramophone when ancient.")
+        Species.RAVEN -> t(ru, "Шарф и ключик, потом фонарь, у древнего – цилиндр с цветком.", "A scarf and a key, then a lantern; a top hat with a flower when ancient.")
         Species.WHALE -> t(ru, "Поёт нотами, у древнего – звёзды на спине.", "Sings in notes; stars on its back when ancient.")
         Species.ECHO -> t(ru, "Отголосков всё больше, у древнего – звенящий нимб.", "More echoes; a ringing halo when ancient.")
         Species.FIREFLY -> t(ru, "Огонёк-зажигалка, браслет фестиваля, у древнего – искры.", "A lighter glow, a festival wristband; sparks when ancient.")
@@ -276,6 +280,7 @@ object Words {
         Species.SNAIL -> t(ru, "Винил", "Groove")
         Species.PARROT -> t(ru, "Кеша", "Polly")
         Species.TORTOISE -> t(ru, "Патефон", "Gramps")
+        Species.RAVEN -> t(ru, "Хранитель", "Keeper")
         Species.WHALE -> t(ru, "Гул", "Hum")
         Species.ECHO -> t(ru, "Отзвук", "Echo")
         Species.FIREFLY -> t(ru, "Огонёк", "Spark")
@@ -300,7 +305,6 @@ object Words {
             if (st.streak >= 3) add(t(ru, "${st.streak} дней подряд с музыкой. $name доволен.", "${st.streak} days of music in a row. $name is pleased."))
             st.quests.firstOrNull { !it.p.done }?.let { add(t(ru, "На этой неделе: ${quest(it.q, true).lowercase()}.", "This week: ${quest(it.q, false).lowercase()}.")) }
             st.recentGenre?.let { g -> add(t(ru, "После ${genre(g, true)} у $name всё ещё качается хвост.", "After some ${genre(g, false)}, $name's tail is still swinging.")) }
-            if (p.stage.next != null) add(t(ru, "До следующей стадии – ${dur(((p.stage.next!!.from - p.fed).coerceAtLeast(0)) * 60_000L, true)}.", "${dur(((p.stage.next!!.from - p.fed).coerceAtLeast(0)) * 60_000L, false)} to the next stage."))
             add(t(ru, "$name слушает вместе с тобой.", "$name is listening with you."))
         }
         return lines[rnd.nextInt(lines.size)]

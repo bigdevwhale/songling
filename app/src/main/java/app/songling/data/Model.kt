@@ -66,6 +66,8 @@ data class Artist(
     @ColumnInfo(defaultValue = "0") val added: Long = 0,
     /** A genre of one's own (its id in Settings.own); overrides [genre] for what's shown. */
     @ColumnInfo(defaultValue = "") val own: String = "",
+    /** A person who has passed away: the year (1 when it's known but not the year); -1 checked and not; 0 not asked yet. */
+    @ColumnInfo(defaultValue = "0") val gone: Int = 0,
 )
 
 /** An album, EP or single. Listening fills it in; it can also be put on the shelf by hand. */
@@ -175,6 +177,21 @@ object Keys {
 
     /** The first-billed artist: «A, B & C» and «A feat. B» are A. */
     fun mainArtist(s: String): String = s.replace(feat, "").split(Regex("""\s*(,|;| & | x | и | with )\s*""")).first().trim().ifBlank { s.trim() }
+
+    private val joiners = Regex("""\s*(,|;| / | & | x | и | with |\b(?:feat\.?|ft\.?|featuring)(?=\s)|при уч\.?)\s*""", RegexOption.IGNORE_CASE)
+    private val many = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
+
+    /**
+     * Everyone billed on a track, first-billed first: «A, B feat. C» is A, B and C (#20: a song by two artists counts
+     * for both). Names, as written.
+     */
+    fun allArtists(s: String): List<String> = many.getOrPut(s) {
+        s.replace(Regex("""[()\[\]]"""), " ").split(joiners).map { it.trim() }.filter { it.isNotEmpty() }
+            .distinctBy { norm(it) }.ifEmpty { listOf(s.trim()) }
+    }
+
+    /** The keys of everyone billed, the first-billed one first. */
+    fun artists(name: String): List<String> = listOf(artist(name)) + allArtists(name).map { norm(it) }.filter { it != artist(name) }.distinct()
 
     fun artist(name: String) = norm(mainArtist(name))
     fun album(artist: String, album: String) = artist(artist) + "|" + norm(album)

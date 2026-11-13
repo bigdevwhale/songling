@@ -165,7 +165,8 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                 nav.toast(if (ru) "${p.pet.title(true)} вырос: теперь ${Words.stage(p.stage, true)}!" else "${p.pet.title(false)} grew: now ${Words.stage(p.stage, false)}!")
             lastStage = p.pet.id to p.stage
         }
-        LaunchedEffect(Unit) { if (nav.said.first.isEmpty()) nav.say(Words.poke(studio, ru)) }
+        // The den's line follows the pet: a new pet clears whatever the old one was saying (#18).
+        LaunchedEffect(studio.pet?.pet?.id) { if (nav.said.first.isNotEmpty()) nav.say("") }
 
         val backdrop = rememberBackdrop(s.backdrop, s.backdropStamp)
         // The colour of the music: from what plays now, else what's played most this week, else the pet's genre.

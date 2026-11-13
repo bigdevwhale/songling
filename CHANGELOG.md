@@ -6,6 +6,20 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.5.0] - 2026-11-13
+
+### Added
+- A new pet, the Raven (#15): a keeper of songs by musicians who have passed away. Its egg opens after three hours of their music, and their songs are its favourite food. Whether an artist is gone comes from MusicBrainz (people only; a band that split up doesn't count); the artists already in your library are looked up again once.
+
+### Fixed
+- A song by several artists («A, B», «A feat. B», «A & B») counts for each of them, not only the first-billed one: in the top, artist goals and new artists (#20).
+- The den's line no longer gets stuck on the previous pet after switching, and the «… to the next stage» line with its frozen time is gone – the bar under the pet shows it (#18).
+
+<!-- tg
+Новое: питомец Ворон – хранитель песен ушедших музыкантов. Яйцо открывается после трёх часов их музыки.
+Исправлено: песня нескольких артистов теперь засчитывается каждому, а не только первому. Подпись «до следующей стадии» больше не застревает от прошлого питомца.
+-->
+
 ## [Unreleased]
 
 ## [1.4.1] - 2026-11-12

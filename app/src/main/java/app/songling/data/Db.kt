@@ -81,7 +81,8 @@ interface MusicDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertArtist(a: Artist): Long
     @Upsert suspend fun upsert(a: Artist)
 
-    @Query("SELECT * FROM artists WHERE checked = 0 LIMIT :n")
+    /** Artists never looked up, or looked up before the app knew to ask whether they're still alive. */
+    @Query("SELECT * FROM artists WHERE checked = 0 OR gone = 0 LIMIT :n")
     suspend fun uncheckedArtists(n: Int): List<Artist>
 
     // --- tracks
@@ -145,8 +146,8 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 3, exportSchema = true,
-    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3)])
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 4, exportSchema = true,
+    autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao
