@@ -30,7 +30,7 @@ Songling sees what plays in Spotify, YouTube Music, Apple Music or any other pla
 
 A record, the radio or a concert can be logged by hand – a whole album or a single song.
 
-## 18 pets
+## 25 pets
 
 There are three eggs to start with. The rest are found by the way you listen: hours of rock or jazz, music at night or in the morning, artists from many countries, long sittings, a song on repeat, a live concert.
 
@@ -54,7 +54,7 @@ Stats for a week, a month, a year and all time: top artists, albums, songs and g
 
 Set goals on anything: «4 new albums this month», «10 hours of Radiohead this year», «music from three new countries». And every week brings three small tasks for plectrums.
 
-51 awards with steps to climb – hours, streaks, night listening, songs by two artists, New Year songs and more – each step paying plectrums. And postcards for a social feed: the den, the pet, your month, top artists and albums, genres, the year as squares, awards and all your pets, as a post or a story.
+70 awards with steps to climb – hours, streaks, night listening, songs by two artists, New Year songs and more – each step paying plectrums. And postcards for a social feed: the den, the pet, your month, top artists and albums, genres, the year as squares, awards and all your pets, as a post or a story.
 
 ## Records or tapes
 

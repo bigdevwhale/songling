@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -72,24 +74,22 @@ fun SagaScreen(st: Studio, nav: Nav) {
     var page by rememberSaveable { mutableIntStateOf(0) }
     Column(Modifier.fillMaxSize()) {
         val fresh = remember(st) { FeatsPage.fresh(st) }
-        Tabs(listOf(t("Статистика", "Stats"), t("Календарь", "Calendar"), t("Награды", "Awards")), page, { page = it }, Modifier.padding(horizontal = 16.dp),
-            counts = listOf(null, null, fresh.size.takeIf { it > 0 }))
+        Tabs(listOf(t("Статистика", "Stats"), t("Календарь", "Calendar"), t("История", "History"), t("Награды", "Awards")), page, { page = it }, Modifier.padding(horizontal = 16.dp),
+            counts = listOf(null, null, null, fresh.size.takeIf { it > 0 }))
+        // The history is a long list of its own, so it isn't put in the page's scroll.
+        if (page == 2) { app.songling.ui.shelf.History(st, nav, Modifier.padding(horizontal = 16.dp)); return@Column }
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SAGA, st.s)
             // Postcards of all this, for a social feed.
-            Row(Modifier.fillMaxWidth().clip(R8.Md).background(C.amberSoft).clickable { nav.go(Overlay.Cards) }.padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(t("Открытки для соцсетей", "Postcards to share"), style = T.Strong)
-                    Text(t("Логово, питомец, итоги, награды – одной картинкой", "Your den, pet, stats and awards as a picture"), style = T.Small)
-                }
-                Text("›", style = T.Title.copy(color = C.amber))
-            }
             when (page) {
                 0 -> StatsPage(st, nav)
                 1 -> CalendarPage(st, nav)
-                else -> FeatsPage.Page(st)
+                3 -> FeatsPage.Page(st)
+                else -> {}
             }
+            // Postcards of all this, for a social feed: at the foot, out of the numbers' way.
+            app.songling.ui.components.LinkRow(t("Открытки для соцсетей", "Postcards to share"), t("Логово, питомец, итоги, награды – одной картинкой", "Your den, pet, stats and awards as a picture"),
+                { nav.go(Overlay.Cards) }, Modifier.padding(top = 6.dp))
         }
     }
 }
@@ -104,19 +104,21 @@ private fun StatsPage(st: Studio, nav: Nav) {
     var topTab by rememberSaveable { mutableIntStateOf(0) }
     val s = remember(st, f) { Stats(st, f) }
     val spans = listOf(Span.WEEK, Span.MONTH, Span.YEAR, Span.LAST_YEAR, Span.ALL)
-    val short = listOf(t("Неделя", "Week"), t("Месяц", "Month"), t("Год", "Year"), t("Прошлый", "Last yr"), t("Всё", "All"))
-    app.songling.ui.components.Segmented(short, spans.indexOf(f.span), { f = f.copy(span = spans[it]) })
+    val short = listOf(t("Неделя", "Week"), t("Месяц", "Month"), t("Год", "Year"), "${st.today.year - 1}", t("Всё", "All"))
     val active = listOfNotNull(f.genre, f.own, f.app, f.source).size + if (f.headphones) 1 else 0
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(Modifier.weight(1f).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    // The span and the filters in one line; what's filtered shows under it only when something is.
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        app.songling.ui.components.Segmented(short, spans.indexOf(f.span), { f = f.copy(span = spans[it]) }, Modifier.weight(1f))
+        app.songling.ui.shelf.ToolButton(app.songling.ui.components.Glyph.FILTER, if (active > 0) "$active" else null, on = active > 0, describe = t("Фильтры", "Filters")) { more = true }
+    }
+    if (active > 0) Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        run {
             f.genre?.let { g -> app.songling.ui.shelf.Removable(Words.genre(g, ru), C.genre(g)) { f = f.copy(genre = null) } }
             f.own?.let { o -> st.owns[o]?.let { og -> app.songling.ui.shelf.Removable(og.name, androidx.compose.ui.graphics.Color(og.color)) { f = f.copy(own = null) } } }
             f.app?.let { a -> app.songling.ui.shelf.Removable(appName(a)) { f = f.copy(app = null) } }
             f.source?.let { src -> app.songling.ui.shelf.Removable(Words.source(src, ru)) { f = f.copy(source = null) } }
             if (f.headphones) app.songling.ui.shelf.Removable(t("в наушниках", "on headphones")) { f = f.copy(headphones = false) }
-            if (active == 0) Text(t("вся музыка", "all music"), style = T.Small, modifier = Modifier.padding(start = 4.dp, top = 10.dp))
         }
-        app.songling.ui.shelf.ToolButton("⚙", if (active > 0) "$active" else t("Фильтры", "Filters"), on = active > 0) { more = true }
     }
     if (more) app.songling.ui.Floating {
         app.songling.ui.components.Sheet(onDismiss = { more = false }) {
@@ -145,16 +147,13 @@ private fun StatsPage(st: Studio, nav: Nav) {
             }
         }
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Stat(Words.hours(s.ms, ru), t("музыки", "of music"), Modifier.weight(1f))
-        Stat(Words.dur(s.perDay * MIN, ru), t("в среднем в день", "a day on average"), Modifier.weight(1f), C.lilac)
-        Stat("${s.days}", t("дней с музыкой", "days with music"), Modifier.weight(1f), C.mint)
+    // Tiles of one row stand as tall as the tallest.
+    Row(Modifier.height(androidx.compose.foundation.layout.IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Stat(Words.hours(s.ms, ru), t("музыки", "of music"), Modifier.weight(1f).fillMaxHeight())
+        Stat(Words.dur(s.perDay * MIN, ru), t("в среднем в день", "a day on average"), Modifier.weight(1f).fillMaxHeight())
+        Stat("${s.days}", t("дней с музыкой", "days with music"), Modifier.weight(1f).fillMaxHeight())
     }
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Stat("${s.whole}", t("альбомов целиком", "whole albums"), Modifier.weight(1f), C.mint)
-        Stat("${s.newArtists}", t("новых артистов", "new artists"), Modifier.weight(1f), C.coral)
-        Stat("${s.plays.size}", t("прослушиваний", "listens"), Modifier.weight(1f))
-    }
+
     val series = s.series
     if (series.isNotEmpty()) Card {
         Text(if (f.span == Span.WEEK || f.span == Span.MONTH) t("По дням", "By day") else t("По месяцам", "By month"), style = T.Eyebrow)
@@ -182,15 +181,15 @@ private fun StatsPage(st: Studio, nav: Nav) {
         0, 1, 2 -> {
             val rows = remember(s, topTab) { when (topTab) { 0 -> s.topArtists(50); 1 -> s.albums.let { s.top({ it.album }, st::albumTitle, { k -> st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty() }, n = 50) }; else -> s.top({ it.track }, st::trackTitle, { k -> st.byTrack[k]?.artistName.orEmpty() }, n = 50) } }
             val top = rows.firstOrNull()?.ms?.coerceAtLeast(1) ?: 1
-            if (rows.isEmpty()) Text(t("Пока пусто.", "Nothing yet."), style = T.Muted)
-            rows.take(if (all) 50 else 10).forEachIndexed { i, r ->
+            if (rows.isEmpty()) app.songling.ui.components.Empty(t("За это время – тишина", "Nothing in this time"), t("Выбери срок подольше или сними фильтры.", "Pick a longer span, or clear the filters."))
+            rows.take(if (all) 50 else 5).forEachIndexed { i, r ->
                 val al = when (topTab) { 1 -> st.albums[r.key]; 2 -> st.albums[st.tracks[r.key]?.album ?: ""]; else -> null }
                 TopRow(i + 1, r.name, listOf(r.sub, Words.plays(r.plays, ru)).filter { it.isNotEmpty() }.joinToString(" · "), Words.dur(r.ms, ru), r.ms / top.toFloat(),
                     cover = al?.cover, genre = al?.genre, showCover = topTab != 0, onClick = {
                         nav.go(when (topTab) { 0 -> Overlay.ArtistOf(r.key); 1 -> Overlay.AlbumOf(r.key); else -> Overlay.TrackOf(r.key) })
                     })
             }
-            if (rows.size > 10) Btn(if (all) t("Свернуть", "Less") else t("Показать 50", "Show 50"), { all = !all }, Modifier.fillMaxWidth(), kind = Kind.GHOST, small = true)
+            if (rows.size > 5) Btn(if (all) t("Свернуть", "Less") else t("Показать ещё", "Show more"), { all = !all }, Modifier.fillMaxWidth(), kind = Kind.GHOST, small = true)
         }
         else -> {
             val mine = s.ownGenres
@@ -207,24 +206,26 @@ private fun StatsPage(st: Studio, nav: Nav) {
         }
     }
     Section(t("Когда ты слушаешь", "When you listen"))
+    // One card, two views of it, instead of two charts in a row.
+    var whenTab by rememberSaveable { mutableIntStateOf(0) }
     Card {
-        Text(t("По часам", "By hour"), style = T.Eyebrow)
+        app.songling.ui.components.Segmented(listOf(t("По часам", "By hour"), t("По дням недели", "By weekday")), whenTab, { whenTab = it })
+        if (whenTab == 0) {
         val h = s.hours
         Bars(h.toList(), (0 until 24).map { "$it" }, Modifier.padding(top = 8.dp), color = C.lilac, every = 3, highlight = s.peakHour ?: -1,
             describe = { i -> "$i:00–${(i + 1) % 24}:00 – " + Words.dur(h[i], ru) })
-    }
-    Card {
-        Text(t("По дням недели", "By weekday"), style = T.Eyebrow)
+        } else {
         val w = s.weekdays
         Bars(w.toList(), (1..7).map { DayOfWeek.of(it).getDisplayName(TextStyle.SHORT, if (ru) Locale("ru") else Locale.ENGLISH) }, Modifier.padding(top = 8.dp), color = C.mint,
             highlight = s.favouriteWeekday?.let { it.value - 1 } ?: -1,
             describe = { i -> DayOfWeek.of(i + 1).getDisplayName(TextStyle.FULL_STANDALONE, if (ru) Locale("ru") else Locale.ENGLISH).replaceFirstChar { it.uppercase() } + " – " + Words.dur(w[i], ru) })
+        }
     }
     val countries = s.countries
     if (countries.isNotEmpty()) {
         Section(t("Страны", "Countries"), "${countries.size}")
         val top = countries.first().second
-        countries.take(10).forEachIndexed { i, (c, ms) -> TopRow(i + 1, Words.flag(c) + " " + Words.country(c, ru), "", Words.dur(ms, ru), ms / top.toFloat()) }
+        countries.take(5).forEachIndexed { i, (c, ms) -> TopRow(i + 1, Words.flag(c) + " " + Words.country(c, ru), "", Words.dur(ms, ru), ms / top.toFloat()) }
     }
     val decades = s.decades
     if (decades.isNotEmpty()) {
@@ -236,16 +237,20 @@ private fun StatsPage(st: Studio, nav: Nav) {
     if (apps.size > 1) {
         Section(t("Откуда", "Where from"))
         val top = apps.first().second
-        apps.take(6).forEachIndexed { i, (a, ms) -> TopRow(i + 1, Source.entries.firstOrNull { it.name == a }?.let { Words.source(it, ru) } ?: appName(a), "", Words.dur(ms, ru), ms / top.toFloat()) }
+        apps.take(4).forEachIndexed { i, (a, ms) -> TopRow(i + 1, Source.entries.firstOrNull { it.name == a }?.let { Words.source(it, ru) } ?: appName(a), "", Words.dur(ms, ru), ms / top.toFloat()) }
     }
-    Section(t("Рекорды", "Records"))
-    Card {
-        s.longest?.let { Text(t("Самая долгая сессия: ${Words.dur(it.ms, true)}, ${date(it.from, true)}", "Longest sitting: ${Words.dur(it.ms, false)}, ${date(it.from, false)}"), style = T.Body) }
-        s.busiestDay?.let { Text(t("Самый музыкальный день: ${date(st.startOf(it.first), true)} – ${Words.dur(it.second, true)}", "Busiest day: ${date(st.startOf(it.first), false)} – ${Words.dur(it.second, false)}"), style = T.Body) }
-        Text(t("Лучшая серия: ${st.bestStreak} дн. подряд, сейчас – ${st.streak}", "Best streak: ${st.bestStreak} days, now ${st.streak}"), style = T.Body)
-        s.peakHour?.let { Text(t("Чаще всего слушаешь около $it:00", "You listen most around $it:00"), style = T.Body) }
-        Text(t("Пропущено песен: ${s.skips}", "Songs skipped: ${s.skips}"), style = T.Body)
-        Text(t("Всего за всё время: ${Words.hours(st.totalMs, true)}, ${st.byArtist.size} артистов", "All time: ${Words.hours(st.totalMs, false)}, ${st.byArtist.size} artists"), style = T.Small)
+    Section(t("В цифрах", "In numbers"))
+    Card(padding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 10.dp)) {
+        val fact = @Composable { label: String, value: String -> app.songling.ui.components.Fact(label, value) }
+        fact(t("Прослушиваний", "Listens"), Words.num(s.plays.size)); app.songling.ui.components.Rule()
+        fact(t("Альбомов целиком", "Whole albums"), Words.num(s.whole)); app.songling.ui.components.Rule()
+        fact(t("Новых артистов", "New artists"), Words.num(s.newArtists)); app.songling.ui.components.Rule()
+        s.longest?.let { fact(t("Самая долгая сессия", "Longest sitting"), "${Words.dur(it.ms, ru)} · ${date(it.from, ru)}"); app.songling.ui.components.Rule() }
+        s.busiestDay?.let { fact(t("Самый музыкальный день", "Busiest day"), "${Words.dur(it.second, ru)} · ${date(st.startOf(it.first), ru)}"); app.songling.ui.components.Rule() }
+        fact(t("Лучшая серия дней", "Best streak of days"), t("${st.bestStreak}, сейчас ${st.streak}", "${st.bestStreak}, now ${st.streak}")); app.songling.ui.components.Rule()
+        s.peakHour?.let { fact(t("Чаще всего слушаешь", "You listen most"), t("около $it:00", "around $it:00")); app.songling.ui.components.Rule() }
+        fact(t("Пропущено песен", "Songs skipped"), Words.num(s.skips)); app.songling.ui.components.Rule()
+        fact(t("За всё время", "All time"), t("${Words.hours(st.totalMs, true)} · артистов: ${st.byArtist.size}", "${Words.hours(st.totalMs, false)} · ${st.byArtist.size} artists"))
     }
 }
 
@@ -286,7 +291,15 @@ private fun appName(pkg: String): String = when {
 @Composable
 fun GoalsScreen(st: Studio, nav: Nav) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(t("Цели", "Goals"), style = T.Title)
+        val live = st.goals.filter { !it.archived }
+        // The title, how it stands, and the one thing to do here.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(t("Цели", "Goals"), style = T.Title)
+                if (live.isNotEmpty()) Text(t("готово ${live.count { Goals.progress(st, it).done }} из ${live.size}", "${live.count { Goals.progress(st, it).done }} of ${live.size} done"), style = T.Small)
+            }
+            Btn(t("+ Новая", "+ New"), { nav.go(Overlay.GoalEdit()) }, kind = Kind.AMBER, small = true)
+        }
         app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.GOALS, st.s)
         GoalsPage(st, nav)
     }
@@ -296,7 +309,6 @@ fun GoalsScreen(st: Studio, nav: Nav) {
 private fun GoalsPage(st: Studio, nav: Nav) {
     val ru = LocalRu.current
     val co = LocalContext.current.container
-    Btn(t("+ Новая цель", "+ New goal"), { nav.go(Overlay.GoalEdit()) }, Modifier.fillMaxWidth(), kind = Kind.AMBER)
     val goals = st.goals.filter { !it.archived }
     if (goals.isEmpty()) {
         Card {
@@ -305,18 +317,28 @@ private fun GoalsPage(st: Studio, nav: Nav) {
                 "For example: «five whole albums a month», «10 hours of Radiohead this year», «20 new artists», «music from three decades». A one-off goal pays 15 plectrums."), style = T.Muted)
         }
         Section(t("Быстро", "Quick"))
-        for (d in Presets.all(ru)) Row(Modifier.fillMaxWidth().paper(16.dp).clip(R8.Md).background(C.surface).clickable { co.write { db.dao().insert(d) } }.padding(12.dp)) {
-            Text(GoalText.title(st, d, ru), style = T.Body, modifier = Modifier.weight(1f))
-            Text("+", style = T.Strong.copy(color = C.amber))
+        for (d in Presets.all(ru).take(4)) Row(Modifier.fillMaxWidth().paper(16.dp).clip(R8.Md).background(C.surface).clickable { co.write { db.dao().insert(d) } }.padding(horizontal = 14.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Column(Modifier.weight(1f)) {
+                Text(GoalText.title(st, d, ru), style = T.Strong)
+                Text(Words.period(d.period, ru), style = T.Small)
+            }
+            androidx.compose.foundation.layout.Box(Modifier.clip(androidx.compose.foundation.shape.CircleShape).background(C.amberSoft).padding(8.dp)) {
+                app.songling.ui.components.Sign(app.songling.ui.components.Glyph.PLUS, color = C.amber, size = 12.dp)
+            }
         }
     }
     for (g in goals) {
         val p = Goals.progress(st, g)
-        Column(Modifier.fillMaxWidth().clip(R8.Md).background(C.surface).border(1.dp, if (p.done) C.mint else C.line, R8.Md).clickable { nav.go(Overlay.GoalEdit(g.id)) }.padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.fillMaxWidth().paper(16.dp).clip(R8.Md).background(C.surface).then(if (p.done) Modifier.border(1.5.dp, C.mint, R8.Md) else Modifier)
+            .clickable { nav.go(Overlay.GoalEdit(g.id)) }.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(GoalText.title(st, g, ru), style = T.Strong, modifier = Modifier.weight(1f))
-                if (p.done) Text(t("готово", "done"), style = T.Small.copy(color = C.mint))
+                // Done, or how far along.
+                if (p.done) Text(t("готово", "done"), style = T.Small.copy(color = androidx.compose.ui.graphics.Color.White),
+                    modifier = Modifier.clip(androidx.compose.foundation.shape.CircleShape).background(C.mint).padding(horizontal = 9.dp, vertical = 2.dp))
+                else Text("${(p.part * 100).toInt()}%", style = T.Small.copy(color = C.amber))
             }
             Bar(p.part, Modifier.fillMaxWidth(), if (p.done) C.mint else C.amber)
             Text(GoalText.progress(g, p, ru) + " · " + Words.period(g.period, ru), style = T.Small)
@@ -325,7 +347,7 @@ private fun GoalsPage(st: Studio, nav: Nav) {
     val archived = st.goals.filter { it.archived }
     if (archived.isNotEmpty()) {
         Section(t("В архиве", "Archived"), "${archived.size}")
-        for (g in archived) Text(GoalText.title(st, g, ru), style = T.Muted, modifier = Modifier.clickable { nav.go(Overlay.GoalEdit(g.id)) }.padding(vertical = 4.dp))
+        for (g in archived) Text(GoalText.title(st, g, ru), style = T.Muted, modifier = Modifier.fillMaxWidth().clip(R8.Sm).clickable { nav.go(Overlay.GoalEdit(g.id)) }.padding(vertical = 10.dp, horizontal = 4.dp))
     }
 }
 
@@ -350,7 +372,7 @@ private fun CalendarPage(st: Studio, nav: Nav) {
     for (m in 1..12) {
         val start = LocalDate.of(year, m, 1)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(start.month.getDisplayName(TextStyle.SHORT_STANDALONE, if (ru) Locale("ru") else Locale.ENGLISH), style = T.Small, modifier = Modifier.padding(end = 6.dp).fillMaxWidth(0.12f))
+            Text(start.month.getDisplayName(TextStyle.SHORT_STANDALONE, if (ru) Locale("ru") else Locale.ENGLISH).trimEnd('.'), style = T.Small, maxLines = 1, modifier = Modifier.padding(end = 6.dp).fillMaxWidth(0.12f))
             Canvas(Modifier.weight(1f).aspectRatio(31 / 1.25f).pointerInput(year, m) {
                 detectTapGestures { o -> val d = (o.x / (size.width / 31f)).toInt() + 1; if (d <= start.lengthOfMonth()) picked = start.withDayOfMonth(d) }
             }) {
@@ -359,7 +381,7 @@ private fun CalendarPage(st: Studio, nav: Nav) {
                     val day = start.withDayOfMonth(d)
                     val v = st.byDay[day] ?: 0L
                     val k = (v.toFloat() / max).coerceIn(0f, 1f)
-                    val col = if (v == 0L) C.surface2 else Color(0xFFF5B841).copy(alpha = .25f + .75f * k)
+                    val col = if (v == 0L) C.track else C.honey.copy(alpha = .28f + .72f * k)
                     drawRoundRect(col, Offset((d - 1) * w + w * .1f, size.height * .1f), Size(w * .8f, size.height * .8f), CornerRadius(w * .2f))
                     if (day == picked || day == st.today) drawRoundRect(if (day == picked) C.coral else C.ink, Offset((d - 1) * w + w * .1f, size.height * .1f), Size(w * .8f, size.height * .8f), CornerRadius(w * .2f), style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f))
                 }
@@ -375,7 +397,10 @@ private fun CalendarPage(st: Studio, nav: Nav) {
             val albums = st.wholeRuns.filter { it.second in from until to }.map { it.first }.distinct()
             if (albums.isNotEmpty()) Text(t("Целиком: ", "Whole: ") + albums.joinToString { "«" + st.albumTitle(it) + "»" }, style = T.Body.copy(color = C.mint))
             for ((k, l) in ps.groupBy { it.artist }.entries.sortedByDescending { e -> e.value.sumOf { it.ms } }.take(8))
-                Text("${st.artistName(k)} – ${Words.dur(l.sumOf { it.ms }, ru)}", style = T.Body, modifier = Modifier.clickable { nav.go(Overlay.ArtistOf(k)) })
+                Row(Modifier.fillMaxWidth().clip(R8.Sm).clickable { nav.go(Overlay.ArtistOf(k)) }.padding(vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(st.artistName(k), style = T.Body, modifier = Modifier.weight(1f), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                    Text(Words.dur(l.sumOf { it.ms }, ru), style = T.Small)
+                }
         }
     }
 }

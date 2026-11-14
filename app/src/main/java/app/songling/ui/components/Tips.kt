@@ -30,8 +30,8 @@ private fun text(tip: Tip, ru: Boolean): Pair<String, List<String>> = if (ru) wh
     Tip.DEN -> "Это логово" to listOf("Питомец слушает с тобой музыку из любого плеера и растёт от каждой минуты.",
         "Погладь его – нажми на комнату. Долгое нажатие – карточка питомца.", "Внизу – задания недели и быстрые действия.")
     Tip.SHELF -> "Это полка" to listOf("Всё, что ты слушал: альбомы, синглы, песни и артисты.",
-        "«Хочу послушать» – список того, до чего не доходили руки: послушаешь – получишь медиаторы.", "Поиск, сортировка и фильтры – наверху.")
-    Tip.SAGA -> "Это сага" to listOf("Статистика за неделю, месяц, год или всё время.", "«Фильтры» сужают её до жанра, плеера или наушников. Во вкладке «Календарь» – каждый день года.")
+        "«Хочу послушать» под поиском показывает то, до чего не доходили руки: послушаешь – получишь медиаторы.", "Поиск, порядок и фильтры – наверху.")
+    Tip.SAGA -> "Это сага" to listOf("Статистика за неделю, месяц, год или всё время.", "«Фильтры» сужают её до жанра, плеера или наушников. Во вкладке «Календарь» – каждый день года, в «Истории» – каждое прослушивание.")
     Tip.GOALS -> "Это цели" to listOf("Задай себе: альбомы целиком, новых артистов, часы любимой группы, страны, десятилетия.",
         "Цели бывают на неделю, месяц, год или разовые – разовая приносит 15 медиаторов.")
     Tip.BESTIARY -> "Это бестиарий" to listOf("Твои питомцы и яйца, которые ещё предстоит найти.",
@@ -44,8 +44,8 @@ private fun text(tip: Tip, ru: Boolean): Pair<String, List<String>> = if (ru) wh
     Tip.DEN -> "This is the den" to listOf("Your pet listens with you to any player and grows with every minute.",
         "Tap the room to stroke it; long-press for its card.", "Below are this week's tasks and quick actions.")
     Tip.SHELF -> "This is the shelf" to listOf("Everything you've heard: albums, singles, songs and artists.",
-        "«To hear» keeps what you never got round to – hearing it pays plectrums.", "Search, sort and filters are at the top.")
-    Tip.SAGA -> "This is the saga" to listOf("Stats for a week, a month, a year or all time.", "«Filters» narrow them to a genre, a player or headphones. «Calendar» shows every day of the year.")
+        "«To hear» under the search shows what you never got round to – hearing it pays plectrums.", "Search, order and filters are at the top.")
+    Tip.SAGA -> "This is the saga" to listOf("Stats for a week, a month, a year or all time.", "«Filters» narrow them to a genre, a player or headphones. «Calendar» shows every day of the year, «History» every listen.")
     Tip.GOALS -> "These are goals" to listOf("Set yourself whole albums, new artists, hours of a band, countries, decades.",
         "Goals run weekly, monthly, yearly or once – a one-off goal pays 15 plectrums.")
     Tip.BESTIARY -> "This is the bestiary" to listOf("Your pets, and the eggs still to find.",

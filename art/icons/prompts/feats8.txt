@@ -1,0 +1,16 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
+
+A sheet of 9 separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
+Transparent background. No text, no letters, no numbers, no labels, no frames or circles around the icons, no grid lines, no ground shadow, nothing else in the picture.
+
+1. Five golden stars in an arc above a small quill pen.
+2. A big red heart with a small white music note in it and two tiny sparkles.
+3. A small leather diary with a ribbon bookmark and a music note embossed on its cover.
+4. A festive bunting garland of small colourful flags with a guitar, a drum and a trumpet under it.
+5. A black cat sitting on a vinyl record, with a crescent moon behind it.
+6. Six small coloured gems arranged in a ring: red, cyan, purple, cream, orange and green.
+7. A silver serving dish with its domed lid lifted, a glowing golden music note on the plate.
+8. An open hand gently patting a small round fluffy creature with closed happy eyes.
+9. A paint roller with a stripe of plum wallpaper pattern and a small roll of wallpaper beside it.
+
+Save the image to: art/icons/sheets/feats8.png

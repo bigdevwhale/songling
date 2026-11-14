@@ -224,11 +224,11 @@ fun QuestList(st: Studio, nav: Nav) {
     for (q in st.quests) {
         val id = "${st.weekId}:${q.q.name}"
         val claimed = id in st.s.claimed
-        Row(Modifier.fillMaxWidth().clip(R8.Md).background(C.surface).border(1.dp, if (q.p.done && !claimed) C.amber else C.line, R8.Md).padding(horizontal = 14.dp, vertical = 10.dp),
+        Row(Modifier.fillMaxWidth().clip(R8.Md).background(if (q.p.done && !claimed) C.amberSoft else C.surface2).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
                 Text(Words.quest(q.q, ru), style = T.Strong.copy(color = if (claimed) C.faint else C.ink))
-                Bar(q.p.part, Modifier.fillMaxWidth().padding(top = 6.dp), color = if (claimed) C.line else C.mint)
+                Bar(q.p.part, Modifier.fillMaxWidth().padding(top = 6.dp), color = if (claimed) C.faint.copy(alpha = .5f) else C.mint)
                 Text(if (q.q == app.songling.domain.Quest.HOURS) "${Words.dur(q.p.have * MIN, ru)} / ${Words.dur(q.p.need * MIN, ru)}" else "${q.p.have.coerceAtMost(q.p.need)} / ${q.p.need}", style = T.Small, modifier = Modifier.padding(top = 2.dp))
             }
             when {

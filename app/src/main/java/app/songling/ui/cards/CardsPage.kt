@@ -86,7 +86,7 @@ fun CardsPage(st: Studio, nav: Nav) {
         }
         // Dots under the cards.
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            cards.indices.forEach { i -> Box(Modifier.padding(3.dp).size(if (i == pager.currentPage) 8.dp else 6.dp).clip(CircleShape).background(if (i == pager.currentPage) C.amber else C.line)) }
+            cards.indices.forEach { i -> Box(Modifier.padding(3.dp).size(if (i == pager.currentPage) 8.dp else 6.dp).clip(CircleShape).background(if (i == pager.currentPage) C.amber else C.faint.copy(alpha = .35f))) }
         }
         if (card?.bySpan == true) {
             val spans = listOf(Span.WEEK, Span.MONTH, Span.YEAR, Span.LAST_YEAR, Span.ALL)

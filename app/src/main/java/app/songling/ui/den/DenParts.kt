@@ -44,7 +44,9 @@ import app.songling.ui.Nav
 import app.songling.ui.Overlay
 import app.songling.ui.components.Bar
 import app.songling.ui.components.Cover
+import app.songling.ui.components.Glyph
 import app.songling.ui.components.Sheet
+import app.songling.ui.components.Sign
 import app.songling.ui.components.t
 import app.songling.ui.theme.C
 import app.songling.ui.theme.R8
@@ -54,40 +56,29 @@ import app.songling.ui.title
 
 private fun Modifier.card() = paper(22.dp).clip(R8.Lg).background(C.surface)
 
-/** The pet in one card: name, what it says, how far to the next stage, and today in three numbers. */
+/** The pet in one card: who it is, today's music, how far to the next stage, and what it says. */
 @Composable
 fun PetCard(st: Studio, said: String, nav: Nav) {
     val ru = LocalRu.current
     val p = st.pet ?: return
-    Column(Modifier.fillMaxWidth().card().clickable { nav.go(Overlay.PetInfo) }.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    val today = st.byDay[st.today] ?: 0L
+    Column(Modifier.fillMaxWidth().card().clickable { nav.go(Overlay.PetInfo) }.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Column(Modifier.weight(1f)) {
-                Text(p.pet.title(ru), style = T.Name)
-                Text(Words.species(p.species, ru) + " · " + Words.stage(p.stage, ru) + (p.form?.let { " · " + Words.form(it, ru) } ?: ""), style = T.Small)
+                Text(p.pet.title(ru), style = T.Name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                // Who it is, and the streak once there is one to speak of.
+                Text(listOfNotNull(Words.species(p.species, ru), Words.stage(p.stage, ru),
+                    if (st.streak >= 2) (if (ru) "${st.streak} ${Words.plural(st.streak, "день", "дня", "дней")} подряд" else "${st.streak} days in a row") else null).joinToString(" · "),
+                    style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(Words.dur(p.fed * MIN, ru), style = T.Small.copy(color = C.amber))
+            Column(horizontalAlignment = Alignment.End) {
+                Text(Words.dur(today, ru), style = T.Strong.copy(color = C.amber), maxLines = 1)
+                Text(t("сегодня", "today"), style = T.Small, maxLines = 1)
+            }
         }
-        if (!st.s.quiet && said.isNotEmpty()) Text("«$said»", style = T.Body.copy(fontStyle = FontStyle.Italic, color = C.muted), maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Bar(p.progress, Modifier.fillMaxWidth(), color = C.lilac)
-        val next = p.stage.next
-        val today = st.byDay[st.today] ?: 0L
-        val whole = st.wholeRuns.count { st.day(it.second) == st.today }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(if (next == null) t("древнее не бывает", "as old as they come")
-                else t("до «${Words.stage(next, true)}» ${Words.dur((next.from - p.fed).coerceAtLeast(0) * MIN, true)}", "${Words.dur((next.from - p.fed).coerceAtLeast(0) * MIN, false)} to «${Words.stage(next, false)}»"),
-                style = T.Small, modifier = Modifier.weight(1f), maxLines = 1)
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Pill(t("сегодня ", "today ") + Words.dur(today, ru), C.amber)
-            Pill(if (ru) "${st.streak} ${Words.plural(st.streak, "день", "дня", "дней")} подряд" else "${st.streak}-day streak", C.coral)
-            if (whole > 0) Pill(if (ru) "$whole ${Words.plural(whole, "альбом", "альбома", "альбомов")} целиком" else "$whole whole", C.mint)
-        }
+        Bar(p.progress, Modifier.fillMaxWidth(), color = C.amber)
+        if (!st.s.quiet && said.isNotEmpty()) Text("«$said»", style = T.Muted.copy(fontStyle = FontStyle.Italic), maxLines = 2, overflow = TextOverflow.Ellipsis)
     }
-}
-
-@Composable
-private fun Pill(text: String, color: androidx.compose.ui.graphics.Color) {
-    Text(text, style = T.Small.copy(color = color), maxLines = 1, modifier = Modifier.clip(CircleShape).background(color.copy(alpha = .12f)).padding(horizontal = 10.dp, vertical = 4.dp))
 }
 
 /** One line under the pet: what plays now, else the song stuck today, else a word about silence. */
@@ -104,7 +95,7 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
                 Text(t("Питомец пока не слышит музыку", "Your pet can't hear the music yet"), style = T.Strong)
                 Text(t("Нажми и разреши доступ к уведомлениям – Songling возьмёт оттуда только песню и артиста.", "Tap to allow notification access – Songling takes just the song and the artist."), style = T.Small)
             }
-            Text("›", style = T.Title.copy(color = C.coral))
+            Sign(Glyph.NEXT, color = C.coral, size = 14.dp)
         }
         return
     }
@@ -126,7 +117,7 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
                 Text(if (tries == 0) t("Система отключила Songling от плееров. Нажми – попробуем подключиться снова.", "The system cut Songling off from the players. Tap to reconnect.")
                     else t("Не вышло? Нажми ещё раз и в настройках выключи и снова включи доступ для Songling.", "Didn't help? Tap again, then turn Songling's access off and on in settings."), style = T.Small)
             }
-            Text("›", style = T.Title.copy(color = C.coral))
+            Sign(Glyph.NEXT, color = C.coral, size = 14.dp)
         }
         return
     }
@@ -183,7 +174,7 @@ fun QuestLine(st: Studio, nav: Nav) {
         }
         if (ready > 0) Text("+$ready", style = T.Small.copy(color = C.onAmber), modifier = Modifier.clip(CircleShape).background(C.amber).padding(horizontal = 10.dp, vertical = 5.dp))
         else Text(if (ru) "$done из ${st.quests.size}" else "$done of ${st.quests.size}", style = T.Small)
-        Text("›", style = T.Title.copy(color = C.faint))
+        Sign(Glyph.NEXT, color = C.faint, size = 14.dp)
     }
 }
 
@@ -197,15 +188,16 @@ fun QuestsSheet(st: Studio, nav: Nav) {
     }
 }
 
-/** Five small pixel buttons: things to do from the den. */
+/**
+ * Three things to do from the den. Putting something on the shelf is the dock's record, and a concert is one of the
+ * ways to log a listen, so neither needs a button of its own here.
+ */
 @Composable
 fun Actions(st: Studio, nav: Nav) {
     Row(Modifier.fillMaxWidth().card().padding(vertical = 10.dp, horizontal = 4.dp)) {
-        Action(R.drawable.act_add, t("На полку", "Shelve")) { nav.go(Overlay.Add(wish = true)) }
-        Action(R.drawable.act_log, t("Отметить", "Log")) { nav.go(Overlay.Log()) }
-        Action(R.drawable.act_concert, t("Концерт", "Concert")) { nav.go(Overlay.Log(concert = true)) }
-        Action(R.drawable.act_egg, t("Яйца", "Eggs"), badge = "${st.hints.count { it.open }}") { nav.go(Overlay.Bestiary) }
-        Action(R.drawable.act_lamp, t("Логово", "Furnish")) { nav.go(Overlay.Shop) }
+        Action(R.drawable.act_log, t("Отметить", "Log a listen")) { nav.go(Overlay.Log()) }
+        Action(R.drawable.act_egg, t("Питомцы", "Pets"), badge = "${st.hints.count { it.open }}") { nav.go(Overlay.Bestiary) }
+        Action(R.drawable.act_lamp, t("Обустроить", "Furnish")) { nav.go(Overlay.Shop) }
     }
 }
 
@@ -213,7 +205,7 @@ fun Actions(st: Studio, nav: Nav) {
 private fun androidx.compose.foundation.layout.RowScope.Action(icon: Int, label: String, badge: String? = null, onClick: () -> Unit) {
     Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).clickable(onClick = onClick).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(46.dp).clip(CircleShape).background(C.surface2), contentAlignment = Alignment.Center) {
+        Box(Modifier.size(48.dp).clip(CircleShape).background(C.surface2), contentAlignment = Alignment.Center) {
             Image(ImageBitmap.imageResource(icon), null, Modifier.size(24.dp), filterQuality = FilterQuality.Low, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(C.muted))
         }
         Text(label + (badge?.let { " $it" } ?: ""), style = T.Small.copy(color = C.muted), maxLines = 1, textAlign = TextAlign.Center)

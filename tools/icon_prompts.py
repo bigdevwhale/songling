@@ -77,6 +77,29 @@ FEATS = [
     ("goals", "A chequered finish flag crossed with a golden trophy cup."),
 ]
 
+# Achievements added later: sheets of their own (feats7 and on), so the earlier sheets stay as they were drawn.
+MORE = [
+    ("weekends", "A striped beach deck chair with headphones hanging on its back and a small sun above."),
+    ("month_hours", "A wall calendar month page where every day square is filled with a tiny music note."),
+    ("albums", "A wooden crate full of vinyl records in colourful sleeves, seen from the front."),
+    ("new_day", "A brass telescope on a tripod pointed at a star shaped like a music note."),
+    ("gone", "A single lit candle beside a small framed vinyl record, with a white flower."),
+    ("short", "A tiny stopwatch with a single small music note on its face."),
+    ("artist_day", "A golden microphone standing on a round red pedestal under one spotlight beam."),
+    ("album_day", "Three vinyl records fanned out like playing cards, with a small sun behind them."),
+    ("timeless", "An hourglass lying on its side wrapped in a green ivy vine with one music note leaf."),
+    ("rated", "Five golden stars in an arc above a small quill pen."),
+    ("loved", "A big red heart with a small white music note in it and two tiny sparkles."),
+    ("notes", "A small leather diary with a ribbon bookmark and a music note embossed on its cover."),
+    ("music_day", "A festive bunting garland of small colourful flags with a guitar, a drum and a trumpet under it."),
+    ("friday13", "A black cat sitting on a vinyl record, with a crescent moon behind it."),
+    ("forms", "Six small coloured gems arranged in a ring: red, cyan, purple, cream, orange and green."),
+    ("gourmet", "A silver serving dish with its domed lid lifted, a glowing golden music note on the plate."),
+    ("strokes", "An open hand gently patting a small round fluffy creature with closed happy eyes."),
+    ("walls", "A paint roller with a stripe of plum wallpaper pattern and a small roll of wallpaper beside it."),
+    ("spent", "A small drawstring pouch spilling colourful guitar plectrums."),
+]
+
 HEAD = """Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references from this game: a pet and the room it lives in. Match their style: detailed pixel art with fine pixels (like a 64x64 game icon, not chunky), crisp dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood. Everything is about music.
 
 A sheet of {n} separate game icons in a 3x3 grid, read left to right, row by row, in the order listed. Each icon sits in its own cell, centred, about the same size as the others, filling most of its cell, with wide empty space between icons: they must not touch or overlap. Each icon is a single compact object or a small tight group, drawn complete and alone, seen from the front.
@@ -96,6 +119,9 @@ def sheets():
     out = {"ui": UI}
     for i in range(0, len(FEATS), 9):
         out[f"feats{i // 9 + 1}"] = FEATS[i:i + 9]
+    first = -(-len(FEATS) // 9) + 1
+    for i in range(0, len(MORE), 9):
+        out[f"feats{first + i // 9}"] = MORE[i:i + 9]
     return out
 
 

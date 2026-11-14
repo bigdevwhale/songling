@@ -153,7 +153,7 @@ fun BackdropLayer(modifier: Modifier = Modifier) {
     Box(modifier.fillMaxSize().background(C.bg)) {
         // The colour of the music, washing down from the top and up from the bottom.
         Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Brush.verticalGradient(
-            0f to C.amber.copy(alpha = .14f), .42f to C.amber.copy(alpha = 0f), .75f to C.lilac.copy(alpha = 0f), 1f to C.lilac.copy(alpha = .10f))))
+            0f to C.amber.copy(alpha = .09f), .36f to C.amber.copy(alpha = 0f), .8f to C.lilac.copy(alpha = 0f), 1f to C.lilac.copy(alpha = .06f))))
         if (image != null) {
             Image(image, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop, filterQuality = if (pixel) FilterQuality.None else FilterQuality.Medium)
             Box(Modifier.fillMaxSize().background(C.bg.copy(alpha = Backdrops.VEIL)))

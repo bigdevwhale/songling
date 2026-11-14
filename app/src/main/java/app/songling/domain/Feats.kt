@@ -28,6 +28,8 @@ enum class Feat(val group: FeatGroup, val tiers: IntArray) {
     MARATHON(FeatGroup.TIME, intArrayOf(50, 100, 200)),
     VETERAN(FeatGroup.TIME, intArrayOf(30, 182, 365, 730)),
     SEASONS(FeatGroup.TIME, intArrayOf(4)),
+    WEEKENDS(FeatGroup.TIME, intArrayOf(10, 50, 150)),
+    MONTH_HOURS(FeatGroup.TIME, intArrayOf(20, 50, 100, 200)),
 
     // Finds
     ARTISTS(FeatGroup.FINDS, intArrayOf(25, 100, 500, 1000)),
@@ -42,6 +44,9 @@ enum class Feat(val group: FeatGroup, val tiers: IntArray) {
     FRESH(FeatGroup.FINDS, intArrayOf(5, 25, 100)),
     VINTAGE(FeatGroup.FINDS, intArrayOf(1, 10, 30)),
     ANTIQUE(FeatGroup.FINDS, intArrayOf(1, 5, 20)),
+    ALBUMS(FeatGroup.FINDS, intArrayOf(25, 100, 500, 1000)),
+    NEW_DAY(FeatGroup.FINDS, intArrayOf(5, 10, 20)),
+    GONE(FeatGroup.FINDS, intArrayOf(3, 25, 100)),
 
     // Habits
     NIGHT(FeatGroup.HABITS, intArrayOf(5, 25, 100)),
@@ -55,6 +60,13 @@ enum class Feat(val group: FeatGroup, val tiers: IntArray) {
     EPIC(FeatGroup.HABITS, intArrayOf(1, 10, 30)),
     COMEBACK(FeatGroup.HABITS, intArrayOf(1, 5)),
     PLAYERS(FeatGroup.HABITS, intArrayOf(2, 3, 5)),
+    SHORT(FeatGroup.HABITS, intArrayOf(10, 50, 200)),
+    ARTIST_DAY(FeatGroup.HABITS, intArrayOf(10, 25, 50)),
+    ALBUM_DAY(FeatGroup.HABITS, intArrayOf(2, 4, 6)),
+    TIMELESS(FeatGroup.HABITS, intArrayOf(3, 6, 12)),
+    RATED(FeatGroup.HABITS, intArrayOf(10, 50, 200)),
+    LOVED(FeatGroup.HABITS, intArrayOf(10, 50, 200)),
+    NOTES(FeatGroup.HABITS, intArrayOf(1, 10, 30)),
 
     // Sound: hours in each of the forms a pet can take
     STORM(FeatGroup.SOUND, intArrayOf(5, 25, 100)),
@@ -71,15 +83,22 @@ enum class Feat(val group: FeatGroup, val tiers: IntArray) {
     LIVE(FeatGroup.HOLIDAYS, intArrayOf(1, 5, 15)),
     VINYL(FeatGroup.HOLIDAYS, intArrayOf(1, 25, 100)),
     RADIO(FeatGroup.HOLIDAYS, intArrayOf(1, 25)),
+    MUSIC_DAY(FeatGroup.HOLIDAYS, intArrayOf(1, 3)),
+    FRIDAY13(FeatGroup.HOLIDAYS, intArrayOf(1, 3)),
 
     // The den and its pets
-    PETS(FeatGroup.DEN, intArrayOf(3, 6, 12, 18)),
+    PETS(FeatGroup.DEN, intArrayOf(3, 6, 12, 18, 24)),
     GROWN(FeatGroup.DEN, intArrayOf(1, 3, 6)),
     ANCIENT(FeatGroup.DEN, intArrayOf(1, 3)),
     SHINY(FeatGroup.DEN, intArrayOf(1)),
     COSY(FeatGroup.DEN, intArrayOf(3, 8, 16)),
     QUESTS(FeatGroup.DEN, intArrayOf(5, 25, 100)),
     GOALS(FeatGroup.DEN, intArrayOf(1, 5, 20)),
+    FORMS(FeatGroup.DEN, intArrayOf(2, 4, 6)),
+    GOURMET(FeatGroup.DEN, intArrayOf(5, 25, 100)),
+    STROKES(FeatGroup.DEN, intArrayOf(10, 100, 1000)),
+    WALLS(FeatGroup.DEN, intArrayOf(1, 3, 6)),
+    SPENT(FeatGroup.DEN, intArrayOf(100, 500, 1500)),
 }
 
 /** How far one achievement got: [level] steps of its tiers reached. */
@@ -131,13 +150,24 @@ object Feats {
         val fresh = HashSet<String>()
         val antique = HashSet<String>()
         val players = HashSet<String>()
+        val short = HashSet<String>()
+        var artistDay = 0
+        var timeless = 0
 
         init {
             val perDay = HashMap<LocalDate, Int>()
             val perDayTrack = HashMap<Pair<LocalDate, String>, Int>()
+            val perDayArtist = HashMap<Pair<LocalDate, String>, Int>()
+            val months = HashMap<String, HashSet<Int>>()
             var run = 0
             for (p in plays) {
                 val d = st.day(p.at)
+                val da = d to p.artist
+                val na = (perDayArtist[da] ?: 0) + 1
+                perDayArtist[da] = na
+                if (na > artistDay) artistDay = na
+                if (p.ms >= MIN) months.getOrPut(p.track) { HashSet() } += d.year * 12 + d.monthValue
+                if (p.whole && p.length in 1 until 2 * MIN) short += p.track
                 perDay[d] = (perDay[d] ?: 0) + 1
                 val k = d to p.track
                 val n = (perDayTrack[k] ?: 0) + 1
@@ -167,6 +197,7 @@ object Feats {
                 }
             }
             maxDayPlays = perDay.values.maxOrNull() ?: 0
+            timeless = months.values.maxOfOrNull { it.size } ?: 0
         }
 
         fun formHours(f: Form): Int = (st.byGenre.filterKeys { it.form == f }.values.sum() / HOUR).toInt()
@@ -181,6 +212,8 @@ object Feats {
             Feat.MARATHON -> maxDayPlays
             Feat.VETERAN -> plays.firstOrNull()?.let { ChronoUnit.DAYS.between(st.day(it.at), st.today).toInt() } ?: 0
             Feat.SEASONS -> st.musicDays.map { (it.monthValue % 12) / 3 }.toSet().size
+            Feat.WEEKENDS -> st.musicDays.count { it.dayOfWeek.value >= 6 }
+            Feat.MONTH_HOURS -> ((st.byDay.entries.groupBy({ it.key.year * 12 + it.key.monthValue }, { it.value }).values.maxOfOrNull { it.sum() } ?: 0L) / HOUR).toInt()
             Feat.ARTISTS -> st.byArtist.size
             Feat.TRACKS -> st.byTrack.size
             Feat.WHOLE -> st.wholeRuns.size
@@ -193,6 +226,9 @@ object Feats {
             Feat.FRESH -> fresh.size
             Feat.VINTAGE -> st.oldAlbums
             Feat.ANTIQUE -> antique.size
+            Feat.ALBUMS -> st.byAlbum.size
+            Feat.NEW_DAY -> st.byArtist.values.groupingBy { st.day(it.first) }.eachCount().values.maxOrNull() ?: 0
+            Feat.GONE -> st.goneHours
             Feat.NIGHT -> st.nights
             Feat.MORNING -> st.mornings
             Feat.REPEAT -> st.maxRepeats
@@ -204,6 +240,13 @@ object Feats {
             Feat.EPIC -> epic.size
             Feat.COMEBACK -> st.comebacks
             Feat.PLAYERS -> players.size
+            Feat.SHORT -> short.size
+            Feat.ARTIST_DAY -> artistDay
+            Feat.ALBUM_DAY -> st.wholeRuns.groupingBy { st.day(it.second) }.eachCount().values.maxOrNull() ?: 0
+            Feat.TIMELESS -> timeless
+            Feat.RATED -> st.albums.values.count { it.stars > 0 } + st.tracks.values.count { it.stars > 0 } + st.artists.values.count { it.stars > 0 }
+            Feat.LOVED -> st.tracks.values.count { it.loved }
+            Feat.NOTES -> st.albums.values.count { it.note.isNotBlank() }
             Feat.STORM -> formHours(Form.STORM)
             Feat.NEON -> formHours(Form.NEON)
             Feat.VELVET -> formHours(Form.VELVET)
@@ -216,6 +259,8 @@ object Feats {
             Feat.LIVE -> st.concerts
             Feat.VINYL -> vinyl
             Feat.RADIO -> radio
+            Feat.MUSIC_DAY -> st.musicDays.count { it.month == Month.JUNE && it.dayOfMonth == 21 }
+            Feat.FRIDAY13 -> st.musicDays.count { it.dayOfMonth == 13 && it.dayOfWeek == java.time.DayOfWeek.FRIDAY }
             Feat.PETS -> st.pets.size
             Feat.GROWN -> st.pets.count { it.stage >= Stage.ADULT }
             Feat.ANCIENT -> st.pets.count { it.stage == Stage.ANCIENT }
@@ -223,6 +268,11 @@ object Feats {
             Feat.COSY -> st.s.bought.count { b -> Item.entries.any { it.name == b } }
             Feat.QUESTS -> st.s.claimed.size
             Feat.GOALS -> st.goalsDone
+            Feat.FORMS -> st.pets.mapNotNull { it.form }.toSet().size
+            Feat.GOURMET -> (st.pets.sumOf { it.favMs } / HOUR).toInt()
+            Feat.STROKES -> st.s.strokes
+            Feat.WALLS -> st.s.bought.count { it.startsWith("wall:") }
+            Feat.SPENT -> st.s.spent
         }
     }
 
@@ -250,6 +300,8 @@ object Feats {
         Feat.MARATHON -> t(ru, "Марафон", "Marathon")
         Feat.VETERAN -> t(ru, "Старожил", "Old-timer")
         Feat.SEASONS -> t(ru, "Круглый год", "All year round")
+        Feat.WEEKENDS -> t(ru, "Выходные", "Weekends")
+        Feat.MONTH_HOURS -> t(ru, "Месяц музыки", "A month of music")
         Feat.ARTISTS -> t(ru, "Знакомства", "Acquaintances")
         Feat.TRACKS -> t(ru, "Песенник", "Songbook")
         Feat.WHOLE -> t(ru, "От начала до конца", "Start to finish")
@@ -262,6 +314,9 @@ object Feats {
         Feat.FRESH -> t(ru, "Свежак", "Fresh")
         Feat.VINTAGE -> t(ru, "Классика жанра", "A classic")
         Feat.ANTIQUE -> t(ru, "Патефон", "Phonograph")
+        Feat.ALBUMS -> t(ru, "Коллекция", "Collection")
+        Feat.NEW_DAY -> t(ru, "День открытий", "A day of finds")
+        Feat.GONE -> t(ru, "Память", "In memory")
         Feat.NIGHT -> t(ru, "Сова", "Night owl")
         Feat.MORNING -> t(ru, "Жаворонок", "Early bird")
         Feat.REPEAT -> t(ru, "На повторе", "On repeat")
@@ -273,6 +328,13 @@ object Feats {
         Feat.EPIC -> t(ru, "Эпос", "Epic")
         Feat.COMEBACK -> t(ru, "Возвращение", "Comeback")
         Feat.PLAYERS -> t(ru, "Отовсюду", "From everywhere")
+        Feat.SHORT -> t(ru, "Коротко и ясно", "Short and sweet")
+        Feat.ARTIST_DAY -> t(ru, "День одного артиста", "One artist's day")
+        Feat.ALBUM_DAY -> t(ru, "Альбомный день", "A day of albums")
+        Feat.TIMELESS -> t(ru, "Проверено временем", "Stands the test of time")
+        Feat.RATED -> t(ru, "Критик", "Critic")
+        Feat.LOVED -> t(ru, "От всего сердца", "With all my heart")
+        Feat.NOTES -> t(ru, "Дневник", "Diary")
         Feat.STORM -> t(ru, "Буря", "Storm")
         Feat.NEON -> t(ru, "Неон", "Neon")
         Feat.VELVET -> t(ru, "Бархат", "Velvet")
@@ -285,6 +347,8 @@ object Feats {
         Feat.LIVE -> t(ru, "Живой звук", "Live")
         Feat.VINYL -> t(ru, "Винил", "Vinyl")
         Feat.RADIO -> t(ru, "На волне", "On the air")
+        Feat.MUSIC_DAY -> t(ru, "День музыки", "Music Day")
+        Feat.FRIDAY13 -> t(ru, "Пятница, 13-е", "Friday the 13th")
         Feat.PETS -> t(ru, "Зверинец", "Menagerie")
         Feat.GROWN -> t(ru, "Вырастил", "All grown up")
         Feat.ANCIENT -> t(ru, "Древний", "Ancient")
@@ -292,6 +356,11 @@ object Feats {
         Feat.COSY -> t(ru, "Уютно", "Cosy")
         Feat.QUESTS -> t(ru, "Порученец", "Errand-runner")
         Feat.GOALS -> t(ru, "Цель достигнута", "Goal reached")
+        Feat.FORMS -> t(ru, "Все обличья", "Every shape")
+        Feat.GOURMET -> t(ru, "Гурман", "Gourmet")
+        Feat.STROKES -> t(ru, "Ласка", "A gentle hand")
+        Feat.WALLS -> t(ru, "Ремонт", "Redecorating")
+        Feat.SPENT -> t(ru, "Транжира", "Big spender")
     }
 
     private fun formGenres(f: Form, ru: Boolean) = Genre.entries.filter { it.form == f && it != Genre.OTHER && it != Genre.KIDS }.joinToString(", ") { Words.genre(it, ru).lowercase() }
@@ -313,6 +382,8 @@ object Feats {
         Feat.MARATHON -> t(ru, "${ru3(x, "песня", "песни", "песен")} за один день", "${en(x, "song", "songs")} in one day")
         Feat.VETERAN -> t(ru, "${days(x, true)} с первой песни", "${days(x, false)} since the first song")
         Feat.SEASONS -> t(ru, "Музыка зимой, весной, летом и осенью", "Music in winter, spring, summer and autumn")
+        Feat.WEEKENDS -> t(ru, "${ru3(x, "выходной", "выходных", "выходных")} с музыкой", "${en(x, "weekend day", "weekend days")} with music")
+        Feat.MONTH_HOURS -> t(ru, "${hrs(x, true)} музыки за один месяц", "${hrs(x, false)} of music in one month")
         Feat.ARTISTS -> t(ru, ru3(x, "артист", "артиста", "артистов"), en(x, "artist", "artists"))
         Feat.TRACKS -> t(ru, "${ru3(x, "разная песня", "разные песни", "разных песен")}", "${en(x, "different song", "different songs")}")
         Feat.WHOLE -> t(ru, "${ru3(x, "альбом", "альбома", "альбомов")} целиком", "${en(x, "album", "albums")} heard whole")
@@ -325,6 +396,9 @@ object Feats {
         Feat.FRESH -> t(ru, "${ru3(x, "альбом", "альбома", "альбомов")} в год их выхода", "${en(x, "album", "albums")} in the year they came out")
         Feat.VINTAGE -> t(ru, "${ru3(x, "альбом", "альбома", "альбомов")} старше 30 лет", "${en(x, "album", "albums")} over thirty years old")
         Feat.ANTIQUE -> t(ru, "${ru3(x, "альбом", "альбома", "альбомов")}, вышедших до 1970 года", "${en(x, "album", "albums")} from before 1970")
+        Feat.ALBUMS -> t(ru, ru3(x, "разный альбом", "разных альбома", "разных альбомов"), en(x, "different album", "different albums"))
+        Feat.NEW_DAY -> t(ru, "${ru3(x, "новый артист", "новых артиста", "новых артистов")} за один день", "${en(x, "new artist", "new artists")} in one day")
+        Feat.GONE -> t(ru, "${hrs(x, true)} музыки тех, кого уже нет", "${hrs(x, false)} of music by those who are gone")
         Feat.NIGHT -> t(ru, "${ru3(x, "ночь", "ночи", "ночей")} с музыкой после 22:00", "${en(x, "night", "nights")} of music after 10 pm")
         Feat.MORNING -> t(ru, "${ru3(x, "утро", "утра", "утр")} с музыкой с 5 до 10 утра", "${en(x, "morning", "mornings")} of music between 5 and 10 am")
         Feat.REPEAT -> t(ru, "Одна песня ${times(x, true)}", "One song ${times(x, false)}")
@@ -336,6 +410,13 @@ object Feats {
         Feat.EPIC -> t(ru, "${ru3(x, "песня", "песни", "песен")} длиннее 10 минут до конца", "${en(x, "song", "songs")} over ten minutes, to the end")
         Feat.COMEBACK -> t(ru, "Вернуться к музыке после недели тишины ${times(x, true)}", "Come back to music after a silent week ${times(x, false)}")
         Feat.PLAYERS -> t(ru, "Музыка из ${n(x)} ${Words.plural(x, "приложения", "приложений", "приложений")} или источников", "Music from ${en(x, "app or source", "apps or sources")}")
+        Feat.SHORT -> t(ru, "${ru3(x, "песня", "песни", "песен")} короче двух минут до конца", "${en(x, "song", "songs")} under two minutes, to the end")
+        Feat.ARTIST_DAY -> t(ru, "${ru3(x, "песня", "песни", "песен")} одного артиста за день", "${en(x, "song", "songs")} by one artist in a day")
+        Feat.ALBUM_DAY -> t(ru, "${ru3(x, "альбом", "альбома", "альбомов")} целиком за один день", "${en(x, "whole album", "whole albums")} in one day")
+        Feat.TIMELESS -> t(ru, "Одна песня в ${n(x)} разных месяцах", "One song in ${en(x, "different month", "different months")}")
+        Feat.RATED -> t(ru, "Звёзды ${n(x)} альбомам, песням или артистам", "Stars for ${en(x, "album, song or artist", "albums, songs or artists")}")
+        Feat.LOVED -> t(ru, "${ru3(x, "песня", "песни", "песен")} с сердечком", "${en(x, "song", "songs")} with a heart")
+        Feat.NOTES -> t(ru, "${ru3(x, "заметка", "заметки", "заметок")} к альбомам", "${en(x, "note", "notes")} on albums")
         Feat.STORM, Feat.NEON, Feat.VELVET, Feat.CHOIR, Feat.STREET, Feat.ROOTS -> {
             val form = Form.valueOf(f.name)
             t(ru, "${hrs(x, true)}: ${formGenres(form, true)}", "${hrs(x, false)}: ${formGenres(form, false)}")
@@ -346,6 +427,8 @@ object Feats {
         Feat.LIVE -> t(ru, "${ru3(x, "концерт", "концерта", "концертов")}", "${en(x, "concert", "concerts")}")
         Feat.VINYL -> t(ru, "${ru3(x, "песня", "песни", "песен")} с пластинки", "${en(x, "song", "songs")} off a record")
         Feat.RADIO -> t(ru, "${ru3(x, "песня", "песни", "песен")} по радио", "${en(x, "song", "songs")} on the radio")
+        Feat.MUSIC_DAY -> t(ru, "Музыка в День музыки, 21 июня" + if (x > 1) " – ${n(x)} ${Words.plural(x, "год", "года", "лет")}" else "", "Music on World Music Day, June 21" + if (x > 1) " – ${en(x, "year", "years")}" else "")
+        Feat.FRIDAY13 -> t(ru, "Музыка в пятницу, 13-го" + if (x > 1) " – ${times(x, true)}" else "", "Music on a Friday the 13th" + if (x > 1) " – ${times(x, false)}" else "")
         Feat.PETS -> t(ru, "Завести " + ru3(x, "питомца", "питомцев", "питомцев"), "Raise ${en(x, "pet", "pets")}")
         Feat.GROWN -> t(ru, "Вырастить ${ru3(x, "взрослого питомца", "взрослых питомцев", "взрослых питомцев")}", "Raise ${en(x, "pet", "pets")} to grown-up")
         Feat.ANCIENT -> t(ru, "${ru3(x, "древний питомец", "древних питомца", "древних питомцев")}", "${en(x, "ancient pet", "ancient pets")}")
@@ -353,5 +436,10 @@ object Feats {
         Feat.COSY -> t(ru, "${ru3(x, "вещь", "вещи", "вещей")} в логове", "${en(x, "thing", "things")} in the den")
         Feat.QUESTS -> t(ru, "${ru3(x, "задание", "задания", "заданий")} недели", "${en(x, "weekly quest", "weekly quests")}")
         Feat.GOALS -> t(ru, "Достичь " + ru3(x, "цели", "целей", "целей"), "Reach ${en(x, "goal", "goals")}")
+        Feat.FORMS -> t(ru, "Питомцы ${n(x)} разных форм", "Pets in ${en(x, "different form", "different forms")}")
+        Feat.GOURMET -> t(ru, "${hrs(x, true)} любимой музыки питомцев", "${hrs(x, false)} of your pets' favourite music")
+        Feat.STROKES -> t(ru, "Погладить питомца ${times(x, true)}", "Stroke your pet ${times(x, false)}")
+        Feat.WALLS -> t(ru, "Купить обои: ${n(x)}", "Buy ${en(x, "wallpaper", "wallpapers")}")
+        Feat.SPENT -> t(ru, "Потратить ${ru3(x, "медиатор", "медиатора", "медиаторов")} на логово", "Spend ${en(x, "plectrum", "plectrums")} on the den")
     }
 }

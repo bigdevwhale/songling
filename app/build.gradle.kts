@@ -134,4 +134,5 @@ tasks.withType<Test>().configureEach {
     systemProperty("render.out", layout.buildDirectory.dir("art").get().asFile.absolutePath)
     (project.findProperty("cover") as String?)?.let { systemProperty("render.cover", it) }
     (project.findProperty("pets") as String?)?.let { systemProperty("render.pets", it) }
+    (project.findProperty("screens") as String?)?.let { systemProperty("render.screens", it) }
 }

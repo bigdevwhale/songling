@@ -81,7 +81,7 @@ object DemoSeed {
         // Two pets: a lyrebird raised first, then the jazz cat out now.
         dao.insert(Pet(species = Species.LYREBIRD, name = if (ru) "Лирик" else "Lyric", laid = start, nature = Nature.CURIOUS, form = Form.STORM, spans = "$start-${now - 45 * DAY}"))
         // Every other pet, raised earlier and waiting in its box, at every stage, two in the rare colouring.
-        val rest = Species.entries.filter { it != Species.LYREBIRD && it != Species.PURR }
+        val rest = Species.known.filter { it != Species.LYREBIRD && it != Species.PURR }
         rest.forEachIndexed { i, sp ->
             val laid = start - (i + 1) * 9 * DAY
             val minutes = listOf(400, 1_800, 5_000, 13_000)[i % 4]

@@ -214,8 +214,11 @@ object PetArt {
     /** Shuts an eye (a box in fine pixels): the lid takes the colour just around it, with a dark line along the middle. */
     private fun closeEye(b: Buf, e: IntArray, happy: Boolean, mask: BooleanArray?) {
         val (x0, y0, x1, y1) = e
-        // The lid: the commonest colour just around the eye.
+        // The lid: the commonest colour just around the eye. Dark pixels are mostly the outline and don't count,
+        // unless the head itself is dark (the magpie's black feathers): then the lid is dark feathers too, not a
+        // white cheek nearby.
         val around = HashMap<Int, Int>()
+        val dark = HashMap<Int, Int>()
         for (y in y0 - 2 * FINE..y1 + FINE - 1) for (x in x0 - 2 * FINE..x1 + FINE - 1) {
             if (x in x0 until x1 && y in y0 until y1) continue
             if (x !in 0 until FS || y !in 0 until FS) continue
@@ -223,10 +226,11 @@ object PetArt {
             val c = b.getF(x, y)
             if (c ushr 24 == 0) continue
             val l = Buf.ch(c, 16) * 0.3f + Buf.ch(c, 8) * 0.59f + Buf.ch(c, 0) * 0.11f
-            if (l < 40) continue
+            if (l < 40) { if (l >= 14) dark[c] = (dark[c] ?: 0) + 1; continue }
             around[c] = (around[c] ?: 0) + 1
         }
-        val lid = around.maxByOrNull { it.value }?.key ?: b.getF((x0 + x1) / 2, max(0, y0 - 1))
+        val pool = if (dark.values.sum() > 3 * around.values.sum()) dark else around
+        val lid = pool.maxByOrNull { it.value }?.key ?: b.getF((x0 + x1) / 2, max(0, y0 - 1))
         for (y in y0 until y1) for (x in x0 until x1) {
             if (x !in 0 until FS || y !in 0 until FS) continue
             if (mask != null && !mask[y * FS + x]) continue

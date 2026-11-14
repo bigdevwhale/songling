@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.songling.data.Covers
 import app.songling.domain.Genre
 import app.songling.ui.art.Buf
@@ -113,7 +114,7 @@ fun Stars(rating: Int, modifier: Modifier = Modifier, size: Dp = 20.dp, onRate: 
                     if (k == 0) p.moveTo(x, y) else p.lineTo(x, y)
                 }
                 p.close()
-                drawPath(p, if (on) C.honey else C.line)
+                drawPath(p, if (on) C.honey else C.track)
             }
         }
     }
@@ -182,8 +183,10 @@ fun DenView(den: app.songling.ui.art.DenLook, modifier: Modifier = Modifier) {
 /** A big number with a label under it. */
 @Composable
 fun Stat(value: String, label: String, modifier: Modifier = Modifier, color: Color = C.amber) {
-    Column(modifier.paper(16.dp).clip(R8.Md).background(C.surface).padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(value, style = T.Number.copy(color = color, fontSize = T.Number.fontSize * .8f), maxLines = 1)
+    Column(modifier.lift(LocalOnSheet.current, 16.dp).clip(R8.Md).background(raised()).padding(horizontal = 12.dp, vertical = 11.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        // A long one («8 ч 11 мин» in a third of the width) shrinks to fit instead of being cut.
+        androidx.compose.foundation.text.BasicText(value, style = T.Number.copy(color = color), maxLines = 1, softWrap = false,
+            autoSize = androidx.compose.foundation.text.TextAutoSize.StepBased(minFontSize = 11.sp, maxFontSize = 18.sp, stepSize = 0.5.sp))
         Text(label, style = T.Small.copy(fontSize = T.Small.fontSize * .95f, lineHeight = T.Small.lineHeight * .95f), maxLines = 2, softWrap = true)
     }
 }
@@ -209,7 +212,7 @@ fun Bars(values: List<Long>, labels: List<String>, modifier: Modifier = Modifier
                 val h = (v.toFloat() / max) * (size.height - 4)
                 val c = if (i == highlight) C.coral else color
                 val dim = picked >= 0 && i != picked
-                drawRoundRect((if (v == 0L) C.line else c).let { if (dim) it.copy(alpha = it.alpha * .35f) else it },
+                drawRoundRect((if (v == 0L) C.track else c).let { if (dim) it.copy(alpha = it.alpha * .35f) else it },
                     Offset(i * w + w * .15f, size.height - h.coerceAtLeast(2f)), Size(w * .7f, h.coerceAtLeast(2f)), CornerRadius(w * .2f))
                 // The picked one gets a dot on top, so a short bar is still found.
                 if (i == picked) drawCircle(C.ink, (w * .22f).coerceIn(2.5f, 6f), Offset(i * w + w / 2, size.height - h.coerceAtLeast(2f) - 7f))
@@ -231,14 +234,14 @@ fun Bars(values: List<Long>, labels: List<String>, modifier: Modifier = Modifier
 /** One line of a top list: rank, cover or dot, name, sub and a bar for its share. */
 @Composable
 fun TopRow(rank: Int, name: String, sub: String, value: String, share: Float, modifier: Modifier = Modifier, cover: String? = null, genre: Genre? = null, showCover: Boolean = false, onClick: (() -> Unit)? = null) {
-    Row(modifier.fillMaxWidth().clip(R8.Sm).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 5.dp),
+    Row(modifier.fillMaxWidth().clip(R8.Sm).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 7.dp, horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("$rank", style = T.Small.copy(color = if (rank <= 3) C.amber else C.faint), modifier = Modifier.size(width = 20.dp, height = 18.dp), textAlign = TextAlign.End)
         if (showCover) Sleeve(cover, name, sub, genre, 44.dp)
         Column(Modifier.weight(1f)) {
             Text(name, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub.isNotEmpty()) Text(sub, style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Box(Modifier.fillMaxWidth().padding(top = 5.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(C.surface2)) {
+            Box(Modifier.fillMaxWidth().padding(top = 5.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(C.track)) {
                 Box(Modifier.fillMaxWidth(share.coerceIn(0.02f, 1f)).height(5.dp).clip(RoundedCornerShape(3.dp)).background(genre?.let { C.genre(it) } ?: C.amber))
             }
         }

@@ -47,6 +47,36 @@ class FeatsTest {
         assertEquals(st.featSteps, st.feats.sumOf { it.level })
     }
 
+    @Test fun aSongHeardInDifferentMonthsAndOneArtistInADay() {
+        // The same song once a month for four months, then eleven more of the artist's on the last day.
+        val monthly = (0 until 4).map { play("Song", t0 + it * 31L * 24 * 3_600_000L) }
+        val last = monthly.last().at
+        val st = studio(monthly + (1..11).map { play("Other $it", last + it * 5 * MIN) })
+        assertEquals(4, level(st, Feat.TIMELESS).have)
+        assertEquals(1, level(st, Feat.TIMELESS).level)
+        assertEquals(12, level(st, Feat.ARTIST_DAY).have)
+    }
+
+    @Test fun everyAwardHasWordsInBothLanguages() {
+        for (f in Feat.entries) for (ru in listOf(true, false)) {
+            assertTrue(Feats.name(f, ru).isNotBlank())
+            for (x in f.tiers) assertTrue(Feats.goal(f, x, ru).isNotBlank())
+        }
+        assertEquals(70, Feat.entries.size)
+    }
+
+    @Test fun speciesNotDrawnYetStayOutOfTheBestiary() {
+        val st = studio(listOf(play("Song", t0)))
+        assertEquals(app.songling.domain.Species.known.map { it }, st.hints.map { it.species })
+        assertTrue(st.hints.all { it.species.drawn })
+        // Each one has its words all the same, for the day its pictures arrive.
+        for (sp in app.songling.domain.Species.entries) for (ru in listOf(true, false)) {
+            assertTrue(app.songling.domain.Words.species(sp, ru).isNotBlank())
+            assertTrue(app.songling.domain.Words.find(sp, 3, ru).isNotBlank())
+            assertTrue(app.songling.domain.Words.growth(sp, ru).isNotBlank())
+        }
+    }
+
     @Test fun midnightCountsOncePerYear() {
         // 31 Dec 2025, 23:30 UTC and 1 Jan 2026, 00:10 UTC: the same New Year's night.
         val eve = java.time.LocalDateTime.of(2025, 12, 31, 23, 30).toInstant(ZoneOffset.UTC).toEpochMilli()

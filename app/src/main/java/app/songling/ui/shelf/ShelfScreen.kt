@@ -32,7 +32,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.songling.data.Keys
@@ -47,6 +54,10 @@ import app.songling.ui.components.Btn
 import app.songling.ui.components.Chip
 import app.songling.ui.components.Cover
 import app.songling.ui.components.Field
+import app.songling.ui.components.Glyph
+import app.songling.ui.components.Sign
+import app.songling.ui.components.lift
+import app.songling.ui.components.pressable
 import app.songling.ui.components.Stars
 import app.songling.ui.components.Tabs
 import app.songling.ui.components.t
@@ -95,7 +106,9 @@ fun entries(st: Studio, tab: ShelfTab): List<Entry> = when (tab) {
 fun ShelfScreen(st: Studio, nav: Nav) {
     val ru = LocalRu.current
     // The tab the shelf opens on is the user's choice (Settings → the shelf).
-    val first = remember(st.s.shelfFirst) { ShelfTab.entries.firstOrNull { it.name == st.s.shelfFirst } ?: ShelfTab.ALBUMS }
+    // Four tabs: the «to hear» list is a switch under the search, and the history lives in the saga.
+    val shown = listOf(ShelfTab.ALBUMS, ShelfTab.SINGLES, ShelfTab.SONGS, ShelfTab.ARTISTS)
+    val first = remember(st.s.shelfFirst) { shown.firstOrNull { it.name == st.s.shelfFirst } ?: ShelfTab.ALBUMS }
     var tab by rememberSaveable { mutableStateOf(first) }
     var q by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf(Sort.MINUTES) }
@@ -104,7 +117,7 @@ fun ShelfScreen(st: Studio, nav: Nav) {
     var decades by remember { mutableStateOf(emptySet<Int>()) }
     var rated by rememberSaveable { mutableStateOf(false) }
     var wholeOnly by rememberSaveable { mutableStateOf(false) }
-    var wishOnly by rememberSaveable { mutableStateOf(false) }
+    var wishOnly by rememberSaveable { mutableStateOf(st.s.shelfFirst == ShelfTab.WISH.name) }
     var sheet by remember { mutableStateOf(0) }
 
     val all = remember(st, tab) { entries(st, tab) }
@@ -126,23 +139,18 @@ fun ShelfScreen(st: Studio, nav: Nav) {
             }
         }
     }
-    val counts = remember(st) { ShelfTab.entries.map { if (it == ShelfTab.HISTORY) null else entries(st, it).size } }
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
-        val names = listOf(t("Альбомы", "Albums"), t("Синглы", "Singles"), t("Песни", "Songs"), t("Артисты", "Artists"), t("Хочу послушать", "To hear"), t("История", "History"))
-        Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            for (tb in listOf(first) + ShelfTab.entries.filter { it != first }) {
-                val n = counts[tb.ordinal]
-                Chip(names[tb.ordinal] + if (n != null && n > 0) " $n" else "", tb == tab, { tab = tb }, color = if (tb == tab) C.lilac else null)
-            }
-        }
+        app.songling.ui.components.Tabs(listOf(t("Альбомы", "Albums"), t("Синглы", "Singles"), t("Песни", "Songs"), t("Артисты", "Artists")), shown.indexOf(tab), { tab = shown[it] })
         app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SHELF, st.s, Modifier.padding(top = 8.dp))
-        if (tab == ShelfTab.HISTORY) { History(st, nav); return@Column }
-        val active = genres.size + owns.size + decades.size + listOf(rated, wholeOnly, wishOnly).count { it }
-        Row(Modifier.padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Field(q, { q = it }, t("Найти на полке", "Search the shelf"), Modifier.weight(1f))
-            ToolButton("⇅", sortShort(sort, ru)) { sheet = 1 }
-            ToolButton("⚙", if (active > 0) "$active" else t("Фильтры", "Filters"), on = active > 0) { sheet = 2 }
+        val active = genres.size + owns.size + decades.size + listOf(rated, wholeOnly).count { it }
+        Field(q, { q = it }, t("Поиск", "Search"), Modifier.padding(top = 10.dp), search = true)
+        // Under the search, in words: the order on the left; the «to hear» switch and the filters on the right.
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Pick(sortName(sort, ru).replaceFirstChar { it.uppercase() }) { sheet = 1 }
+            androidx.compose.foundation.layout.Spacer(Modifier.weight(1f))
+            Toggle(t("Хочу послушать", "To hear"), wishOnly) { wishOnly = !wishOnly }
+            Pick(t("Фильтры", "Filters") + if (active > 0) " · $active" else "", on = active > 0) { sheet = 2 }
         }
         // What's on, each with a cross.
         if (active > 0) Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -151,20 +159,21 @@ fun ShelfScreen(st: Studio, nav: Nav) {
             for (d in decades) Removable(if (ru) "${d}-е" else "${d}s") { decades = decades - d }
             if (rated) Removable(t("со звёздами", "rated")) { rated = false }
             if (wholeOnly) Removable(t("слушал целиком", "heard whole")) { wholeOnly = false }
-            if (wishOnly) Removable(t("хочу послушать", "to hear")) { wishOnly = false }
             Text(t("сбросить", "clear"), style = T.Small.copy(color = C.coral), modifier = Modifier.clip(CircleShape).clickable {
-                genres = emptySet(); owns = emptySet(); decades = emptySet(); rated = false; wholeOnly = false; wishOnly = false
+                genres = emptySet(); owns = emptySet(); decades = emptySet(); rated = false; wholeOnly = false
             }.padding(horizontal = 10.dp, vertical = 8.dp))
         }
-        Text(if (ru) "${list.size} из ${all.size}" else "${list.size} of ${all.size}", style = T.Small, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
+        // How many are left, once something narrows the list.
+        if (list.size != all.size) Text(if (ru) "${list.size} из ${all.size}" else "${list.size} of ${all.size}", style = T.Small, modifier = Modifier.padding(top = 8.dp, start = 4.dp))
         if (sheet == 1) app.songling.ui.Floating { Sheet(onDismiss = { sheet = 0 }) {
             Text(t("Сортировка", "Sort"), style = T.Title)
-            for (so in Sort.entries) Row(Modifier.fillMaxWidth().clip(R8.Md).clickable { sort = so; sheet = 0 }.padding(vertical = 12.dp, horizontal = 4.dp),
+            for (so in Sort.entries) Row(Modifier.fillMaxWidth().clip(R8.Md).background(if (so == sort) C.amberSoft else androidx.compose.ui.graphics.Color.Transparent)
+                .clickable { sort = so; sheet = 0 }.padding(vertical = 13.dp, horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(Modifier.size(20.dp).clip(CircleShape).background(if (so == sort) C.amber else C.surface2), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(20.dp).clip(CircleShape).background(if (so == sort) C.amber else C.track), contentAlignment = Alignment.Center) {
                     if (so == sort) Box(Modifier.size(8.dp).clip(CircleShape).background(C.surface))
                 }
-                Text(sortName(so, ru).replaceFirstChar { it.uppercase() }, style = T.Body)
+                Text(sortName(so, ru).replaceFirstChar { it.uppercase() }, style = if (so == sort) T.Strong else T.Body)
             }
         } }
         if (sheet == 2) app.songling.ui.Floating { Sheet(onDismiss = { sheet = 0 }) {
@@ -188,51 +197,76 @@ fun ShelfScreen(st: Studio, nav: Nav) {
             Flow {
                 Chip(t("со звёздами", "rated"), rated, { rated = !rated })
                 if (tab == ShelfTab.ALBUMS) Chip(t("слушал целиком", "heard whole"), wholeOnly, { wholeOnly = !wholeOnly })
-                if (tab != ShelfTab.WISH) Chip(t("хочу послушать", "to hear"), wishOnly, { wishOnly = !wishOnly })
             }
             val n = all.count { pass(it, genres, decades, rated, wholeOnly, wishOnly) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
-                Btn(t("Сбросить", "Clear"), { genres = emptySet(); owns = emptySet(); decades = emptySet(); rated = false; wholeOnly = false; wishOnly = false }, Modifier.weight(1f), kind = app.songling.ui.components.Kind.GHOST)
+                Btn(t("Сбросить", "Clear"), { genres = emptySet(); owns = emptySet(); decades = emptySet(); rated = false; wholeOnly = false }, Modifier.weight(1f), kind = app.songling.ui.components.Kind.GHOST)
                 Btn(if (ru) "Показать $n" else "Show $n", { sheet = 0 }, Modifier.weight(1f), kind = app.songling.ui.components.Kind.AMBER)
             }
         } }
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 8.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            item {
-                Btn(when (tab) {
-                    ShelfTab.WISH -> t("+ Хочу послушать", "+ Want to hear")
-                    else -> t("+ Добавить альбом, сингл или песню", "+ Add an album, single or song")
-                }, { nav.go(Overlay.Add(wish = tab == ShelfTab.WISH)) }, Modifier.fillMaxWidth(), kind = app.songling.ui.components.Kind.GHOST, small = true)
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 6.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // The record in the dock adds to the shelf; only the «to hear» list keeps a button of its own.
+            if (wishOnly) item {
+                Btn(t("+ Хочу послушать", "+ Want to hear"), { nav.go(Overlay.Add(wish = true)) }, Modifier.fillMaxWidth(), kind = app.songling.ui.components.Kind.GHOST, small = true)
             }
             if (list.isEmpty()) item {
-                Text(when {
-                    all.isEmpty() && tab == ShelfTab.WISH -> t("Список «послушать» пуст. Добавь то, до чего давно не доходили руки: послушаешь – получишь медиаторы.",
-                        "The «to hear» list is empty. Add what you never got round to: hearing it pays plectrums.")
-                    all.isEmpty() -> t("Здесь появится всё, что ты слушаешь.", "Everything you listen to shows up here.")
-                    else -> t("Ничего не нашлось.", "Nothing found.")
-                }, style = T.Muted, modifier = Modifier.padding(vertical = 20.dp))
+                when {
+                    wishOnly && all.none { it.wish } -> app.songling.ui.components.Empty(t("Список «послушать» пуст", "The «to hear» list is empty"),
+                        t("Добавь то, до чего давно не доходили руки: послушаешь – получишь медиаторы.", "Add what you never got round to: hearing it pays plectrums."))
+                    all.isEmpty() -> app.songling.ui.components.Empty(t("Полка пока пуста", "The shelf is empty for now"),
+                        t("Здесь появится всё, что ты слушаешь. Включи музыку в плеере или добавь альбом сам.", "Everything you listen to shows up here. Play some music, or add an album yourself."))
+                    else -> app.songling.ui.components.Empty(t("Ничего не нашлось", "Nothing found"), t("Попробуй другое слово или сними фильтры.", "Try another word, or clear the filters.")) {
+                        if (active > 0 || q.isNotEmpty()) Btn(t("Сбросить всё", "Clear everything"), {
+                            q = ""; genres = emptySet(); owns = emptySet(); decades = emptySet(); rated = false; wholeOnly = false; wishOnly = false
+                        }, kind = app.songling.ui.components.Kind.SOFT, small = true)
+                    }
+                }
             }
             items(list, key = { it.kind.name + it.key }) { e -> Line(st, e, nav) }
         }
     }
 }
 
-/** A small square-ish button with a symbol and a word. */
+/** A switch said in words: a small box, ticked when on. */
 @Composable
-fun ToolButton(symbol: String, label: String, on: Boolean = false, onClick: () -> Unit) {
-    Row(Modifier.paper(99.dp, 2.dp).clip(CircleShape).background(if (on) C.amber else C.surface).clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-        Text(symbol, style = T.Strong.copy(color = if (on) C.onAmber else C.muted))
-        Text(label, style = T.Small.copy(color = if (on) C.onAmber else C.ink), maxLines = 1)
+private fun Toggle(text: String, on: Boolean, onClick: () -> Unit) {
+    Row(Modifier.clip(CircleShape).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(Modifier.size(16.dp).clip(androidx.compose.foundation.shape.RoundedCornerShape(5.dp)).background(if (on) C.amber else C.track), contentAlignment = Alignment.Center) {
+            if (on) Sign(Glyph.CHECK, color = C.onAmber, size = 8.dp, stroke = 1.7.dp)
+        }
+        Text(text, style = T.Small.copy(color = if (on) C.amber else C.muted, fontSize = T.Small.fontSize * 1.08f), maxLines = 1)
+    }
+}
+
+/** A choice said in words with a small arrow: tap to change it. In the music's colour when it's narrowing the list. */
+@Composable
+private fun Pick(text: String, on: Boolean = false, onClick: () -> Unit) {
+    Row(Modifier.clip(CircleShape).clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(text, style = T.Small.copy(color = if (on) C.amber else C.muted, fontSize = T.Small.fontSize * 1.08f), maxLines = 1)
+        Sign(Glyph.DOWN, color = if (on) C.amber else C.faint, size = 9.dp, stroke = 1.7.dp)
+    }
+}
+
+/** A small round button with a sign, and a word beside it when there's one to say (how many filters are on). */
+@Composable
+fun ToolButton(sign: Glyph, label: String?, on: Boolean = false, describe: String = label.orEmpty(), onClick: () -> Unit) {
+    val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    Row(Modifier.pressable(src).lift(app.songling.ui.components.LocalOnSheet.current, 99.dp, 2.dp).clip(CircleShape).background(if (on) C.amber else app.songling.ui.components.raised())
+        .clickable(src, androidx.compose.foundation.LocalIndication.current, onClick = onClick).semantics { contentDescription = describe }
+        .padding(horizontal = 16.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+        Sign(sign, color = if (on) C.onAmber else C.muted, size = 15.dp, stroke = 1.9.dp)
+        if (label != null) Text(label, style = T.Small.copy(color = if (on) C.onAmber else C.ink), maxLines = 1)
     }
 }
 
 /** A filter that's on: tap to take it off. */
 @Composable
 fun Removable(label: String, color: androidx.compose.ui.graphics.Color = C.amber, onRemove: () -> Unit) {
-    Row(Modifier.clip(CircleShape).background(color.copy(alpha = .15f)).clickable(onClick = onRemove).padding(start = 12.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(Modifier.clip(CircleShape).background(color.copy(alpha = .16f)).clickable(onClick = onRemove).padding(start = 12.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(label, style = T.Small.copy(color = C.ink))
-        Text("×", style = T.Strong.copy(color = C.muted))
+        Sign(Glyph.CLOSE, color = C.muted, size = 8.dp, stroke = 1.7.dp)
     }
 }
 
@@ -266,7 +300,8 @@ private fun Line(st: Studio, e: Entry, nav: Nav) {
             else -> if (st.tracks.containsKey(e.key) && !st.albums.containsKey(e.key)) Overlay.TrackOf(e.key) else Overlay.AlbumOf(e.key)
         })
     }
-    Row(Modifier.fillMaxWidth().paper(16.dp).clip(R8.Md).background(C.surface).clickable(onClick = open).padding(8.dp),
+    // A flat line on the page, not a card each: a long list of cards is a wall.
+    Row(Modifier.fillMaxWidth().clip(R8.Md).clickable(onClick = open).padding(start = 4.dp, top = 7.dp, bottom = 7.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Box {
             if (e.kind == ShelfTab.ARTISTS || e.kind == ShelfTab.SONGS) Cover(e.cover, e.title, e.genre, 52.dp, round = if (e.kind == ShelfTab.ARTISTS) 26.dp else 8.dp)
@@ -274,15 +309,16 @@ private fun Line(st: Studio, e: Entry, nav: Nav) {
         }
         Column(Modifier.weight(1f)) {
             Text(e.title, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            val bits = listOfNotNull(e.sub.ifEmpty { null }, e.year?.toString(), app.songling.ui.sheets.genreName(st, e.own, e.genre, ru),
-                e.country.ifEmpty { null }?.let { Words.flag(it) + " " + Words.country(it, ru) })
+            // Two lines, no more: who and when. The rest is a tap away.
+            val bits = listOfNotNull(e.sub.ifEmpty { null }, e.year?.toString(),
+                e.country.ifEmpty { null }?.let { Words.flag(it) + " " + Words.country(it, ru) },
+                if (e.sub.isEmpty() && e.year == null && e.country.isEmpty()) app.songling.ui.sheets.genreName(st, e.own, e.genre, ru) else null)
             if (bits.isNotEmpty()) Text(bits.joinToString(" · "), style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-                if (e.ms > 0) Text(Words.dur(e.ms, ru), style = T.Small.copy(color = C.amber))
-                if (e.whole > 0) Text(t("целиком ×${e.whole}", "whole ×${e.whole}"), style = T.Small.copy(color = C.mint))
-                if (e.wish && e.plays == 0) Text(t("хочу послушать", "to hear"), style = T.Small.copy(color = C.lilac))
-                if (e.stars > 0) Stars(e.stars, size = 11.dp)
-            }
+        }
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            if (e.ms > 0) Text(Words.dur(e.ms, ru), style = T.Small.copy(color = C.muted), maxLines = 1)
+            else if (e.wish) Text(t("хочу послушать", "to hear"), style = T.Small.copy(color = C.lilac), maxLines = 1)
+            if (e.stars > 0) Stars(e.stars, size = 9.dp)
         }
     }
 }
@@ -302,16 +338,17 @@ private fun ForgetSheet(st: Studio, p: app.songling.data.Play, close: () -> Unit
     } }
 }
 
+/** Every listen, newest first, by day (the saga's «History» tab). */
 @Composable
-private fun History(st: Studio, nav: Nav) {
+fun History(st: Studio, nav: Nav, modifier: Modifier = Modifier) {
     val ru = LocalRu.current
     var shown by remember { mutableIntStateOf(150) }
     val rev = remember(st) { st.plays.asReversed() }
     // A listen held down: asked whether to take it out of the history (a stray video, a misheard song).
     var gone by remember { mutableStateOf<app.songling.data.Play?>(null) }
     gone?.let { p -> ForgetSheet(st, p) { gone = null } }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (rev.isEmpty()) item { Text(t("Пока ни одного прослушивания.", "No listens yet."), style = T.Muted) }
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(top = 10.dp, bottom = 104.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        if (rev.isEmpty()) item { app.songling.ui.components.Empty(t("Пока ни одного прослушивания", "No listens yet"), t("Здесь будет всё, что ты слушал, по дням.", "Everything you hear lands here, day by day.")) }
         else item { Text(t("Подержи строку пальцем, чтобы убрать прослушивание из истории.", "Hold a line to take the listen out of the history."), style = T.Small) }
         var lastDay: java.time.LocalDate? = null
         val slice = rev.take(shown)
@@ -321,7 +358,7 @@ private fun History(st: Studio, nav: Nav) {
                 lastDay = d
                 val dayMs = st.byDay[d] ?: 0
                 item(key = "d$d") {
-                    Row(Modifier.fillMaxWidth().padding(top = 10.dp, bottom = 2.dp)) {
+                    Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp), verticalAlignment = Alignment.Bottom) {
                         Text(date(st.startOf(d), ru).uppercase(), style = T.Eyebrow.copy(color = C.amber), modifier = Modifier.weight(1f))
                         Text(Words.dur(dayMs, ru), style = T.Small)
                     }
@@ -329,9 +366,9 @@ private fun History(st: Studio, nav: Nav) {
             }
             item(key = "p${p.id}") {
                 val al = st.albums[p.album]
-                Row(Modifier.fillMaxWidth().clip(R8.Sm).combinedClickable(onLongClick = { gone = p }) { nav.go(Overlay.TrackOf(p.track)) }.padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Cover(al?.cover, p.albumName.ifEmpty { p.title }, al?.genre, 36.dp, round = 6.dp)
+                Row(Modifier.fillMaxWidth().clip(R8.Sm).combinedClickable(onLongClick = { gone = p }) { nav.go(Overlay.TrackOf(p.track)) }.padding(vertical = 6.dp, horizontal = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Cover(al?.cover, p.albumName.ifEmpty { p.title }, al?.genre, 40.dp, round = 6.dp)
                     Column(Modifier.weight(1f)) {
                         Text(p.title, style = T.Body, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(p.artistName + if (p.source != app.songling.data.Source.PLAYER) " · " + Words.source(p.source, ru) else "", style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)

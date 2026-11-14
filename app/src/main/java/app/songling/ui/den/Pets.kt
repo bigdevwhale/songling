@@ -127,7 +127,9 @@ fun BestiaryPage(st: Studio, nav: Nav) {
         app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.BESTIARY, st.s)
         app.songling.ui.components.Segmented(listOf(t("Мои питомцы · ${st.pets.size}", "My pets · ${st.pets.size}"), t("Яйца · $open из ${st.hints.size}", "Eggs · $open of ${st.hints.size}")), page, { page = it })
         if (page == 0) {
-            if (st.pets.isEmpty()) Text(t("Пока никого. Выбери яйцо во вкладке «Яйца».", "No one yet. Pick an egg under «Eggs»."), style = T.Muted)
+            if (st.pets.isEmpty()) app.songling.ui.components.Empty(t("Пока никого", "No one yet"), t("Выбери яйцо – и оно вылупится через три часа музыки.", "Pick an egg, and it hatches after three hours of music.")) {
+                Btn(t("К яйцам", "See the eggs"), { page = 1 }, kind = Kind.AMBER, small = true)
+            }
             val sorted = st.pets.sortedWith(compareByDescending<app.songling.domain.PetState> { it.pet.id == st.pet?.pet?.id }.thenByDescending { it.fed })
             for (row in sorted.chunked(2)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (p in row) PetTile(st, p, Modifier.weight(1f)) { petOpen = p.pet.id }
@@ -347,7 +349,7 @@ fun ShopPage(st: Studio, nav: Nav) {
                         }
                         Text(it.name(ru), style = T.Small.copy(color = C.ink), maxLines = 2, minLines = 2, textAlign = TextAlign.Center)
                         Text(when { shown -> t("в комнате", "in the room"); have -> t("убрано", "put away"); else -> "${it.price}" },
-                            style = T.Small.copy(color = when { shown -> C.mint; have -> C.faint; else -> C.amber }))
+                            style = T.Small.copy(color = when { shown -> C.mint; have -> C.faint; st.plectrums < it.price -> C.faint; else -> C.amber }))
                     }
                 }
                 repeat(3 - row.size) { Box(Modifier.weight(1f)) }

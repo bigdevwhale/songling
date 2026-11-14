@@ -22,7 +22,8 @@ OUT = os.path.join(ROOT, "app", "src", "main", "resources", "pets")
 DEBUG = os.path.join(ROOT, "app", "build", "art", "sheets.png")
 
 SPECIES = ["lyrebird", "musicbox", "longear", "basilisk", "conductor", "purr", "axolotl", "raccoon", "wanderer",
-           "cricket", "lark", "snail", "parrot", "tortoise", "whale", "echo", "firefly", "potpourri", "raven"]
+           "cricket", "lark", "snail", "parrot", "tortoise", "whale", "echo", "firefly", "potpourri", "raven",
+           "hummingbird", "magpie", "bullfinch", "bat", "dragon", "hound"]
 STAGES = ["baby", "young", "adult", "ancient"]
 # The app's pets are 80x80 art pixels; their pictures are FINE times finer (the app's Buf.FINE), and so are
 # the eye boxes in faces.txt.
@@ -32,7 +33,16 @@ GROUND = 77 * FINE + 1   # the bottom row a familiar stands on
 MAX_W, MAX_H = 78 * FINE, 76 * FINE
 
 # Eyes the finder gets wrong, by hand: (x0, y0, x1, y1) of each eye in sprite pixels.
-EYES = {}
+EYES = {
+    # The magpie's dark eyes sit in a black head beside white cheeks: the finder takes a cheek for an eye.
+    "magpie_young": [(48, 97, 56, 105), (64, 98, 73, 107)],
+    "magpie_adult": [(33, 71, 43, 84), (55, 71, 67, 83)],
+    "magpie_ancient": [(24, 46, 32, 59), (46, 47, 58, 62)],
+    # The hummingbird's big glossy eyes have no white around them to find them by.
+    "hummingbird_young": [(70, 87, 87, 104), (95, 87, 102, 96)],
+    "hummingbird_adult": [(77, 64, 93, 83), (104, 63, 113, 76)],
+    "hummingbird_ancient": [(85, 46, 106, 66), (117, 44, 127, 58)],
+}
 
 
 def lum(a):

@@ -84,9 +84,21 @@ enum class Species(val starter: Boolean = false, val floats: Boolean = false) {
     LYREBIRD(true), MUSICBOX(true), LONGEAR(true),
     BASILISK, CONDUCTOR, PURR, AXOLOTL, RACCOON, WANDERER,
     CRICKET, LARK, SNAIL, PARROT, TORTOISE,
-    WHALE(floats = true), ECHO(floats = true), FIREFLY(floats = true), POTPOURRI, RAVEN;
+    WHALE(floats = true), ECHO(floats = true), FIREFLY(floats = true), POTPOURRI, RAVEN,
+    HUMMINGBIRD(floats = true), MAGPIE, BULLFINCH, BAT(floats = true), DRAGON, HOUND;
 
     val file get() = name.lowercase()
+
+    /**
+     * Whether its pictures are in the app: a species is written before it is drawn (tools/gen_pets.py, cut.py,
+     * eggs.py), and stays out of the bestiary until its egg and its baby are there.
+     */
+    val drawn: Boolean by lazy { listOf("egg", "baby").all { Species::class.java.getResource("/pets/${file}_$it.png") != null } }
+
+    companion object {
+        /** The species that can be met: the drawn ones. */
+        val known: List<Species> by lazy { entries.filter { it.drawn } }
+    }
 }
 
 /** The genres a species is especially fond of, if any. */
@@ -98,5 +110,6 @@ val Species.genres: Set<Genre> get() = when (this) {
     Species.RACCOON -> setOf(Genre.HIPHOP)
     Species.WANDERER -> setOf(Genre.FOLK, Genre.WORLD, Genre.LATIN, Genre.COUNTRY, Genre.REGGAE)
     Species.WHALE -> setOf(Genre.AMBIENT)
+    Species.HUMMINGBIRD -> setOf(Genre.POP)
     else -> emptySet()
 }

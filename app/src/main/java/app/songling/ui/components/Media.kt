@@ -62,6 +62,8 @@ fun Sleeve(cover: String?, title: String, artist: String, genre: Genre?, size: D
                 Canvas(Modifier.size(size * .94f).align(Alignment.CenterStart).offset(x = size * (0.03f + 0.24f * out.value))) {
                     val r = this.size.minDimension / 2; val c = center
                     drawCircle(C.vinyl, r, c)
+                    // A thin rim, so the record doesn't sink into a dark sheet.
+                    drawCircle(Color.White.copy(alpha = .14f), r - 1f, c, style = androidx.compose.ui.graphics.drawscope.Stroke(1.5f))
                     for (k in 1..7) drawCircle(Color.White.copy(alpha = .05f), r * (0.42f + k * 0.075f), c, style = androidx.compose.ui.graphics.drawscope.Stroke(1f))
                     drawArc(Color.White.copy(alpha = .12f), -60f, 35f, false, Offset(c.x - r * .8f, c.y - r * .8f), androidx.compose.ui.geometry.Size(r * 1.6f, r * 1.6f), style = androidx.compose.ui.graphics.drawscope.Stroke(r * .14f))
                     drawCircle(C.amber, r * .3f, c)

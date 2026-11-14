@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -169,8 +170,8 @@ fun GoalSheet(st: Studio, id: Long?, draft: Goal?, nav: Nav) {
                 }.filter { nq.isEmpty() || Keys.norm(it.second).contains(nq) }
                     .sortedByDescending { (k, _) -> when (kind) { GoalKind.ARTIST -> st.byArtist[k]?.ms; GoalKind.ALBUM -> st.byAlbum[k]?.ms; else -> st.byTrack[k]?.ms } ?: 0 }
                     .take(8)
-                for ((k, name) in options) Text(name, style = T.Body.copy(color = if (k == ref) C.amber else C.ink), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.fillMaxWidth().clickable { ref = k; label = name.substringBefore(" · ") }.padding(vertical = 6.dp))
+                for ((k, name) in options) Text(name, style = (if (k == ref) T.Strong else T.Body).copy(color = if (k == ref) C.amber else C.ink), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.fillMaxWidth().clip(app.songling.ui.theme.R8.Sm).clickable { ref = k; label = name.substringBefore(" · ") }.padding(vertical = 10.dp, horizontal = 4.dp))
             }
         }
         Section(t("Сколько", "How much"))

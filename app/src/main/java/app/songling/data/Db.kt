@@ -68,6 +68,27 @@ interface MusicDao {
     @Query("DELETE FROM plays WHERE track = :track")
     suspend fun forgetTrack(track: String)
 
+    /**
+     * An artist and everything billed first to them: listens, songs, albums. Songs where they're only featured
+     * («X feat. them») stay with the artist who leads them.
+     */
+    @androidx.room.Transaction
+    suspend fun forgetArtist(artist: String) {
+        forgetArtistPlays(artist); forgetArtistTracks(artist); forgetArtistAlbums(artist); forgetArtistRow(artist)
+    }
+
+    @Query("DELETE FROM plays WHERE artist = :artist")
+    suspend fun forgetArtistPlays(artist: String)
+
+    @Query("DELETE FROM tracks WHERE artist = :artist")
+    suspend fun forgetArtistTracks(artist: String)
+
+    @Query("DELETE FROM albums WHERE artist = :artist")
+    suspend fun forgetArtistAlbums(artist: String)
+
+    @Query("DELETE FROM artists WHERE `key` = :artist")
+    suspend fun forgetArtistRow(artist: String)
+
     @Query("SELECT * FROM plays WHERE album = :album ORDER BY at DESC LIMIT 1")
     suspend fun lastOfAlbum(album: String): Play?
 

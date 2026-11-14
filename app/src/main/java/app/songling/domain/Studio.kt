@@ -253,13 +253,29 @@ class Studio(
         m.values.maxOfOrNull { it.size } ?: 0
     }
 
+    /** Different songs by two artists or more. */
+    val collabTracks: Int by lazy { plays.filter { it.ms >= MIN && Feats.isCollab(it.artistName, it.title) }.map { it.track }.toSet().size }
+
+    /** Days with music in December, January and February. */
+    val winterDays: Int get() = musicDays.count { it.monthValue == 12 || it.monthValue <= 2 }
+
+    /** Listens off a record or the radio. */
+    val offPhone: Int get() = plays.count { it.source == Source.VINYL || it.source == Source.RADIO }
+
+    /** Different songs of eight minutes and more, heard to the end. */
+    val longSongs: Int by lazy { plays.filter { it.whole && it.length >= LONG_SONG }.map { it.track }.toSet().size }
+
+    /** The artist listened to longest of all, and the hours of them. */
+    val topArtist: String? by lazy { byArtist.maxByOrNull { it.value.ms }?.key }
+    val topArtistHours: Int get() = ((byArtist[topArtist]?.ms ?: 0L) / 3_600_000L).toInt()
+
     fun genreHours(vararg g: Genre): Int = (g.sumOf { byGenre[it] ?: 0L } / 3_600_000L).toInt()
 
     // ---------------------------------------------------------------- eggs
 
     /** How near each egg is to being found; the three starters are always there. */
     val hints: List<Hint> by lazy {
-        Species.entries.map { sp ->
+        Species.known.map { sp ->
             // The demo shows the whole bestiary open.
             if (app.songling.BuildConfig.DEMO) Hint(sp, 1, 1) else when (sp) {
                 Species.LYREBIRD, Species.MUSICBOX, Species.LONGEAR -> Hint(sp, 1, 1)
@@ -279,11 +295,17 @@ class Studio(
                 Species.FIREFLY -> Hint(sp, concerts, 1)
                 Species.POTPOURRI -> Hint(sp, mostGenresInADay, 4)
                 Species.RAVEN -> Hint(sp, goneHours, 3)
+                Species.HUMMINGBIRD -> Hint(sp, genreHours(Genre.POP), 10)
+                Species.MAGPIE -> Hint(sp, collabTracks, 20)
+                Species.BULLFINCH -> Hint(sp, winterDays, 10)
+                Species.BAT -> Hint(sp, offPhone, 5)
+                Species.DRAGON -> Hint(sp, longSongs, 10)
+                Species.HOUND -> Hint(sp, topArtistHours, 20)
             }
         }
     }
 
-    fun open(sp: Species) = hints.first { it.species == sp }.open
+    fun open(sp: Species) = hints.firstOrNull { it.species == sp }?.open == true
 
     // ---------------------------------------------------------------- pets
 
@@ -308,6 +330,11 @@ class Studio(
         Species.FIREFLY -> p.source == Source.CONCERT
         Species.POTPOURRI -> false
         Species.RAVEN -> (artists[p.artist]?.gone ?: 0) > 0
+        Species.MAGPIE -> Feats.isCollab(p.artistName, p.title)
+        Species.BULLFINCH -> day(p.at).monthValue.let { it == 12 || it <= 2 } || Feats.isFestive(p.title, p.albumName)
+        Species.BAT -> p.source == Source.VINYL || p.source == Source.RADIO
+        Species.DRAGON -> p.length >= LONG_SONG
+        Species.HOUND -> p.artist == topArtist
         else -> g != null && g in sp.genres
     }
 
@@ -408,6 +435,11 @@ class Studio(
     val shelfAlbums: List<String> get() = (byAlbum.keys + albums.keys).toList()
     val shelfTracks: List<String> get() = (byTrack.keys + tracks.keys).toList()
     val shelfArtists: List<String> get() = (byArtist.keys + artists.keys.filter { artists[it]?.wish == true || artists[it]?.added != 0L }).toList()
+
+    companion object {
+        /** A long song, for the little dragon. */
+        const val LONG_SONG = 8 * MIN
+    }
 
     fun wishes(): Int = albums.values.count { it.wish } + tracks.values.count { it.wish } + artists.values.count { it.wish }
 }

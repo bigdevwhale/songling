@@ -68,9 +68,12 @@ import java.time.LocalDate
 
 /** A group of settings on one paper card, with a small heading above. */
 @Composable
-private fun Group(title: String, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Text(title.uppercase(), style = T.Eyebrow.copy(color = C.coral), modifier = Modifier.padding(start = 6.dp, top = 6.dp))
-    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(C.surface).padding(vertical = 4.dp), content = content)
+private fun Group(title: String?, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
+    if (title != null) Text(title.uppercase(), style = T.Eyebrow, modifier = Modifier.padding(start = 6.dp, top = 6.dp))
+    androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(C.surface).padding(vertical = 4.dp)) {
+        // On the group's paper, chips and choices are wells.
+        androidx.compose.runtime.CompositionLocalProvider(app.songling.ui.components.LocalOnSheet provides true) { content() }
+    }
 }
 
 /** One line of a group: what it is, a word about it, and a control on the right. */
@@ -84,7 +87,7 @@ private fun Line(title: String, note: String? = null, onClick: (() -> Unit)? = n
         }
         trailing()
     }
-    if (divider) Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(C.surface2))
+    if (divider) app.songling.ui.components.Rule(Modifier.padding(horizontal = 16.dp))
 }
 
 /** A plump toggle. */
@@ -93,7 +96,7 @@ private fun Toggle(on: Boolean, onChange: (Boolean) -> Unit) {
     val x by androidx.compose.animation.core.animateDpAsState(if (on) 20.dp else 0.dp, label = "knob")
     val fill by androidx.compose.animation.animateColorAsState(if (on) C.amber else C.surface2, label = "fill")
     Box(Modifier.width(50.dp).height(30.dp).clip(CircleShape).background(fill).clickable { onChange(!on) }.padding(3.dp)) {
-        Box(Modifier.offset(x = x).size(24.dp).paper(12.dp, 2.dp).clip(CircleShape).background(Color(0xFFFFF8EE)))
+        Box(Modifier.offset(x = x).size(24.dp).paper(12.dp, 2.dp).clip(CircleShape).background(Color.White))
     }
 }
 
@@ -101,14 +104,14 @@ private fun Toggle(on: Boolean, onChange: (Boolean) -> Unit) {
 @Composable
 private fun Small(value: String, onStep: (Int) -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(32.dp).clip(CircleShape).background(C.surface2).clickable { onStep(-1) }, contentAlignment = Alignment.Center) { Text("−", style = T.Strong) }
+        Box(Modifier.size(38.dp).clip(CircleShape).background(C.surface2).clickable { onStep(-1) }, contentAlignment = Alignment.Center) { Text("−", style = T.Strong) }
         Text(value, style = T.Strong.copy(color = C.amber), modifier = Modifier.width(54.dp), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        Box(Modifier.size(32.dp).clip(CircleShape).background(C.surface2).clickable { onStep(1) }, contentAlignment = Alignment.Center) { Text("+", style = T.Strong) }
+        Box(Modifier.size(38.dp).clip(CircleShape).background(C.surface2).clickable { onStep(1) }, contentAlignment = Alignment.Center) { Text("+", style = T.Strong) }
     }
 }
 
 @Composable
-private fun Chevron() = Text("›", style = T.Title.copy(color = C.faint))
+private fun Chevron() = app.songling.ui.components.Sign(app.songling.ui.components.Glyph.NEXT, color = C.faint, size = 13.dp)
 
 /** The StillCraft bot: deep links file a bug or an idea for this app, or follow its releases. */
 object Community {
@@ -146,133 +149,154 @@ fun SettingsPage(st: Studio, nav: Nav) {
         }
     }
     val apps = rememberPlayers()
-    var showApps by remember { mutableStateOf(false) }
     var askRestore by remember { mutableStateOf(false) }
     var pickTown by remember { mutableStateOf(false) }
     fun open(url: String) = runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     var newGenre by remember { mutableStateOf(false) }
     var editingGenre by remember { mutableStateOf<app.songling.data.OwnGenre?>(null) }
-    Page(t("Настройки", "Settings"), nav::close) {
-        app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SETTINGS, st.s)
-        // Access first: without it nothing works.
-        val on = co.tracker.enabled() || app.songling.BuildConfig.DEMO
-        Row(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(if (on) C.surface else C.coralSoft).clickable {
-            ctx.startActivity(Intent(AndroidSettings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            Box(Modifier.size(14.dp).clip(CircleShape).background(if (on) C.mint else C.coral))
-            androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
-                Text(if (on) t("Музыка слышна", "Music can be heard") else t("Музыка не слышна", "Music can't be heard"), style = T.Name)
-                Text(if (on) t("Songling видит, что играет в плеерах. Сами уведомления не читаются.", "Songling sees what players play. Notifications themselves aren't read.")
-                    else t("Нажми и разреши Songling доступ к уведомлениям – иначе питомец не услышит музыку.", "Tap and allow Songling notification access, or the pet can't hear the music."), style = T.Muted)
-            }
-            Chevron()
-        }
-
-        Group(t("Как считать", "Counting")) {
-            Line(t("Песня засчитывается", "A song counts"), t("после стольких секунд", "after this many seconds")) {
-                Small(if (ru) "${s.minSeconds} с" else "${s.minSeconds} s") { d -> set { it.copy(minSeconds = (it.minSeconds + d * 10).coerceIn(10, 120)) } }
-            }
-            Line(t("Только дослушанные", "Only songs heard to the end"), t("песня засчитывается за 10 секунд до конца", "a song counts in its last ten seconds")) { Toggle(s.onlyWhole) { v -> set { it.copy(onlyWhole = v) } } }
-            Line(t("Без длинных треков", "No long tracks"), t("подкасты, сборники одним файлом – длиннее ${s.longMinutes} минут", "podcasts, compilations in one file – over ${s.longMinutes} minutes")) { Toggle(s.skipLong) { v -> set { it.copy(skipLong = v) } } }
-            if (s.skipLong) Line(t("Длинный трек", "A long track"), t("от стольких минут", "from this many minutes")) {
-                Small(if (ru) "${s.longMinutes} мин" else "${s.longMinutes} min") { d -> set { it.copy(longMinutes = (it.longMinutes + d * 5).coerceIn(10, 90)) } }
-            }
-            Line(t("Полка открывается", "The shelf opens on"), null) {}
-            app.songling.ui.components.Flow {
-                for ((id, n) in listOf("ALBUMS" to t("Альбомы", "Albums"), "SINGLES" to t("Синглы", "Singles"), "SONGS" to t("Песни", "Songs"),
-                    "ARTISTS" to t("Артисты", "Artists"), "WISH" to t("Хочу послушать", "To hear"), "HISTORY" to t("История", "History")))
-                    app.songling.ui.components.Chip(n, s.shelfFirst == id, { set { it.copy(shelfFirst = id) } })
-            }
-            Line(t("Новый день", "A new day"), t("музыка до этого часа идёт в вечер накануне", "music before this hour counts to the evening before")) {
-                Small("${s.dayStart}:00") { d -> set { it.copy(dayStart = (it.dayStart + d).coerceIn(0, 8)) } }
-            }
-            val summary = when {
-                s.only && s.tracked.isEmpty() -> t("ни одного – отметь плееры", "none yet – tick the players")
-                s.only -> t("только отмеченные: ${s.tracked.size}", "only the ticked: ${s.tracked.size}")
-                s.excluded.isEmpty() -> t("все плееры", "every player")
-                else -> t("все, кроме отмеченных: ${s.excluded.size}", "all but the ticked: ${s.excluded.size}")
-            }
-            Line(t("Какие приложения слушать", "Which apps to hear"), summary,
-                onClick = { showApps = !showApps }, divider = showApps) { Text(if (showApps) "⌃" else "⌄", style = T.Strong.copy(color = C.faint)) }
-            if (showApps) AppsChoice(s, apps, ::set)
-        }
-
-        Group(t("Вид", "Look")) {
-            Line(t("Музыка", "Music"), t("как выглядят альбомы, песни и формы", "how albums, songs and forms look"), divider = false)
-            app.songling.ui.components.Segmented(listOf(t("Пластинки", "Records"), t("Кассеты", "Tapes")), if (s.look == "TAPE") 1 else 0,
-                { i -> set { it.copy(look = if (i == 1) "TAPE" else "VINYL") } }, Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp))
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(C.surface2))
-            Line(t("Тема", "Theme"), null, divider = false)
-            app.songling.ui.components.Segmented(listOf(t("Светлая", "Light"), t("Тёмная", "Dark"), t("Как в системе", "System")),
-                when (s.theme) { "dark" -> 1; "system" -> 2; else -> 0 }, { i -> set { it.copy(theme = listOf("light", "dark", "system")[i]) } },
-                Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp))
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(C.surface2))
-            Line(t("Фон", "Background"), Backdrops.name(s.backdrop, ru), divider = false)
-            Row(Modifier.horizontalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 12.dp)) {
-                BackdropPicker(s.backdrop, s.backdropStamp, { k -> set { it.copy(backdrop = k) } }, { pick.launch("image/*") })
-            }
-            Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(C.surface2))
-            Line(t("Питомец говорит", "The pet talks"), t("реплики над логовом", "lines above the den")) { Toggle(!s.quiet) { v -> set { it.copy(quiet = !v) } } }
-            Line(t("Песня дня", "Earworm"), t("что прилипло сегодня", "what's stuck today")) { Toggle(s.earworm) { v -> set { it.copy(earworm = v) } } }
-            Line(t("Обложки пикселями", "Covers in pixels"), t("как в логове", "like in the den"), divider = false) { Toggle(s.pixelCovers) { v -> set { it.copy(pixelCovers = v) } } }
-        }
-
-        Group(t("За окном", "Outside the window")) {
-            val o = app.songling.data.Outside.of(s.outside)
-            Line(t("Настоящая погода и время суток", "Real weather and time of day"), t("как сейчас в вашем городе", "as it is in your town now")) {
-                Toggle(s.realWeather) { v -> set { it.copy(realWeather = v) }; if (v) co.refreshOutside(force = true) }
-            }
-            if (s.realWeather) Line(t("Город", "Town"), s.town.ifBlank { t("определится сам", "found by itself") } +
-                (o?.let { " · " + String.format("%+.0f°", it.temp) + " · " + weatherName(it.weather, ru) } ?: ""), onClick = { pickTown = true }, divider = false) { Chevron() }
-        }
-        if (pickTown) app.songling.ui.Floating { TownSheet(onClose = { pickTown = false }) }
-
-        Group(t("Свои жанры", "Your genres")) {
-            for (o in s.own) Line(o.name, t("похож на ", "close to ") + Words.genre(app.songling.domain.Genre.entries.firstOrNull { it.name == o.base } ?: app.songling.domain.Genre.OTHER, ru),
-                onClick = { editingGenre = o }) { Box(Modifier.size(18.dp).clip(CircleShape).background(Color(o.color))) }
-            Line(t("+ Новый жанр", "+ New genre"), if (s.own.isEmpty()) t("свои названия для музыки: «для пробежки», «пост-рок для работы»…", "your own names: «running», «post-rock for work»…") else null,
-                onClick = { newGenre = true }, divider = false)
-        }
-        if (newGenre || editingGenre != null) app.songling.ui.Floating {
-            app.songling.ui.sheets.OwnGenreSheet(st, editingGenre, onSaved = { newGenre = false; editingGenre = null }, onClose = { newGenre = false; editingGenre = null })
-        }
-
-        Group(t("Язык", "Language")) {
-            val cur = AppCompatDelegate.getApplicationLocales().toLanguageTags()
-            Row(Modifier.fillMaxWidth().padding(10.dp).clip(CircleShape).background(C.surface2).padding(4.dp)) {
-                for ((label, tag) in listOf(t("Как в телефоне", "Phone") to "", "Русский" to "ru", "English" to "en")) {
-                    val sel = if (tag.isEmpty()) cur.isEmpty() else cur.startsWith(tag)
-                    Text(label, style = T.Small.copy(color = if (sel) C.ink else C.muted, fontSize = T.Small.fontSize * 1.05f), maxLines = 1,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.weight(1f).then(if (sel) Modifier.paper(99.dp, 2.dp) else Modifier).clip(CircleShape).background(if (sel) C.surface else C.surface2)
-                            .clickable { AppCompatDelegate.setApplicationLocales(if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag)) }
-                            .padding(vertical = 9.dp))
+    // The menu first: a handful of lines, each opening a short page of its own, so nothing is a long scroll.
+    var section by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    val on = co.tracker.enabled() || app.songling.BuildConfig.DEMO
+    val cur = AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    val appsSummary = when {
+        s.only && s.tracked.isEmpty() -> t("ни одного – отметь плееры", "none yet – tick the players")
+        s.only -> t("только отмеченные: ${s.tracked.size}", "only the ticked: ${s.tracked.size}")
+        s.excluded.isEmpty() -> t("все плееры", "every player")
+        else -> t("все, кроме отмеченных: ${s.excluded.size}", "all but the ticked: ${s.excluded.size}")
+    }
+    val themeName = when (s.theme) { "dark" -> t("тёмная тема", "dark"); "system" -> t("тема как в системе", "system theme"); else -> t("светлая тема", "light") }
+    val titles = mapOf("count" to t("Что считать", "Counting"), "apps" to t("Приложения", "Apps"), "look" to t("Вид и язык", "Look and language"),
+        "den" to t("Питомец и окно", "The pet and the window"), "genres" to t("Свои жанры", "Your genres"), "data" to t("История и копии", "History and backups"),
+        "about" to t("О приложении", "About"))
+    androidx.compose.runtime.key(section) {
+        Page(titles[section] ?: t("Настройки", "Settings"), { if (section.isEmpty()) nav.close() else section = "" }) {
+            when (section) {
+                "" -> {
+                    app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SETTINGS, st.s)
+                    // Access first: without it nothing works.
+                    Row(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(if (on) C.surface else C.coralSoft).clickable {
+                        ctx.startActivity(Intent(AndroidSettings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                    }.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Box(Modifier.size(12.dp).clip(CircleShape).background(if (on) C.mint else C.coral))
+                        androidx.compose.foundation.layout.Column(Modifier.weight(1f)) {
+                            Text(if (on) t("Музыка слышна", "Music can be heard") else t("Музыка не слышна", "Music can't be heard"), style = T.Strong)
+                            if (!on) Text(t("Нажми и разреши доступ к уведомлениям – иначе питомец не услышит музыку.", "Tap and allow notification access, or the pet can't hear the music."), style = T.Small)
+                        }
+                        if (!on) Chevron()
+                    }
+                    Group(null) {
+                        Line(titles.getValue("count"), t("с ${s.minSeconds} секунд", "after ${s.minSeconds} seconds") + if (s.onlyWhole) t(", только дослушанные", ", heard to the end") else "", onClick = { section = "count" }) { Chevron() }
+                        Line(titles.getValue("apps"), appsSummary, onClick = { section = "apps" }) { Chevron() }
+                        Line(titles.getValue("look"), (if (s.look == "TAPE") t("кассеты", "tapes") else t("пластинки", "records")) + ", " + themeName, onClick = { section = "look" }) { Chevron() }
+                        Line(titles.getValue("den"), if (s.realWeather) s.town.ifBlank { t("настоящая погода", "real weather") } else t("погода выключена", "weather off"), onClick = { section = "den" }) { Chevron() }
+                        Line(titles.getValue("genres"), if (s.own.isEmpty()) t("пока нет", "none yet") else s.own.joinToString { it.name }, onClick = { section = "genres" }, divider = false) { Chevron() }
+                    }
+                    Group(null) {
+                        Line(titles.getValue("data"), t("Spotify, Last.fm, резервная копия", "Spotify, Last.fm, a backup"), onClick = { section = "data" }) { Chevron() }
+                        Line(titles.getValue("about"), "Songling ${app.songling.BuildConfig.VERSION_NAME}", onClick = { section = "about" }, divider = false) { Chevron() }
+                    }
+                }
+                "count" -> {
+                    Group(null) {
+                        Line(t("Песня засчитывается", "A song counts"), t("после стольких секунд", "after this many seconds")) {
+                            Small(if (ru) "${s.minSeconds} с" else "${s.minSeconds} s") { d -> set { it.copy(minSeconds = (it.minSeconds + d * 10).coerceIn(10, 120)) } }
+                        }
+                        Line(t("Только дослушанные", "Only heard to the end"), t("за 10 секунд до конца", "in the last ten seconds")) { Toggle(s.onlyWhole) { v -> set { it.copy(onlyWhole = v) } } }
+                        Line(t("Без длинных треков", "No long tracks"), t("подкасты, сборники одним файлом", "podcasts, compilations in one file"), divider = s.skipLong) { Toggle(s.skipLong) { v -> set { it.copy(skipLong = v) } } }
+                        if (s.skipLong) Line(t("Длинный – это", "Long means"), t("от стольких минут", "from this many minutes"), divider = false) {
+                            Small(if (ru) "${s.longMinutes} мин" else "${s.longMinutes} min") { d -> set { it.copy(longMinutes = (it.longMinutes + d * 5).coerceIn(10, 90)) } }
+                        }
+                    }
+                    Group(t("Полка открывается на вкладке", "The shelf opens on")) {
+                        app.songling.ui.components.Flow(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            for ((id, n) in listOf("ALBUMS" to t("Альбомы", "Albums"), "SINGLES" to t("Синглы", "Singles"), "SONGS" to t("Песни", "Songs"),
+                                "ARTISTS" to t("Артисты", "Artists"), "WISH" to t("Хочу послушать", "To hear")))
+                                app.songling.ui.components.Chip(n, s.shelfFirst == id, { set { it.copy(shelfFirst = id) } })
+                        }
+                    }
+                    Group(null) {
+                        Line(t("Новый день начинается", "A new day starts"), t("музыка до этого часа – ещё вчера", "music before this hour is still yesterday"), divider = false) {
+                            Small("${s.dayStart}:00") { d -> set { it.copy(dayStart = (it.dayStart + d).coerceIn(0, 8)) } }
+                        }
+                    }
+                }
+                "apps" -> Group(null) {
+                    androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
+                    AppsChoice(s, apps, ::set)
+                }
+                "look" -> {
+                    Group(t("Музыка", "Music")) {
+                        app.songling.ui.components.Segmented(listOf(t("Пластинки", "Records"), t("Кассеты", "Tapes")), if (s.look == "TAPE") 1 else 0,
+                            { i -> set { it.copy(look = if (i == 1) "TAPE" else "VINYL") } }, Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
+                        app.songling.ui.components.Rule(Modifier.padding(horizontal = 16.dp))
+                        Line(t("Обложки пикселями", "Covers in pixels"), null, divider = false) { Toggle(s.pixelCovers) { v -> set { it.copy(pixelCovers = v) } } }
+                    }
+                    Group(t("Тема", "Theme")) {
+                        app.songling.ui.components.Segmented(listOf(t("Светлая", "Light"), t("Тёмная", "Dark"), t("Как в системе", "System")),
+                            when (s.theme) { "dark" -> 1; "system" -> 2; else -> 0 }, { i -> set { it.copy(theme = listOf("light", "dark", "system")[i]) } },
+                            Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
+                    }
+                    Group(t("Фон", "Background") + " · " + Backdrops.name(s.backdrop, ru)) {
+                        Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 12.dp)) {
+                            BackdropPicker(s.backdrop, s.backdropStamp, { k -> set { it.copy(backdrop = k) } }, { pick.launch("image/*") })
+                        }
+                    }
+                    Group(t("Язык", "Language")) {
+                        val tags = listOf("", "ru", "en")
+                        app.songling.ui.components.Segmented(listOf(t("Как в телефоне", "Phone"), "Русский", "English"), tags.indexOfFirst { if (it.isEmpty()) cur.isEmpty() else cur.startsWith(it) },
+                            { i -> AppCompatDelegate.setApplicationLocales(if (tags[i].isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tags[i])) },
+                            Modifier.padding(horizontal = 12.dp, vertical = 10.dp))
+                    }
+                }
+                "den" -> {
+                    Group(t("Питомец", "The pet")) {
+                        Line(t("Питомец говорит", "The pet talks"), t("реплики в логове", "lines in the den")) { Toggle(!s.quiet) { v -> set { it.copy(quiet = !v) } } }
+                        Line(t("Песня дня", "Earworm"), t("что прилипло сегодня", "what's stuck today"), divider = false) { Toggle(s.earworm) { v -> set { it.copy(earworm = v) } } }
+                    }
+                    Group(t("За окном", "Outside the window")) {
+                        val o = app.songling.data.Outside.of(s.outside)
+                        Line(t("Настоящая погода", "Real weather"), t("и время суток, как в твоём городе", "and the time of day, as in your town"), divider = s.realWeather) {
+                            Toggle(s.realWeather) { v -> set { it.copy(realWeather = v) }; if (v) co.refreshOutside(force = true) }
+                        }
+                        if (s.realWeather) Line(t("Город", "Town"), s.town.ifBlank { t("определится сам", "found by itself") } +
+                            (o?.let { " · " + String.format("%+.0f°", it.temp) + " · " + weatherName(it.weather, ru) } ?: ""), onClick = { pickTown = true }, divider = false) { Chevron() }
+                    }
+                }
+                "genres" -> {
+                    Text(t("Свои названия для музыки: «для пробежки», «пост-рок для работы». Ими можно помечать альбомы, песни и артистов.",
+                        "Your own names for music: «running», «post-rock for work». Albums, songs and artists can be marked with them."), style = T.Muted)
+                    Group(null) {
+                        for (o in s.own) Line(o.name, t("похож на ", "close to ") + Words.genre(app.songling.domain.Genre.entries.firstOrNull { it.name == o.base } ?: app.songling.domain.Genre.OTHER, ru),
+                            onClick = { editingGenre = o }) { Box(Modifier.size(18.dp).clip(CircleShape).background(Color(o.color))) }
+                        Line(t("+ Новый жанр", "+ New genre"), null, onClick = { newGenre = true }, divider = false)
+                    }
+                }
+                "data" -> Group(null) {
+                    Line(t("Перенести историю", "Bring history over"), "Spotify, Last.fm, ListenBrainz", onClick = { nav.go(Overlay.Import) }) { Chevron() }
+                    Line(t("Сохранить копию", "Save a backup"), t("всё в одном zip", "everything in one zip"), onClick = { save.launch("songling-${LocalDate.now()}.zip") }) { Chevron() }
+                    Line(t("Восстановить из копии", "Restore a backup"), t("заменит всё, что есть сейчас", "replaces everything there is now"), onClick = { askRestore = true }, divider = false) { Chevron() }
+                }
+                else -> {
+                    Group(null) {
+                        Line(t("Как это устроено", "How it works"), t("стадии, яйца, медиаторы, цели", "stages, eggs, plectrums, goals"), onClick = { nav.go(Overlay.How) }) { Chevron() }
+                        Line(t("Поддержать Songling", "Support Songling"), t("бесплатно и без рекламы", "free, with no ads"), onClick = { open(Community.SUPPORT) }, divider = false) { Chevron() }
+                    }
+                    Group("StillCraft") {
+                        Line(t("Сообщество в Telegram", "Telegram community"), null, onClick = { open(Community.CHAT) }) { Chevron() }
+                        Line(t("Сообщить об ошибке", "Report a bug"), null, onClick = { open(Community.BUG) }) { Chevron() }
+                        Line(t("Предложить идею", "Suggest an idea"), null, onClick = { open(Community.IDEA) }) { Chevron() }
+                        Line(t("Следить за обновлениями", "Follow updates"), null, onClick = { open(Community.FOLLOW) }) { Chevron() }
+                        Line(t("Исходный код", "Source code"), null, onClick = { open(Community.CODE) }, divider = false) { Chevron() }
+                    }
+                    Text("Songling ${app.songling.BuildConfig.VERSION_NAME}. " + t("Без рекламы и аккаунта, всё хранится на телефоне. В сеть – только за обложками, жанрами, странами и погодой.",
+                        "No ads, no account; everything stays on the phone. Online only for covers, genres, countries and the weather."), style = T.Small, modifier = Modifier.padding(horizontal = 6.dp))
                 }
             }
         }
-
-        Group(t("История и копии", "History and backups")) {
-            Line(t("Перенести историю", "Bring history over"), "Spotify, Last.fm, ListenBrainz", onClick = { nav.go(Overlay.Import) }) { Chevron() }
-            Line(t("Сохранить копию", "Save a backup"), t("всё в один zip: прослушивания, полка, питомцы, цели", "everything in one zip: listens, shelf, pets, goals"),
-                onClick = { save.launch("songling-${LocalDate.now()}.zip") }) { Chevron() }
-            Line(t("Восстановить из копии", "Restore a backup"), t("заменит всё, что есть сейчас", "replaces everything there is now"),
-                onClick = { askRestore = true }, divider = false) { Chevron() }
-        }
-
-        Group("StillCraft") {
-            Line(t("Сообщество в Telegram", "Telegram community"), t("новости, обсуждения, другие приложения", "news, talk and the other apps"), onClick = { open(Community.CHAT) }) { Chevron() }
-            Line(t("Сообщить об ошибке", "Report a bug"), t("через бота StillCraft", "through the StillCraft bot"), onClick = { open(Community.BUG) }) { Chevron() }
-            Line(t("Предложить идею", "Suggest an idea"), null, onClick = { open(Community.IDEA) }) { Chevron() }
-            Line(t("Следить за обновлениями", "Follow updates"), t("бот напишет, когда выйдет новая версия", "the bot writes when a new version is out"), onClick = { open(Community.FOLLOW) }) { Chevron() }
-            Line(t("Поддержать Songling", "Support Songling"), t("приложение бесплатное и без рекламы", "the app is free and has no ads"), onClick = { open(Community.SUPPORT) }) { Chevron() }
-            Line(t("Исходный код", "Source code"), "GitHub", onClick = { open(Community.CODE) }, divider = false) { Chevron() }
-        }
-
-        Group(t("О приложении", "About")) {
-            Line(t("Как это устроено", "How it works"), t("стадии, яйца, медиаторы, цели", "stages, eggs, plectrums, goals"), onClick = { nav.go(Overlay.How) }) { Chevron() }
-            Line("Songling ${app.songling.BuildConfig.VERSION_NAME}", t("Из серии Stillcraft. Без рекламы и аккаунта, всё хранится на телефоне. В сеть – только за обложками, жанрами и странами.",
-                "Part of Stillcraft. No ads, no account; everything stays on the phone. Online only for covers, genres and countries."), divider = false)
-        }
+    }
+    if (pickTown) app.songling.ui.Floating { TownSheet(onClose = { pickTown = false }) }
+    if (newGenre || editingGenre != null) app.songling.ui.Floating {
+        app.songling.ui.sheets.OwnGenreSheet(st, editingGenre, onSaved = { newGenre = false; editingGenre = null }, onClose = { newGenre = false; editingGenre = null })
     }
     if (askRestore) app.songling.ui.components.Sheet(onDismiss = { askRestore = false }) {
         Text(t("Восстановить из копии?", "Restore from a backup?"), style = T.Title)
@@ -349,7 +373,7 @@ fun HowPage(nav: Nav) {
                 "Listen in any player – Spotify, YouTube Music, Apple Music, your own. Every minute feeds the pet. A song counts after 30 seconds."),
             t("Стадии", "Stages") to t("Яйцо вылупляется через 3 часа музыки. Дальше – подросток (20 ч), взрослый (≈67 ч) и древний (200 ч). Любимое питомца идёт в зачёт в полтора раза.",
                 "An egg hatches after 3 hours of music. Then youngster (20 h), grown (≈67 h) and ancient (200 h). A pet's favourite counts one and a half times."),
-            t("18 питомцев", "18 pets") to t("Три яйца есть сразу, остальные находятся по тому, как ты слушаешь: часы жанра, ночи, утра, страны, долгие сессии, песня на повторе, концерт.",
+            t("Питомцы: ${app.songling.domain.Species.known.size}", "${app.songling.domain.Species.known.size} pets") to t("Три яйца есть сразу, остальные находятся по тому, как ты слушаешь: часы жанра, ночи, утра, страны, долгие сессии, песня на повторе, концерт.",
                 "Three eggs are there from the start; the rest are found by how you listen: hours of a genre, nights, mornings, countries, long sittings, a song on repeat, a concert."),
             t("Форма", "Form") to t("Выросший питомец навсегда принимает одну из шести форм – по музыке, которой питался: Гроза, Неон, Бархат, Хор, Улица, Корни.",
                 "A grown pet takes one of six forms for good by the music it ate: Storm, Neon, Velvet, Choir, Street, Roots."),
@@ -396,11 +420,11 @@ private fun TownSheet(onClose: () -> Unit) {
         }
         found?.let { list ->
             if (list.isEmpty()) Text(t("Не нашлось.", "Nothing found."), style = T.Muted)
-            for (tn in list) androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().clip(R8.Md).clickable {
+                for (tn in list) androidx.compose.foundation.layout.Column(Modifier.fillMaxWidth().clip(R8.Md).background(C.surface2).clickable {
                 co.write { settings.update { it.copy(town = tn.name, lat = tn.lat, lon = tn.lon, outside = "") } }
                 co.refreshOutside(force = true)
                 onClose()
-            }.padding(vertical = 8.dp)) {
+            }.padding(vertical = 10.dp, horizontal = 14.dp)) {
                 Text(tn.name, style = T.Strong)
                 if (tn.region.isNotBlank()) Text(tn.region, style = T.Small)
             }

@@ -46,6 +46,7 @@ import app.songling.ui.components.t
 import app.songling.ui.theme.C
 import app.songling.ui.theme.R8
 import app.songling.ui.theme.T
+import app.songling.ui.theme.paper
 
 /** Achievements: a page of the stats, by shelves; steps not seen yet are marked new until the page is opened. */
 object FeatsPage {
@@ -66,7 +67,7 @@ object FeatsPage {
 
     /** Bronze, silver, gold and on: the colour of the step reached. */
     private fun medal(level: Int, max: Int): Color = when {
-        level == 0 -> C.surface2
+        level == 0 -> C.track
         level == max -> Color(0xFFE8B931)
         level * 3 >= max * 2 -> Color(0xFFB9C3CC)
         else -> Color(0xFFCD8B5A)
@@ -95,35 +96,48 @@ object FeatsPage {
             }
             Bar(steps / most.toFloat().coerceAtLeast(1f), Modifier.fillMaxWidth().padding(top = 8.dp))
         }
-        var only by remember { mutableStateOf(false) }
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Chip(t("Все", "All"), !only, { only = false })
-            Chip(t("Полученные", "Earned"), only, { only = true })
+        // All of them by shelf, the earned ones, or the ones a step is nearest for.
+        var show by remember { mutableStateOf(0) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Chip(t("Все", "All"), show == 0, { show = 0 })
+            Chip(t("Скоро", "Nearly there"), show == 2, { show = 2 })
+            Chip(t("Полученные", "Earned"), show == 1, { show = 1 })
         }
-        for (g in FeatGroup.entries) {
-            val list = all.filter { it.f.group == g && (!only || it.level > 0) }
-            if (list.isEmpty()) continue
-            Section(Feats.group(g, ru), "${list.count { it.level > 0 }}/${all.count { it.f.group == g }}")
-            for (fs in list) Item(fs, fs.f in news, ru)
+        if (show == 2) {
+            val near = all.filter { !it.done && it.have > 0 }.sortedByDescending { it.part }.take(10)
+            if (near.isEmpty()) app.songling.ui.components.Empty(t("Пока нечего догонять", "Nothing to chase yet"), t("Включи музыку – и первые ступени не заставят себя ждать.", "Play some music and the first steps won't be long."))
+            else Section(t("Ближе всего к новой ступени", "Nearest to a new step"))
+            for (fs in near) Item(fs, fs.f in news, ru)
+        } else {
+            if (show == 1 && all.none { it.level > 0 }) app.songling.ui.components.Empty(t("Наград пока нет", "No awards yet"), t("Первая появится после первых часов музыки.", "The first one comes with the first hours of music."))
+            for (g in FeatGroup.entries) {
+                val list = all.filter { it.f.group == g && (show == 0 || it.level > 0) }
+                if (list.isEmpty()) continue
+                Section(Feats.group(g, ru), "${list.count { it.level > 0 }}/${all.count { it.f.group == g }}")
+                for (fs in list) Item(fs, fs.f in news, ru)
+            }
         }
     }
 
     @Composable
     private fun Item(fs: FeatState, new: Boolean, ru: Boolean) {
         val color = medal(fs.level, fs.max)
-        Row(Modifier.fillMaxWidth().clip(R8.Md).background(C.surface).border(1.dp, if (new) C.amber else C.line, R8.Md).padding(12.dp),
+        Row(Modifier.fillMaxWidth().paper(16.dp).clip(R8.Md).background(C.surface).then(if (new) Modifier.border(1.5.dp, C.amber, R8.Md) else Modifier).padding(12.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Box(Modifier.size(52.dp).clip(CircleShape).background(color), contentAlignment = Alignment.Center) {
-                icon(fs.f)?.let { Image(it, null, Modifier.size(40.dp), filterQuality = FilterQuality.Low, alpha = if (fs.level > 0) 1f else .45f,
-                    colorFilter = if (fs.level > 0) null else grey) }
+                val pic = icon(fs.f)
+                if (pic != null) Image(pic, null, Modifier.size(40.dp), filterQuality = FilterQuality.Low, alpha = if (fs.level > 0) 1f else .45f,
+                    colorFilter = if (fs.level > 0) null else grey)
+                // Not drawn yet: its first letter stands in.
+                else Text(Feats.name(fs.f, ru).take(1), style = T.Title.copy(color = if (fs.level > 0) Color.White else C.faint))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(Feats.name(fs.f, ru), style = T.Strong.copy(color = if (fs.level > 0) C.ink else C.muted), modifier = Modifier.weight(1f))
-                    if (new) Text(t("новое", "new"), style = T.Small.copy(color = C.amber))
+                    if (new) Text(t("новое", "new"), style = T.Small.copy(color = C.onAmber), modifier = Modifier.clip(CircleShape).background(C.amber).padding(horizontal = 8.dp, vertical = 1.dp))
                     // One dot a step.
                     if (fs.max > 1) Row(Modifier.padding(start = 6.dp), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                        repeat(fs.max) { i -> Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < fs.level) medal(i + 1, fs.max) else C.surface2)) }
+                        repeat(fs.max) { i -> Box(Modifier.size(7.dp).clip(CircleShape).background(if (i < fs.level) medal(i + 1, fs.max) else C.track)) }
                     }
                 }
                 Text(Feats.goal(fs.f, fs.need, ru), style = T.Small)

@@ -98,6 +98,7 @@ private fun Record(playing: Boolean, onClick: () -> Unit) {
         Canvas(Modifier.size(50.dp).rotate(angle)) {
             val c = center; val r = size.minDimension / 2
             drawCircle(Color(0xFF2B2524), r, c)
+            drawCircle(Color.White.copy(alpha = .14f), r - 1f, c, style = Stroke(1.5f))
             for (k in 1..4) drawCircle(Color(0xFF3B3432), r * (0.5f + k * 0.11f), c, style = Stroke(1.2f))
             drawArc(Color.White.copy(alpha = .16f), -70f, 40f, false, Offset(c.x - r * .78f, c.y - r * .78f), Size(r * 1.56f, r * 1.56f), style = Stroke(r * .2f))
             drawCircle(C.amber, r * .42f, c)

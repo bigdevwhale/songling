@@ -31,6 +31,12 @@ object Words {
         Species.ECHO -> t(ru, "Эхо", "Echo")
         Species.FIREFLY -> t(ru, "Светлячок", "Firefly")
         Species.POTPOURRI -> t(ru, "Попурри", "Potpourri")
+        Species.HUMMINGBIRD -> t(ru, "Колибри", "Hummingbird")
+        Species.MAGPIE -> t(ru, "Сорока", "Magpie")
+        Species.BULLFINCH -> t(ru, "Снегирь", "Bullfinch")
+        Species.BAT -> t(ru, "Летучая мышь", "Bat")
+        Species.DRAGON -> t(ru, "Дракончик", "Little dragon")
+        Species.HOUND -> t(ru, "Пёс", "Hound")
     }
 
     /** What the pet loves to eat most. */
@@ -54,6 +60,12 @@ object Words {
         Species.ECHO -> t(ru, "возвращения после тишины", "coming back after a silence")
         Species.FIREFLY -> t(ru, "живые концерты", "live concerts")
         Species.POTPOURRI -> t(ru, "дни, где намешано много жанров", "days with many genres mixed")
+        Species.HUMMINGBIRD -> t(ru, "поп-музыку", "pop music")
+        Species.MAGPIE -> t(ru, "песни двух и более артистов", "songs by two artists or more")
+        Species.BULLFINCH -> t(ru, "музыку зимой и новогодние песни", "music in winter and Christmas songs")
+        Species.BAT -> t(ru, "пластинки и радио", "records and the radio")
+        Species.DRAGON -> t(ru, "песни длиннее восьми минут", "songs over eight minutes long")
+        Species.HOUND -> t(ru, "твоего самого любимого артиста", "your most played artist")
     }
 
     /** How the egg is found. */
@@ -75,6 +87,12 @@ object Words {
         Species.ECHO -> t(ru, "Вернуться к музыке после недели тишины", "Come back to music after a silent week")
         Species.FIREFLY -> t(ru, "Отметить живой концерт", "Log a live concert")
         Species.POTPOURRI -> t(ru, "$need жанра за один день", "$need genres in one day")
+        Species.HUMMINGBIRD -> t(ru, "$need часов поп-музыки", "$need hours of pop music")
+        Species.MAGPIE -> t(ru, "$need песен двух и более артистов", "$need songs by two artists or more")
+        Species.BULLFINCH -> t(ru, "$need зимних дней с музыкой", "$need winter days with music")
+        Species.BAT -> t(ru, "$need песен с пластинки или по радио", "$need songs off a record or the radio")
+        Species.DRAGON -> t(ru, "$need песен длиннее восьми минут до конца", "$need songs over eight minutes, to the end")
+        Species.HOUND -> t(ru, "$need часов одного артиста", "$need hours of one artist")
     }
 
     fun stage(s: Stage, ru: Boolean) = when (s) {
@@ -130,6 +148,12 @@ object Words {
         Species.ECHO -> t(ru, "Отголосков всё больше, у древнего – звенящий нимб.", "More echoes; a ringing halo when ancient.")
         Species.FIREFLY -> t(ru, "Огонёк-зажигалка, браслет фестиваля, у древнего – искры.", "A lighter glow, a festival wristband; sparks when ancient.")
         Species.POTPOURRI -> t(ru, "Лоскутов всё больше, у древнего – бант.", "More patches; a bow when ancient.")
+        Species.HUMMINGBIRD -> t(ru, "Клюв-микрофон, блёстки на крыльях, у древнего – корона со звездой.", "A microphone beak, glitter on its wings; a star crown when ancient.")
+        Species.MAGPIE -> t(ru, "Две ноты в хвосте, блестящие значки, у древней – ожерелье из медиаторов.", "Two notes in its tail, shiny badges; a necklace of plectrums when ancient.")
+        Species.BULLFINCH -> t(ru, "Вязаная шапка, бубенчик, у древнего – шарф и снежинки на крыльях.", "A knitted hat, a little bell; a scarf and snowflakes on its wings when ancient.")
+        Species.BAT -> t(ru, "Уши-антенны, крылья как шкала приёмника, у древней – светится радиолампа.", "Antenna ears, wings like a radio dial; a glowing valve when ancient.")
+        Species.DRAGON -> t(ru, "Гребень-клавиши, хвост-свиток с нотами, у древнего – крылья из органных труб.", "A crest of keys, a tail like a scroll of notes; organ-pipe wings when ancient.")
+        Species.HOUND -> t(ru, "Ошейник с пластинкой, уши-наушники, у древнего – медаль и седая морда.", "A collar with a record tag, headphone ears; a medal and a grey muzzle when ancient.")
     }
 
     fun form(f: Form, ru: Boolean) = when (f) {
@@ -285,6 +309,12 @@ object Words {
         Species.ECHO -> t(ru, "Отзвук", "Echo")
         Species.FIREFLY -> t(ru, "Огонёк", "Spark")
         Species.POTPOURRI -> t(ru, "Лоскут", "Patch")
+        Species.HUMMINGBIRD -> t(ru, "Блёстка", "Glitter")
+        Species.MAGPIE -> t(ru, "Дуэт", "Duet")
+        Species.BULLFINCH -> t(ru, "Морозко", "Frost")
+        Species.BAT -> t(ru, "Эфир", "Static")
+        Species.DRAGON -> t(ru, "Опус", "Opus")
+        Species.HOUND -> t(ru, "Хатико", "Buddy")
     }
 
     /** A line for the den, about what's going on. */

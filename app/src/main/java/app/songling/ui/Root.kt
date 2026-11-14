@@ -51,6 +51,7 @@ import app.songling.domain.Words
 import app.songling.listen.NowPlaying
 import app.songling.ru
 import app.songling.ui.components.LocalPixelCovers
+import app.songling.ui.components.pressable
 import app.songling.ui.components.t
 import app.songling.ui.den.DenScreen
 import app.songling.ui.den.look
@@ -59,6 +60,7 @@ import app.songling.ui.saga.SagaScreen
 import app.songling.ui.shelf.ShelfScreen
 import app.songling.ui.theme.C
 import app.songling.ui.theme.T
+import app.songling.ui.theme.paper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -195,11 +197,14 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                     // The dock sits above the system navigation bar, so the screens end above it too:
                     // with three-button navigation their last lines would otherwise hide under the dock.
                     Box(Modifier.weight(1f).navigationBarsPadding()) {
-                        when (tab) {
-                            Tab.DEN -> DenScreen(studio, playing, nav)
-                            Tab.SHELF -> ShelfScreen(studio, nav)
-                            Tab.SAGA -> SagaScreen(studio, nav)
-                            Tab.GOALS -> app.songling.ui.saga.GoalsScreen(studio, nav)
+                        // One screen fades into the next instead of snapping.
+                        androidx.compose.animation.Crossfade(tab, animationSpec = androidx.compose.animation.core.tween(170), label = "tab") { shown ->
+                            when (shown) {
+                                Tab.DEN -> DenScreen(studio, playing, nav)
+                                Tab.SHELF -> ShelfScreen(studio, nav)
+                                Tab.SAGA -> SagaScreen(studio, nav)
+                                Tab.GOALS -> app.songling.ui.saga.GoalsScreen(studio, nav)
+                            }
                         }
                     }
                 }
@@ -239,7 +244,11 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
 private fun Header(st: Studio, onPicks: () -> Unit, onSettings: () -> Unit) {
     Row(Modifier.fillMaxWidth().statusBarsPadding().padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("Songling", style = T.Title.copy(color = C.amber), modifier = Modifier.weight(1f))
-        Row(Modifier.clip(CircleShape).background(C.surface).clickable(onClick = onPicks).padding(horizontal = 12.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        val src = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+        val purse = t("Медиаторы: ${st.plectrums}. Обустроить логово", "Plectrums: ${st.plectrums}. Furnish the den")
+        Row(Modifier.pressable(src).paper(99.dp, 2.dp).clip(CircleShape).background(C.surface)
+            .clickable(src, androidx.compose.foundation.LocalIndication.current, onClick = onPicks).semantics(mergeDescendants = true) { contentDescription = purse }
+            .padding(horizontal = 13.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Canvas(Modifier.size(12.dp, 14.dp)) {
                 val p = androidx.compose.ui.graphics.Path().apply {
                     moveTo(size.width / 2, size.height); cubicTo(0f, size.height * .55f, 0f, 0f, size.width / 2, 0f); cubicTo(size.width, 0f, size.width, size.height * .55f, size.width / 2, size.height); close()
@@ -268,8 +277,19 @@ private fun Header(st: Studio, onPicks: () -> Unit, onSettings: () -> Unit) {
 private fun Toast(nav: Nav, modifier: Modifier) {
     val (text, stamp) = nav.toast
     var shown by remember { mutableStateOf(false) }
-    LaunchedEffect(stamp) { if (text.isNotEmpty()) { shown = true; delay(3200); shown = false } }
-    if (!shown || text.isEmpty()) return
-    Text(text, style = T.Body.copy(color = C.onAmber), modifier = modifier.statusBarsPadding().padding(top = 60.dp, start = 16.dp, end = 16.dp).fillMaxWidth()
-        .clip(RoundedCornerShape(16.dp)).background(C.amber).padding(horizontal = 16.dp, vertical = 12.dp))
+    // The words stay while the note slides away.
+    var last by remember { mutableStateOf("") }
+    LaunchedEffect(stamp) { if (text.isNotEmpty()) { last = text; shown = true; delay(3200); shown = false } }
+    androidx.compose.animation.AnimatedVisibility(shown, modifier.statusBarsPadding().padding(top = 56.dp, start = 16.dp, end = 16.dp),
+        enter = androidx.compose.animation.fadeIn(androidx.compose.animation.core.tween(180)) + androidx.compose.animation.slideInVertically(androidx.compose.animation.core.tween(240)) { -it / 2 },
+        exit = androidx.compose.animation.fadeOut(androidx.compose.animation.core.tween(200)) + androidx.compose.animation.slideOutVertically(androidx.compose.animation.core.tween(200)) { -it / 2 }) {
+        // Ink on the light page, cream on the dark one: it reads over anything under it.
+        Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(C.ink).padding(horizontal = 16.dp, vertical = 13.dp),
+            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Box(Modifier.size(22.dp).clip(CircleShape).background(C.amber), contentAlignment = Alignment.Center) {
+                app.songling.ui.components.Sign(app.songling.ui.components.Glyph.CHECK, color = C.onAmber, size = 10.dp, stroke = 2.dp)
+            }
+            Text(last, style = T.Body.copy(color = C.bg), modifier = Modifier.weight(1f))
+        }
+    }
 }

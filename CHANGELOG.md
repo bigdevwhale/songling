@@ -8,6 +8,40 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-11-14
+
+### Added
+- Delete an artist with their listens, songs and albums (after asking) – at the foot of the artist's sheet. Songs where they're only featured stay with the lead artist.
+- 19 more awards, 70 in all (213 steps): weekends with music, a month of music, a collection of albums, a day of finds, music by those who are gone, short songs, one artist's day, a day of albums, a song that lasts through the months, stars, hearts and notes, World Music Day, Friday the 13th, pets in every form, the pets' favourite music, strokes, wallpapers and plectrums spent. «Menagerie» has a fifth step, 24 pets. The awards tab has a third view, «Nearly there»: the ten nearest to a new step. Steps already reached pay their plectrums at once.
+- Six new pets, 25 in all: the Hummingbird (pop), the Magpie (songs by two artists or more), the Bullfinch (winter and Christmas songs), the Bat (records and the radio), the Little dragon (songs over eight minutes) and the Hound (your most played artist). Each egg is found by listening its way.
+
+### Changed
+- New colours: a near-white page with white cards by day, graphite by night, instead of the brown oatmeal. The colour of the music stays clear: oranges and yellows are amber, not tan.
+- Less on every screen. The shelf's lines are two lines (who and when; time and stars on the right) and the «add» row is gone – the record in the dock adds. The pet's card lost its «to the next stage» line. The saga keeps three tiles; the rest moved to «In numbers», and postcards to the foot. Sheets lost the decorative arc.
+- An album's sheet has two buttons – «Heard it» and «Want to hear» – and the rest under «More». One editor instead of two: title, artist, cover, year, kind, genre and songs together, with «Save» always in reach; a typed song can be renamed by a tap, and the heard songs show five at a time.
+- Settings are a short menu – counting, apps, look and language, the pet and the window, your genres, history and backups, about – and each opens a page of its own instead of one long scroll.
+- The den: the pet's card says who it is, today's music and what it says; three buttons instead of five (a concert is logged from «Log a listen», the shelf is filled from the dock's record).
+- The shelf is a flat list instead of a card per line, with four tabs that fit across: albums, singles, songs, artists. Under the search: the order on the left, a «To hear» switch and the filters on the right. The history of listens moved to the saga, beside the calendar.
+- The saga: the span and the filters share a line; the top lists show five; hours and weekdays share one card. Goals: «+ New» sits by the title.
+- The whole interface, tidied. Sheets slide up and follow the finger down; pages come in from the side; tabs fade into each other; buttons, chips and cards sink a little under the finger. On a sheet and on a card, tiles and chips are flat wells instead of paper on paper, where only their shadow showed.
+- Second-rank text is darker and reads better on the page, by day and by night. Empty bars show on any background.
+- Tabs sit on one thin rule with a short bar under the open one. Arrows, crosses, the search glass, sort and filters are drawn in one style instead of font symbols.
+- The shelf's search has a glass and a cross to clear it; fields light up while written in. Empty lists say what to do next. Stat tiles of a row are one height and long numbers shrink to fit. Records are label and value in two columns. Goals show their per cent.
+- The first screens show the step and take «back» a step back. Song rows and small buttons are bigger under the thumb.
+- A note at the top slides in and reads in both themes.
+
+### Fixed
+- Sheets no longer stutter while opening: the dim layer behind them is drawn without recomposing the sheet, and an album's songs are worked out once.
+- The record no longer sinks into a dark sheet or the dark dock.
+- «The shelf opens on» chips no longer stick to the edge of the settings card.
+
+<!-- tg
+Новое: шесть питомцев – колибри, сорока, снегирь, летучая мышь, дракончик и пёс, теперь их 25. И ещё 19 наград, всего 70.
+Новый вид: светлые цвета вместо коричневых, меньше всего на каждом экране, короткие настройки, один удобный редактор альбома.
+Артиста теперь можно удалить вместе с прослушиваниями. История прослушиваний переехала в сагу.
+Исправлено: шторки больше не подтормаживают при открытии.
+-->
+
 ## [1.6.0] - 2026-11-13
 
 ### Added
