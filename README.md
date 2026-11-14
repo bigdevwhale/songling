@@ -9,6 +9,7 @@
 *Play music in any player and your pet hears it, dances and grows. Plus a shelf of albums, stats, goals and a den to furnish. Free, no ads, no account.*
 
 [![Android CI](https://github.com/bigdevwhale/songling/actions/workflows/android.yml/badge.svg)](https://github.com/bigdevwhale/songling/actions/workflows/android.yml)
+[![Google Play](https://img.shields.io/badge/Google_Play-get_it-34A853?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=app.songling)
 [![Release](https://img.shields.io/github/v/release/bigdevwhale/songling?color=C8553D&label=download&logo=android)](https://github.com/bigdevwhale/songling/releases/latest)
 ![Android 9+](https://img.shields.io/badge/Android-9%2B-3C9D50?logo=android&logoColor=white)
 ![Languages](https://img.shields.io/badge/lang-EN%20%7C%20RU-6C77B6)
@@ -18,7 +19,7 @@
 
 <img src="docs/screenshots/en/1-den.jpg" width="200" /> <img src="docs/screenshots/en/3-album.jpg" width="200" /> <img src="docs/screenshots/en/6-bestiary.jpg" width="200" /> <img src="docs/screenshots/en/4-saga.jpg" width="200" />
 
-**[Download APK](https://github.com/bigdevwhale/songling/releases/latest/download/Songling.apk)** · Android 9+
+**[Get it on Google Play](https://play.google.com/store/apps/details?id=app.songling)** · [Download APK](https://github.com/bigdevwhale/songling/releases/latest/download/Songling.apk) · Android 9+
 
 </div>
 
