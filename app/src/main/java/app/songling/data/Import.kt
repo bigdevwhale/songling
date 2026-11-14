@@ -23,6 +23,26 @@ object Import {
     private const val MIN_MS = 30_000L
     private const val GUESS_MS = 210_000L
 
+    /**
+     * The imported listens that aren't there already: one of the same song that started about the same time as a
+     * listen already written (heard here, or brought from another service) is the same listen, and is left out so
+     * it doesn't count twice. Each listen already there stands for one imported listen only, so a song on repeat
+     * keeps every play. «About the same time» is half the song, between one and three minutes.
+     */
+    fun fresh(incoming: List<Play>, existing: List<Play>): List<Play> {
+        val taken = HashMap<String, MutableList<Long>>()
+        for (p in existing) taken.getOrPut(p.track) { ArrayList() } += p.at
+        val out = ArrayList<Play>(incoming.size)
+        for (p in incoming.sortedBy { it.at }) {
+            val near = (maxOf(p.ms, p.length) / 2).coerceIn(60_000L, 180_000L)
+            val times = taken[p.track]
+            val i = times?.withIndex()?.filter { kotlin.math.abs(it.value - p.at) <= near }?.minByOrNull { kotlin.math.abs(it.value - p.at) }?.index
+            if (i != null) { times.removeAt(i); continue }
+            out += p
+        }
+        return out
+    }
+
     fun read(name: String, input: InputStream): Result {
         if (name.endsWith(".zip", true)) {
             val all = ArrayList<Play>(); var skipped = 0; val formats = HashSet<String>()

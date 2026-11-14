@@ -87,4 +87,27 @@ class StudioTest {
         assertEquals("2 мин", d(2, 15))
         assertEquals("0,5 мин", d(0, 5))
     }
+
+    /** An imported history feeds no pet, and doesn't make an artist the lyrebird already ate as new «not new» (#import). */
+    @Test fun importsDontFeedPets() {
+        val pet = app.songling.data.Pet(1, app.songling.domain.Species.LYREBIRD, laid = t0 - 1000)
+        val live = play("One", t0, artist = "Fresh")
+        val old = play("Old", t0 - 400 * 24 * 3_600_000L, artist = "Fresh").copy(source = app.songling.data.Source.IMPORT)
+        val recent = play("Two", t0 + 5 * MIN, artist = "Other").copy(source = app.songling.data.Source.IMPORT)
+        val st = Studio(listOf(old, live, recent), emptyList(), emptyList(), emptyList(), listOf(pet), emptyList(), Settings(), t0 + 10 * 3_600_000L)
+        val ps = st.pets.single()
+        assertEquals(4 * MIN, ps.ms)
+        assertEquals(4 * MIN, ps.favMs)
+        assertEquals(1, ps.found)
+    }
+
+    /** An imported listen of a song already written about the same time is the same listen; a song on repeat keeps every play. */
+    @Test fun importSkipsListensAlreadyThere() {
+        val heard = play("One", t0)
+        val dup = play("One", t0 + 40_000).copy(source = app.songling.data.Source.IMPORT, ref = "lf:1")
+        val again = play("One", t0 + 4 * MIN).copy(source = app.songling.data.Source.IMPORT, ref = "lf:2")
+        val other = play("Two", t0 + 30_000).copy(source = app.songling.data.Source.IMPORT, ref = "lf:3")
+        assertEquals(listOf(other, again), app.songling.data.Import.fresh(listOf(dup, again, other), listOf(heard)))
+        assertEquals(listOf(dup, again), app.songling.data.Import.fresh(listOf(again, dup), emptyList()))
+    }
 }

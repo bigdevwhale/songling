@@ -88,6 +88,11 @@ data class Settings(
     val outside: String = "",
     /** Achievement steps already shown: «FEAT:level», so new ones are marked. */
     val feats: Set<String> = emptySet(),
+    /** Last.fm read as it happens: the username («» when off), the newest scrobble taken (seconds), the last try and what went wrong. */
+    val lastfm: String = "",
+    val lastfmFrom: Long = 0,
+    val lastfmAt: Long = 0,
+    val lastfmError: String = "",
 ) {
     fun json(): String = JSONObject()
         .put("onboarded", onboarded).put("pet", pet ?: -1).put("spent", spent)
@@ -99,6 +104,7 @@ data class Settings(
         .put("seen", JSONArray(seen.toList())).put("strokes", strokes).put("quiet", quiet).put("earworm", earworm).put("dayStart", dayStart).put("theme", theme).put("look", look).put("posters", JSONArray(posters)).put("own", JSONArray(own.map { it.json() })).put("tips", JSONArray(tips.toList())).put("realWeather", realWeather).put("town", town)
         .put("lat", if (lat.isNaN()) JSONObject.NULL else lat).put("lon", if (lon.isNaN()) JSONObject.NULL else lon).put("outside", outside)
         .put("feats", JSONArray(feats.toList()))
+        .put("lastfm", lastfm).put("lastfmFrom", lastfmFrom).put("lastfmAt", lastfmAt).put("lastfmError", lastfmError)
         .toString()
 
     companion object {
@@ -125,6 +131,7 @@ data class Settings(
                 lat = o.optDouble("lat", Double.NaN), lon = o.optDouble("lon", Double.NaN), outside = o.optString("outside"), feats = o.set("feats"),
                 own = o.optJSONArray("own")?.let { a -> (0 until a.length()).mapNotNull { runCatching { OwnGenre.of(a.getJSONObject(it)) }.getOrNull() } } ?: emptyList(),
                 posters = o.optJSONArray("posters")?.let { a -> List(2) { i -> a.optString(i, "") } } ?: d.posters,
+                lastfm = o.optString("lastfm"), lastfmFrom = o.optLong("lastfmFrom"), lastfmAt = o.optLong("lastfmAt"), lastfmError = o.optString("lastfmError"),
             )
         }
     }

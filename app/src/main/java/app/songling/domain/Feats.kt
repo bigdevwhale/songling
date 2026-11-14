@@ -193,7 +193,7 @@ object Feats {
                 }
                 when {
                     p.source == Source.PLAYER && p.app.isNotEmpty() -> players += p.app
-                    p.source != Source.PLAYER && p.source != Source.IMPORT -> players += p.source.name
+                    p.source != Source.PLAYER && p.source != Source.IMPORT && p.source != Source.LASTFM -> players += p.source.name
                 }
             }
             maxDayPlays = perDay.values.maxOrNull() ?: 0

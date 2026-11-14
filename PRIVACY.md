@@ -1,6 +1,6 @@
 # Songling — Privacy Policy
 
-*Last updated: 13 November 2026*
+*Last updated: 14 November 2026*
 
 Songling is an Android app: a pixel pet that hears the music you play, with a shelf of albums, stats and
 goals. It is published as open source at <https://github.com/bigdevwhale/songling>.
@@ -46,6 +46,11 @@ applies. No identifier of you or your device is sent.
   time zone or picked by you: its name is sent to Open-Meteo's geocoding (`geocoding-api.open-meteo.com`),
   and the town's coordinates to Open-Meteo (`api.open-meteo.com`) or, when that can't be reached,
   MET Norway (`api.met.no`). The app does not use your phone's location.
+- **Last.fm, only if you connect it** (Settings → History and backups → Bring history over). The Last.fm
+  username you enter is sent to the Last.fm API (`ws.audioscrobbler.com`) to read your public recent
+  scrobbles and what you are playing now: every 15 minutes, and every 20 seconds while the app is open.
+  No password is asked for and nothing is written to your Last.fm account. The username is kept only on
+  your phone; «Disconnect» stops it.
 
 ## Sharing
 
@@ -80,7 +85,7 @@ Questions: open an issue at <https://github.com/bigdevwhale/songling/issues>.
 
 # Songling — Политика конфиденциальности
 
-*Обновлено: 13 ноября 2026*
+*Обновлено: 14 ноября 2026*
 
 Songling — приложение под Android: пиксельный питомец, который слышит вашу музыку, с полкой альбомов,
 статистикой и целями. Код открыт: <https://github.com/bigdevwhale/songling>.
@@ -126,6 +131,11 @@ Songling — приложение под Android: пиксельный пито�
   выбирается вами: его название отправляется в геокодер Open-Meteo (`geocoding-api.open-meteo.com`),
   а координаты города — в Open-Meteo (`api.open-meteo.com`) или, если он недоступен, в MET Norway
   (`api.met.no`). Местоположение телефона приложение не использует.
+- **Last.fm, только если вы его подключили** (Настройки → История и копии → Перенести историю).
+  Введённое имя пользователя Last.fm отправляется в API Last.fm (`ws.audioscrobbler.com`), чтобы прочитать
+  ваши открытые недавние скробблы и то, что играет сейчас: раз в 15 минут и раз в 20 секунд, пока приложение
+  открыто. Пароль не запрашивается, в ваш аккаунт Last.fm ничего не записывается. Имя хранится только на
+  телефоне; «Отключить» прекращает обращения.
 
 ## Передача
 

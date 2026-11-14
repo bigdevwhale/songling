@@ -136,7 +136,7 @@ private fun StatsPage(st: Studio, nav: Nav) {
             app.songling.ui.components.Section(t("Откуда", "Where from"))
             app.songling.ui.components.Flow {
                 for (a in apps) Chip(appName(a), a == f.app, { f = f.copy(app = if (f.app == a) null else a, source = null) })
-                for (src in listOf(Source.VINYL, Source.RADIO, Source.CONCERT, Source.IMPORT)) if (st.plays.any { it.source == src })
+                for (src in listOf(Source.VINYL, Source.RADIO, Source.CONCERT, Source.IMPORT, Source.LASTFM)) if (st.plays.any { it.source == src })
                     Chip(Words.source(src, ru), f.source == src, { f = f.copy(source = if (f.source == src) null else src, app = null) })
             }
             app.songling.ui.components.Section(t("Ещё", "More"))

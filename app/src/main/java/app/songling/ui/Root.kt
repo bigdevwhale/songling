@@ -63,6 +63,8 @@ import app.songling.ui.theme.T
 import app.songling.ui.theme.paper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.withContext
 
 val LocalRu = staticCompositionLocalOf { true }
@@ -157,7 +159,28 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
         var tab by rememberSaveable { mutableStateOf(tab0) }
         var overlay by remember { mutableStateOf(overlay0) }
         val nav = remember { Nav({ overlay = it }, { tab = it; overlay = null }) }
-        val playing = playing0 ?: live
+        // What Last.fm says plays on another device (a computer, a speaker), asked every 20 seconds while the app is open
+        // and nothing plays here: the den shows it and the pet dances to it.
+        var elsewhere by remember { mutableStateOf<NowPlaying?>(null) }
+        val shelf by androidx.compose.runtime.rememberUpdatedState(studio.albums)
+        val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+        LaunchedEffect(s.lastfm) {
+            elsewhere = null
+            if (s.lastfm.isBlank() || clock != null || app.songling.BuildConfig.DEMO) return@LaunchedEffect
+            lifecycle.repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                while (true) {
+                    val before = elsewhere
+                    elsewhere = if (c.tracker.now.value?.playing == true) null
+                        else withContext(Dispatchers.IO) { runCatching { app.songling.data.LastFm.now(s.lastfm) }.getOrNull() }
+                            ?.let { n -> n.copy(cover = shelf[app.songling.data.Keys.album(n.artist, n.album)]?.cover) }
+                    // A new song there means the last one is being scrobbled: bring it in half a minute later (Last.fm takes a
+                    // moment), not in a quarter of an hour.
+                    if (before != null && (elsewhere?.title != before.title || elsewhere?.artist != before.artist)) c.scope.launch { delay(30_000); c.syncLastFm() }
+                    delay(20_000)
+                }
+            }
+        }
+        val playing = playing0 ?: live?.takeIf { it.playing } ?: elsewhere ?: live
 
         // A grown pet takes its form for good; an egg that has eaten enough hatches.
         var lastStage by remember { mutableStateOf<Pair<Long, Stage>?>(null) }

@@ -215,7 +215,7 @@ class Studio(
             val was = open[p.album]
             val r = if (was == null || p.at - was.last > 40 * MIN) { was?.let { close(p.album, it) }; Run(p.at).also { open[p.album] = it } } else was
             r.seen += p.track; r.ms += p.ms
-            if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT) r.marked = true
+            if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT && p.source != Source.LASTFM) r.marked = true
             // The album just heard in a player, marked whole by hand without adding any time.
             if (p.ref?.startsWith("whole:") == true) r.marked = true
             r.last = max(r.last, p.at + p.ms)
@@ -359,7 +359,7 @@ class Studio(
     }
 
     private fun likes(sp: Species, p: Play): Boolean = when (sp) {
-        Species.LYREBIRD -> byArtist[p.artist]?.first == p.at
+        Species.LYREBIRD -> liveFirst[p.artist] == p.at
         Species.MUSICBOX -> wholeRuns.any { it.first == p.album && it.second <= p.at && p.at - it.second < 3 * 3_600_000L }
         Species.LONGEAR -> p.headphones
         Species.CRICKET -> hour(p.at).let { it >= 22 || it < 4 }
@@ -379,13 +379,24 @@ class Studio(
         else -> false
     }
 
+    /**
+     * When each artist was first heard live, imports left out: an imported history from the past mustn't make an
+     * artist the pet already ate as new «not new» after the fact (the lyrebird, a curious pet).
+     */
+    private val liveFirst: Map<String, Long> by lazy {
+        val m = HashMap<String, Long>()
+        for (p in plays) if (p.source != Source.IMPORT && p.artist !in m) m[p.artist] = p.at
+        m
+    }
+
+    /** Pets eat only what they heard: an imported history feeds nobody, though it stays in the statistics and the awards. */
     val pets: List<PetState> = petList.map { pet ->
         val ranges = spans(pet)
         var ms = 0L; var fav = 0L; var found = 0
         val g = HashMap<Genre, Long>()
-        for (p in plays) if (ranges.any { p.at in it }) {
+        for (p in plays) if (p.source != Source.IMPORT && ranges.any { p.at in it }) {
             ms += p.ms
-            if (byArtist[p.artist]?.first == p.at) found++
+            if (liveFirst[p.artist] == p.at) found++
             val gg = genresOf(p)
             for (x in gg) g[x] = (g[x] ?: 0L) + p.ms
             fav += (p.ms * favourite(pet.species, p, gg)).toLong()

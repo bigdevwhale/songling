@@ -14,7 +14,7 @@ import java.io.File
 
 /**
  * The pets as the den draws them (run with `-Prender`, `-Ppets=lyrebird,purr` to pick): for each stage
- * awake, blinking and asleep, 4x, on the den's dark background, to app/build/art/pets/<species>.png.
+ * awake, blinking, asleep, in the rare colouring and in a grown form's colour, 4x, on the den's dark background, to app/build/art/pets/<species>.png.
  */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
@@ -28,12 +28,13 @@ class RenderPets {
         for (sp in Species.entries) {
             if (pick != null && sp.file !in pick) continue
             val k = 4
-            val cols = 3
+            val cols = 5
             val img = Bitmap.createBitmap(PetArt.W * k * cols, PetArt.H * k * stages.size, Bitmap.Config.ARGB_8888)
             img.eraseColor(0xFF231C33.toInt())
             for ((row, st) in stages.withIndex()) {
-                // Awake and still; blinking (a tick where the eyes are shut); asleep.
-                val looks = listOf(Look(sp, st) to 1, Look(sp, st) to blinkTick(sp, st), Look(sp, st, sleeping = true) to 1)
+                // Awake and still; blinking (a tick where the eyes are shut); asleep; shiny; a form's colour (eyes keep theirs).
+                val looks = listOf(Look(sp, st) to 1, Look(sp, st) to blinkTick(sp, st), Look(sp, st, sleeping = true) to 1,
+                    Look(sp, st, shiny = true) to 1, Look(sp, st, form = app.songling.domain.Form.NEON) to 1)
                 for ((col, lt) in looks.withIndex()) {
                     val b = PetArt.frame(lt.first, lt.second, motion = false)
                     // Fine pixels, k / s screen pixels each.

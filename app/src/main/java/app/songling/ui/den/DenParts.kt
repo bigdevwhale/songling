@@ -130,7 +130,8 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
                 Text(np.artist, style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (np.length > 0) Bar(np.ms / np.length.toFloat(), Modifier.fillMaxWidth().padding(top = 4.dp), color = C.mint)
             }
-            Text(if (np.playing) t("играет", "playing") else t("пауза", "paused"), style = T.Small.copy(color = if (np.playing) C.mint else C.faint))
+            Text(when { np.app == app.songling.data.LastFm.APP -> "Last.fm"; np.playing -> t("играет", "playing"); else -> t("пауза", "paused") },
+                style = T.Small.copy(color = if (np.playing) C.mint else C.faint))
         }
         return
     }

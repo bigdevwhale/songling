@@ -203,6 +203,7 @@ object Words {
         Source.RADIO -> t(ru, "радио", "radio")
         Source.CONCERT -> t(ru, "концерт", "concert")
         Source.IMPORT -> t(ru, "импорт", "import")
+        Source.LASTFM -> "Last.fm"
     }
 
     fun period(p: Period, ru: Boolean) = when (p) {

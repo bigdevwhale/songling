@@ -102,12 +102,12 @@ object PetArt {
     private fun hsv(c: Int): FloatArray { val f = FloatArray(3); android.graphics.Color.colorToHSV(c, f); return f }
     private fun fromHsv(a: Int, f: FloatArray): Int = (android.graphics.Color.HSVToColor(f) and 0xFFFFFF) or (a shl 24)
 
-    /** The rare colouring: every hue turned, the same way for each species. */
-    private fun shine(b: Buf, sp: Species) {
+    /** The rare colouring: every hue turned, the same way for each species. The eyes ([eyes]) keep theirs. */
+    private fun shine(b: Buf, sp: Species, eyes: BooleanArray?) {
         val turn = 120f + sp.ordinal * 37f % 160f
         for (i in b.d.indices) {
             val c = b.d[i]; val a = c ushr 24
-            if (a == 0) continue
+            if (a == 0 || eyes?.get(i) == true) continue
             val f = hsv(c)
             if (f[1] < 0.12f) continue
             f[0] = (f[0] + turn) % 360f
@@ -115,12 +115,12 @@ object PetArt {
         }
     }
 
-    /** A grown form: the body leans to its colour. */
-    private fun tint(b: Buf, form: Form) {
+    /** A grown form: the body leans to its colour; the eyes ([eyes]) don't. */
+    private fun tint(b: Buf, form: Form, eyes: BooleanArray?) {
         val t = (form.argb and 0xFFFFFF).toInt() or Buf.OPAQUE
         for (i in b.d.indices) {
             val c = b.d[i]; val a = c ushr 24
-            if (a == 0) continue
+            if (a == 0 || eyes?.get(i) == true) continue
             val l = (Buf.ch(c, 16) * 0.3f + Buf.ch(c, 8) * 0.59f + Buf.ch(c, 0) * 0.11f) / 255f
             if (l < 0.12f || l > 0.92f) continue
             b.d[i] = (mix(c, t, 0.22f) and 0xFFFFFF) or (a shl 24)
@@ -154,8 +154,8 @@ object PetArt {
         if (look.stage == Stage.EGG) { egg(into, look, tick); return into }
         val sp = sprite(look.species, look.stage) ?: return into
         val b = Buf(SIZE, SIZE, FINE).also { it.copyFrom(sp.buf) }
-        if (look.form != null && look.stage >= Stage.ADULT) tint(b, look.form)
-        if (look.shiny) shine(b, look.species)
+        if (look.form != null && look.stage >= Stage.ADULT) tint(b, look.form, sp.lids)
+        if (look.shiny) shine(b, look.species, sp.lids)
         // Eyes: blink now and then, shut when asleep, wound down or stroked.
         val still = look.windup >= 1f
         val shut = look.sleeping || still || look.happy || look.mood == Mood.DREAMY && (tick / 30) % 2 == 0

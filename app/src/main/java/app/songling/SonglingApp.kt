@@ -3,6 +3,7 @@ package app.songling
 import android.app.Application
 import android.content.Context
 import app.songling.data.DemoSeed
+import app.songling.data.LastFm
 import app.songling.data.Meta
 import app.songling.data.MusicDb
 import app.songling.data.Outside
@@ -45,6 +46,28 @@ class AppContainer(context: Context) {
     fun kick() {
         if (BuildConfig.DEMO || looking?.isActive == true) return
         looking = scope.launch(Dispatchers.IO) { runCatching { meta.drain() } }
+    }
+
+    private var scrobbling: Job? = null
+
+    /** Reads what was scrobbled to Last.fm since last time ([LastFm]), when a username is set. */
+    fun syncLastFm() {
+        if (BuildConfig.DEMO || scrobbling?.isActive == true) return
+        scrobbling = scope.launch(Dispatchers.IO) {
+            val s = settings.now()
+            if (s.lastfm.isBlank()) return@launch
+            val r = runCatching { LastFm.sync(db.dao(), s.lastfm, s.lastfmFrom) }
+            val now = System.currentTimeMillis()
+            r.onSuccess { (added, newest) ->
+                settings.update { if (it.lastfm == s.lastfm) it.copy(lastfmFrom = newest, lastfmAt = now, lastfmError = "") else it }
+                if (added > 0) kick()
+            }.onFailure { e -> settings.update { if (it.lastfm == s.lastfm) it.copy(lastfmAt = now, lastfmError = e.message ?: e.javaClass.simpleName) else it } }
+        }
+    }
+
+    /** Last.fm every quarter of an hour while the app lives (the listener keeps it alive in the background). */
+    fun followLastFm() {
+        scope.launch { while (true) { syncLastFm(); kotlinx.coroutines.delay(15 * 60_000L) } }
     }
 
     private var weathering: Job? = null
@@ -109,6 +132,7 @@ class SonglingApp : Application() {
             // Listens clocked longer than their song by an older version (#10).
             container.scope.launch { runCatching { container.db.dao().trimOverlong() } }
             container.kick()
+            container.followLastFm()
         }
     }
 }

@@ -52,6 +52,7 @@ import app.songling.ui.Nav
 import app.songling.ui.Overlay
 import app.songling.ui.components.Btn
 import app.songling.ui.components.Card
+import app.songling.ui.components.FormField
 import app.songling.ui.components.Chip
 import app.songling.ui.components.Flow
 import app.songling.ui.components.Kind
@@ -321,14 +322,17 @@ fun ImportPage(st: Studio, nav: Nav) {
         if (uris.isEmpty()) return@rememberLauncherForActivityResult
         busy = true
         scope.launch {
-            var added = 0; var seen = 0; var formats = HashSet<String>()
+            var added = 0; var seen = 0; var same = 0; var formats = HashSet<String>()
             withContext(Dispatchers.IO) {
                 for (u in uris) runCatching {
                     val name = ctx.contentResolver.query(u, null, null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(c.getColumnIndexOrThrow(android.provider.OpenableColumns.DISPLAY_NAME)) else null } ?: u.lastPathSegment.orEmpty()
                     val r = ctx.contentResolver.openInputStream(u)!!.use { Import.read(name, it) }
                     if (r.format.isNotEmpty()) formats += r.format
                     seen += r.plays.size
-                    for (chunk in r.plays.chunked(2000)) {
+                    // Listens already written – heard here or brought over before – aren't counted twice.
+                    val fresh = Import.fresh(r.plays, co.db.dao().playList())
+                    same += r.plays.size - fresh.size
+                    for (chunk in fresh.chunked(2000)) {
                         added += co.db.dao().insertPlays(chunk).count { it > 0 }
                         val dao = co.db.dao()
                         for (p in chunk.distinctBy { it.artist }) dao.insertArtist(Artist(p.artist, Keys.mainArtist(p.artistName)))
@@ -338,7 +342,8 @@ fun ImportPage(st: Studio, nav: Nav) {
                 }
             }
             busy = false
-            said = if (ru) "Найдено ${Words.plays(seen, true)} (${formats.joinToString()}), новых: $added." else "Found ${Words.plays(seen, false)} (${formats.joinToString()}), new: $added."
+            said = (if (ru) "Найдено ${Words.plays(seen, true)} (${formats.joinToString()}), новых: $added." else "Found ${Words.plays(seen, false)} (${formats.joinToString()}), new: $added.") +
+                (if (same > 0) (if (ru) " Уже были записаны: $same." else " Already there: $same.") else "")
             co.kick()
         }
     }
@@ -350,6 +355,7 @@ fun ImportPage(st: Studio, nav: Nav) {
             Text(t("На сайте Spotify: Аккаунт → Конфиденциальность → «Расширенная история потоковой передачи». Через несколько дней придёт архив – выбери его целиком (zip) или файлы Streaming_History_Audio.",
                 "On spotify.com: Account → Privacy → «Extended streaming history». An archive arrives within days: pick the zip or the Streaming_History_Audio files."), style = T.Small)
         }
+        LastFmCard(st)
         Card {
             Text("Last.fm", style = T.Name)
             Text(t("Выгрузи скробблы в CSV (например, на lastfm.ghan.nl/export) и выбери файл.", "Export your scrobbles to CSV (e.g. at lastfm.ghan.nl/export) and pick the file."), style = T.Small)
@@ -427,6 +433,53 @@ private fun TownSheet(onClose: () -> Unit) {
             }.padding(vertical = 10.dp, horizontal = 14.dp)) {
                 Text(tn.name, style = T.Strong)
                 if (tn.region.isNotBlank()) Text(tn.region, style = T.Small)
+            }
+        }
+    }
+}
+
+/**
+ * Last.fm as it happens: a username, and what it scrobbles on a computer or a speaker comes in every quarter of an
+ * hour. It counts as heard – the pet eats it – but only from the moment it's connected.
+ */
+@Composable
+private fun LastFmCard(st: Studio) {
+    val ru = LocalRu.current
+    val co = LocalContext.current.container
+    val scope = rememberCoroutineScope()
+    val s = st.s
+    var name by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf("") }
+    Card {
+        Text(t("Last.fm сейчас", "Last.fm, live"), style = T.Name)
+        if (s.lastfm.isBlank()) {
+            Text(t("Что ты скробблишь на компьютере, колонке или другом телефоне, будет приходить сюда каждые 15 минут – с этой минуты, без пароля. Это считается живым прослушиванием: питомец его ест. Песни, которые Songling уже услышал здесь, не задвоятся.",
+                "What you scrobble on a computer, a speaker or another phone comes here every 15 minutes – from now on, no password. It counts as heard: the pet eats it. Songs Songling already heard here aren't counted twice."), style = T.Small)
+            FormField(name, { name = it.trim().take(40); error = "" }, t("Имя на Last.fm", "Last.fm username"))
+            Btn(if (busy) t("Проверяю…", "Checking…") else t("Подключить", "Connect"), {
+                busy = true
+                scope.launch {
+                    val r = withContext(Dispatchers.IO) { runCatching { app.songling.data.LastFm.check(name) } }
+                    busy = false
+                    r.onSuccess { real ->
+                        co.settings.update { it.copy(lastfm = real, lastfmFrom = System.currentTimeMillis() / 1000, lastfmAt = 0, lastfmError = "") }
+                        co.syncLastFm()
+                    }.onFailure { error = it.message ?: if (ru) "Не вышло" else "Didn't work" }
+                }
+            }, Modifier.fillMaxWidth().padding(top = 8.dp), kind = Kind.AMBER, enabled = name.isNotBlank() && !busy)
+            if (error.isNotEmpty()) Text(error, style = T.Small.copy(color = C.coral))
+        } else {
+            val came = st.plays.count { it.source == app.songling.data.Source.LASTFM }
+            Text(t("Подключено: ${s.lastfm}. Пришло прослушиваний: $came.", "Connected: ${s.lastfm}. Listens come in: $came."), style = T.Small)
+            Text(when {
+                s.lastfmError.isNotEmpty() -> t("Last.fm не ответил: ${s.lastfmError}", "Last.fm didn't answer: ${s.lastfmError}")
+                s.lastfmAt > 0 -> t("Проверено в ", "Checked at ") + java.text.SimpleDateFormat("HH:mm", java.util.Locale.ROOT).format(java.util.Date(s.lastfmAt))
+                else -> t("Скоро проверю.", "Checking soon.")
+            }, style = T.Small.copy(color = if (s.lastfmError.isNotEmpty()) C.coral else C.faint))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                Btn(t("Проверить сейчас", "Check now"), { co.syncLastFm() }, Modifier.weight(1f), kind = Kind.SOFT, small = true)
+                Btn(t("Отключить", "Disconnect"), { co.write { settings.update { it.copy(lastfm = "", lastfmFrom = 0, lastfmAt = 0, lastfmError = "") } } }, Modifier.weight(1f), kind = Kind.GHOST, small = true)
             }
         }
     }

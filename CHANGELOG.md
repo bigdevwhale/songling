@@ -8,6 +8,25 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-11-14
+
+### Added
+- Last.fm as it happens: connect a username (Settings → History and backups → Bring history over) and what you scrobble on a computer, a speaker or another phone comes in – every 15 minutes, and half a minute after a song ends while the app is open. It counts as heard: the pet eats it (headphones aside, which Last.fm can't tell). Only what comes after connecting is taken; a song this phone already heard isn't counted twice, and a song put in another album by hand goes there. No password; nothing is written to Last.fm.
+- What plays on Last.fm shows in the den while nothing plays on the phone, and the pet dances to it.
+
+### Changed
+- An imported history (Last.fm, Spotify, ListenBrainz) feeds no pet: feeding and favourites count only what was heard here. It stays in the statistics, the saga and the awards. An imported past no longer makes an artist the lyrebird or a curious pet already ate as new «not new» after the fact.
+- A pet's colouring – the rare one and a grown form's – leaves its eyes as they are.
+
+### Fixed
+- Importing no longer counts a listen twice: one of the same song that started about the same time as a listen already there is left out, and the import says how many were.
+
+<!-- tg
+Новое: Last.fm в реальном времени – введи имя в «Перенести историю», и то, что ты скробблишь на компьютере или колонке, будет приходить в Songling и кормить питомца. Что играет на Last.fm, видно в логове.
+Импорт истории больше не кормит питомцев и не задваивает прослушивания, которые уже есть.
+У питомцев с редкой окраской и цветом формы глаза больше не перекрашиваются.
+-->
+
 ## [1.8.0] - 2026-11-14
 
 ### Added

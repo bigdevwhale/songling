@@ -14,8 +14,8 @@ const val MIN = 60_000L
 const val HOUR = 3_600_000L
 const val DAY = 86_400_000L
 
-/** Where a listen came from. */
-enum class Source { PLAYER, MANUAL, VINYL, RADIO, CONCERT, IMPORT }
+/** Where a listen came from. LASTFM: scrobbled elsewhere and read from Last.fm as it happens; it counts as heard. */
+enum class Source { PLAYER, MANUAL, VINYL, RADIO, CONCERT, IMPORT, LASTFM }
 
 /** What a release is. */
 enum class Kind { ALBUM, EP, SINGLE }
