@@ -8,6 +8,16 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-11-14
+
+### Added
+- Put a song in another album by hand (#22): «Album» on the song's sheet. Its listens move along, and its next listens land in that album whatever album the player names.
+
+<!-- tg
+Новое: у песни теперь можно поменять альбом – в карточке песни нажми на строку с альбомом.
+Прослушивания переедут вместе с ней, и новые прослушивания этой песни тоже будут попадать в выбранный альбом.
+-->
+
 ## [1.7.0] - 2026-11-14
 
 ### Added

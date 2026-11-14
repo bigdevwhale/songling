@@ -76,7 +76,7 @@ class RenderScreens {
             View("17-den-dark", dark = true), View("18-album-dark", Tab.SHELF, Overlay.AlbumOf(album), dark = true), View("19-saga-dark", Tab.SAGA, dark = true),
             View("20-settings-dark", overlay = Overlay.Settings, dark = true),
             View("23-settings-count", overlay = Overlay.Settings, tap = "Что считать"), View("24-settings-look", overlay = Overlay.Settings, tap = "Вид и язык"),
-            View("25-history", Tab.SAGA, tap = "История"), View("21-album-edit", Tab.SHELF, Overlay.AlbumEdit(album)), View("22-album-edit-dark", Tab.SHELF, Overlay.AlbumEdit(album), dark = true),
+            View("26-track-album", Tab.SHELF, Overlay.TrackOf(Keys.track("Radiohead", "Airbag")), tap = "нажми, чтобы поменять"), View("25-history", Tab.SAGA, tap = "История"), View("21-album-edit", Tab.SHELF, Overlay.AlbumEdit(album)), View("22-album-edit-dark", Tab.SHELF, Overlay.AlbumEdit(album), dark = true),
         )
         val pick = System.getProperty("render.screens")?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }
         var view by mutableStateOf(views.first())

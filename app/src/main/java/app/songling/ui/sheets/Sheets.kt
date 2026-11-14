@@ -265,6 +265,10 @@ fun TrackSheet(st: Studio, key: String, nav: Nav) {
         }
         StatRow("${tl?.plays ?: 0}" to t("раз слушал", "listens"), Words.dur(tl?.ms ?: 0, ru) to t("всего", "in all"), "${tl?.skips ?: 0}" to t("пропусков", "skips"))
         if (tl != null) Text(t("Впервые ${date(tl.first, true)}, последний раз ${date(tl.last, true)}", "First ${date(tl.first, false)}, last ${date(tl.last, false)}"), style = T.Small)
+        // The album it's in, and a way to put it in another one when the player named the wrong one (#22).
+        var picking by remember(key) { mutableStateOf(false) }
+        app.songling.ui.components.LinkRow(al?.title ?: tr.albumName.ifEmpty { t("Без альбома", "No album") }, t("альбом · нажми, чтобы поменять", "album · tap to change"), { picking = true })
+        if (picking) app.songling.ui.Floating { TrackAlbumPick(st, tr, onDone = { picking = false }) }
         Flow {
             Chip(if (tr.wish) t("в списке «послушать»", "on the «to hear» list") else t("хочу послушать", "want to hear"), tr.wish, {
                 save(tr.copy(wish = !tr.wish, added = if (tr.added == 0L) System.currentTimeMillis() else tr.added))
@@ -284,6 +288,52 @@ fun TrackSheet(st: Studio, key: String, nav: Nav) {
             }, Modifier.fillMaxWidth(), kind = if (sure) BtnKind.CORAL else BtnKind.GHOST)
             if (sure) Text(t("Например, сборник одним файлом: прослушивания пропадут из статистики, времени питомца и заданий.",
                 "A compilation in one file, say: the listens leave the statistics, the pet's time and the goals."), style = T.Small)
+        }
+    }
+}
+
+/** Which album a song belongs to: the artist's albums first, any album on the shelf by search. */
+@Composable
+private fun TrackAlbumPick(st: Studio, tr: Track, onDone: () -> Unit) {
+    val ru = LocalRu.current
+    val co = LocalContext.current.container
+    var q by remember { mutableStateOf("") }
+    val nq = Keys.norm(q)
+    val options = remember(st, nq) {
+        val all = (st.albums.keys + st.byAlbum.keys).distinct()
+        // This artist's own albums lead; a search reaches every album on the shelf.
+        all.filter { k ->
+            val artist = st.albums[k]?.artist ?: k.substringBefore('|')
+            if (nq.isEmpty()) artist == tr.artist || tr.artist in Keys.artists(st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty())
+            else Keys.norm(st.albumTitle(k)).contains(nq) || Keys.norm(st.albums[k]?.artistName ?: st.byAlbum[k]?.artistName.orEmpty()).contains(nq)
+        }.sortedByDescending { st.byAlbum[it]?.ms ?: 0L }.take(30)
+    }
+    Sheet(onDismiss = onDone) {
+        Text(t("В какой альбом?", "Which album?"), style = T.Title)
+        Text(t("«${tr.title}» переедет туда вместе с прослушиваниями, и новые прослушивания этой песни тоже будут попадать туда.",
+            "«${tr.title}» moves there with its listens, and its next listens land there too."), style = T.Muted)
+        Field(q, { q = it }, t("Найти альбом", "Find an album"), search = true)
+        if (options.isEmpty()) Text(if (nq.isEmpty()) t("У этого артиста других альбомов нет – найди любой поиском.", "This artist has no other albums – search for any.")
+            else t("Ничего не нашлось.", "Nothing found."), style = T.Muted)
+        for (k in options) {
+            val a = st.albums[k]
+            val on = k == tr.album
+            Row(Modifier.fillMaxWidth().clip(app.songling.ui.theme.R8.Md).background(if (on) C.amberSoft else androidx.compose.ui.graphics.Color.Transparent)
+                .clickable {
+                    if (!on) {
+                        val target = a ?: Album(k, st.albumTitle(k), st.byAlbum[k]?.artistName ?: tr.artistName)
+                        co.write { db.dao().placeTrackByHand(tr.key, target, tr) }
+                    }
+                    onDone()
+                }.padding(horizontal = 8.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Cover(a?.cover, st.albumTitle(k), a?.genre, 44.dp)
+                Column(Modifier.weight(1f)) {
+                    Text(st.albumTitle(k), style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(listOfNotNull(a?.artistName ?: st.byAlbum[k]?.artistName, a?.year?.toString()).joinToString(" · "), style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                if (on) app.songling.ui.components.Sign(app.songling.ui.components.Glyph.CHECK, color = C.amber, size = 14.dp)
+            }
         }
     }
 }

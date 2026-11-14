@@ -276,7 +276,8 @@ class Tracker(private val ctx: Context) {
                 val p0 = Play(at = k.started, ms = ms, title = k.title, artistName = k.artist, albumName = k.album, length = k.length,
                     source = Source.PLAYER, app = k.pkg, whole = whole, headphones = headphones())
                 // An album the user folded into one of their own («Unnamed» → the real one) takes it in.
-                val home = if (p0.album.isEmpty()) null else c.db.dao().albumByAlias(p0.album)
+                // A song put in an album by hand goes there first, whatever album the player names (#22).
+                val home = c.db.dao().albumByAlias("t:" + p0.track) ?: if (p0.album.isEmpty()) null else c.db.dao().albumByAlias(p0.album)
                 val p = if (home != null) p0.copy(album = home.key, albumName = home.title) else p0
                 k.id = c.db.dao().insert(p)
                 // Closed while it was being written: give it its final length now.

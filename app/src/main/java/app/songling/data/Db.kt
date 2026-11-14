@@ -110,6 +110,21 @@ interface MusicDao {
     @Query("SELECT * FROM albums WHERE ',' || aliases || ',' LIKE '%,' || :key || ',%' LIMIT 1")
     suspend fun albumByAlias(key: String): Album?
 
+    /**
+     * Puts a song in another album by hand (#22): its listens and its row move there, and the album keeps
+     * «t:<song>» among its aliases, so the song's next listens land there whatever album the player names.
+     */
+    @androidx.room.Transaction
+    suspend fun placeTrackByHand(trackKey: String, to: Album, fallback: Track) {
+        val mark = "t:$trackKey"
+        albumByAlias(mark)?.let { old -> upsert(old.copy(aliases = old.aliases.split(',').filter { it.isNotBlank() && it != mark }.joinToString(","))) }
+        val target = album(to.key) ?: to
+        upsert(target.copy(aliases = (target.aliases.split(',').filter { it.isNotBlank() } + mark).distinct().joinToString(",")))
+        moveTrack(trackKey, target.key, target.title)
+        val t = track(trackKey) ?: fallback
+        upsert(t.copy(album = target.key, albumName = target.title, number = if (t.album == target.key) t.number else 0))
+    }
+
     @Query("UPDATE tracks SET album = :to, albumName = :name WHERE album = :from")
     suspend fun moveTracks(from: String, to: String, name: String)
 
