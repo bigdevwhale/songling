@@ -73,6 +73,6 @@ cd songling
 ./gradlew assembleDebug -Pdemo -Pdemolang=ru   # app.songling.demo: четыре месяца музыки и все 18 питомцев
 ```
 
-Нужны JDK 17+ (подойдёт JBR из Android Studio) и Android SDK. Kotlin, Jetpack Compose, Room, DataStore. Питомцы рисуются скриптом `tools/pets.py`, иконка – `tools/icon.py`, скриншоты – `tools/capture.sh`.
+Нужны JDK 17+ (подойдёт JBR из Android Studio) и Android SDK. Kotlin, Jetpack Compose, Room, DataStore. Питомцы рисуются скриптом `tools/pets.py`, иконка – `tools/icon.py`, скриншоты – `RenderStore` и `tools/store_shots.py` (без телефона).
 
 Songling – часть [Stillcraft](https://bigdevwhale.github.io/stillcraft/), серии небольших бесплатных приложений. Лицензия MIT. Шрифты Comfortaa, Nunito, Caveat и IBM Plex Mono – OFL.

@@ -73,6 +73,6 @@ cd songling
 ./gradlew assembleDebug -Pdemo -Pdemolang=en   # app.songling.demo: four months of music and all 18 pets
 ```
 
-Needs JDK 17+ (Android Studio's bundled JBR works) and the Android SDK. Kotlin, Jetpack Compose, Room, DataStore. The pets are painted by `tools/pets.py`, the icon by `tools/icon.py`, the screenshots by `tools/capture.sh`.
+Needs JDK 17+ (Android Studio's bundled JBR works) and the Android SDK. Kotlin, Jetpack Compose, Room, DataStore. The pets are painted by `tools/pets.py`, the icon by `tools/icon.py`, the screenshots by `RenderStore` and `tools/store_shots.py` (no phone needed).
 
 Songling is part of [Stillcraft](https://bigdevwhale.github.io/stillcraft/), a series of small free apps. MIT licensed. Fonts Comfortaa, Nunito, Caveat and IBM Plex Mono are under the OFL.

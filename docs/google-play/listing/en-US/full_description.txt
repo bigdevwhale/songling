@@ -1,0 +1,51 @@
+Play music in Spotify, YouTube Music, Apple Music or any other player, and your pet hears it. There's nothing to log: a song counts after 30 seconds, podcasts are left out, and the pet dances along – nodding to rock, swaying slowly to ambient. Every hour of music helps it grow, fills your shelf and writes the saga of how you listen. Free, no ads, no account, everything stays on your phone.
+
+🥚 25 PETS
+• Three eggs to start with. The rest are found by the way you listen: hours of rock or jazz, music at night or in the morning, artists from many countries, long sittings, a song on repeat, a live concert
+• An egg hatches after three hours of music, then the pet grows: baby, youngster, grown, ancient
+• Each has its favourite music, which feeds it one and a half times as much and pays double plectrums
+• A nature of its own: a greedy one grows faster, a curious one earns a plectrum for every new artist. Grown up, it takes one of six forms for good, by the music it was raised on
+• Days without music wind it down like a clockwork toy. A couple of songs and it dances again
+
+🏠 THE DEN
+• A pixel room where your pet lives and dances while music plays
+• Plectrums, paid for music, whole albums, tasks and goals, buy a turntable, a record shelf, fairy lights, a disco ball and a dozen more things – each tried in the room first
+• Two frames on the wall for posters: your favourite album and a band
+• The window shows the real weather and time of day in your town
+
+💿 THE SHELF
+• Everything you've heard – albums, singles, songs and artists – with covers, genres, years and stars
+• A «to hear» list for what you never get round to
+• Add an album or a song yourself, from search or typed in, or make an album of your own with its cover and songs
+• Genres of your own, like «for work» or «grandma's records»
+
+📖 THE SAGA
+• A week, a month, a year or all time: top artists, albums, songs and genres, your hours and weekdays, countries and decades
+• A calendar with every day of the year
+
+🎯 GOALS AND AWARDS
+• Goals on anything: «4 new albums this month», «10 hours of Radiohead this year», «music from three new countries»
+• Three small tasks every week
+• 70 awards with steps to climb – hours, streaks, night listening, songs by two artists, New Year songs – each step paying plectrums
+
+💌 POSTCARDS
+• The den, the pet, your month, top artists and albums, genres, the year as squares, awards and all your pets – as a post or a story
+
+📼 RECORDS OR TAPES
+• Albums as records in sleeves or as tapes with hand-written J-cards
+• A light and a dark theme and a few pixel backgrounds
+• A home-screen widget with what plays, as a record or a tape, with previous, play/pause and next
+
+🧳 BRING YOUR HISTORY
+• From Spotify (your data download), Last.fm or ListenBrainz
+• A record, the radio or a concert can be logged by hand – a whole album or a single song
+
+ALSO
+• You choose which apps it hears: every player but a few, or only the ones you play music in
+• Backups as one zip file
+• English and Russian
+• Free and open source (MIT)
+
+How it hears: Android shows what a player is playing only to apps with notification access. Songling asks for it and takes just the song, the artist and the album – it doesn't read your notifications.
+
+Privacy: no account, no servers of ours, no analytics, no ads. Your music history and pets stay on your phone. The app goes online only for covers, genres and artists' countries (iTunes, MusicBrainz, Deezer) and for the weather in the window (Open-Meteo, MET Norway).

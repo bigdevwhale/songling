@@ -1,0 +1,1 @@
+A pixel pet that hears the music in any player, dances and grows with it.
