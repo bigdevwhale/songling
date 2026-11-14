@@ -274,6 +274,22 @@ object Words {
         }
     }
 
+    /**
+     * A listen's length to the nearest half minute (#24): x:00–x:15 is x, x:16–x:44 is x and a half, x:45–x:59 is x+1.
+     * Never under half a minute; an hour and more as [dur].
+     */
+    fun songDur(ms: Long, ru: Boolean): String {
+        if (ms >= 3_600_000L) return dur(ms, ru)
+        val s = ms / 1000
+        val m = s / 60; val r = s % 60
+        val halves = (when { r <= 15 -> m * 2; r <= 44 -> m * 2 + 1; else -> m * 2 + 2 }).coerceAtLeast(1)
+        val whole = halves / 2
+        return when {
+            halves % 2 == 0L -> t(ru, "$whole мин", "$whole min")
+            else -> t(ru, "$whole,5 мин", "$whole.5 min")
+        }
+    }
+
     fun hours(ms: Long, ru: Boolean): String {
         val h = ms / 3_600_000.0
         return if (h >= 10) t(ru, "${h.toInt()} ч", "${h.toInt()} h") else t(ru, String.format(Locale.US, "%.1f ч", h), String.format(Locale.US, "%.1f h", h))

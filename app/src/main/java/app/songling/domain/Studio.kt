@@ -114,6 +114,37 @@ class Studio(
         return guess.firstOrNull { it != Genre.OTHER } ?: guess.firstOrNull()
     }
     fun yearOf(p: Play): Int? = tracks[p.track]?.year ?: albums[p.album]?.year
+    /**
+     * Genres told beside the main one (#23), as tokens: a [Genre] name or «own:<id>». The song's own list when its
+     * genre was set by hand, else its album's.
+     */
+    fun moreOf(p: Play): List<String> {
+        val t = tracks[p.track]
+        val raw = if (t != null && (t.more.isNotEmpty() || t.pinned || t.own.isNotEmpty())) t.more else albums[p.album.ifEmpty { t?.album.orEmpty() }]?.more.orEmpty()
+        return if (raw.isEmpty()) emptyList() else raw.split(',').filter { it.isNotBlank() }
+    }
+
+    private val genresSeen = java.util.concurrent.ConcurrentHashMap<Triple<String, String, String>, List<Genre>>()
+
+    /** Every genre a listen belongs to, the main one first; it counts in full for each of them (#23). */
+    fun genresOf(p: Play): List<Genre> = genresSeen.getOrPut(Triple(p.track, p.album, p.artist)) {
+        val more = moreOf(p).mapNotNull { k ->
+            val name = if (k.startsWith("own:")) owns[k.removePrefix("own:")]?.base else k
+            Genre.entries.firstOrNull { it.name == name }
+        }
+        (listOfNotNull(genreOf(p)) + more).distinct()
+    }
+
+    /** Every genre of one's own a listen belongs to. */
+    fun ownsOf(p: Play): List<app.songling.data.OwnGenre> =
+        (listOfNotNull(ownOf(p)) + moreOf(p).mapNotNull { if (it.startsWith("own:")) owns[it.removePrefix("own:")] else null }).distinct()
+
+    /** The genres a listen counts for as goal keys: «own:<id>» for one's own, else the genre's name. */
+    fun genreKeys(p: Play): List<String> {
+        val main = ownOf(p)?.let { "own:" + it.id } ?: genreOf(p)?.name
+        return (listOfNotNull(main) + moreOf(p)).distinct()
+    }
+
     fun countryOf(artist: String): String = artists[artist]?.country.orEmpty()
 
     // ---------------------------------------------------------------- totals
@@ -138,7 +169,7 @@ class Studio(
             }
             if (p.album.isNotEmpty()) byAlbum.getOrPut(p.album) { Tally(p.album).also { it.name = p.albumName; it.artistName = p.artistName } }.add(p)
             byTrack.getOrPut(p.track) { Tally(p.track).also { it.name = p.title; it.artistName = p.artistName; it.albumName = p.albumName } }.add(p)
-            genreOf(p)?.let { byGenre[it] = (byGenre[it] ?: 0L) + p.ms }
+            for (g in genresOf(p)) byGenre[g] = (byGenre[g] ?: 0L) + p.ms
             val d = day(p.at)
             byDay[d] = (byDay[d] ?: 0L) + p.ms
         }
@@ -249,7 +280,7 @@ class Studio(
     /** The most genres heard in one day. */
     val mostGenresInADay: Int by lazy {
         val m = HashMap<LocalDate, HashSet<Genre>>()
-        for (p in plays) genreOf(p)?.let { if (p.ms >= MIN) m.getOrPut(day(p.at)) { HashSet() } += it }
+        for (p in plays) if (p.ms >= MIN) genresOf(p).let { if (it.isNotEmpty()) m.getOrPut(day(p.at)) { HashSet() } += it }
         m.values.maxOfOrNull { it.size } ?: 0
     }
 
@@ -316,8 +347,18 @@ class Studio(
         from..to
     }
 
-    /** Whether a listen feeds [sp] especially well. */
-    fun favourite(sp: Species, p: Play, g: Genre?): Boolean = when (sp) {
+    /**
+     * How much of a listen is a pet's favourite: all of it, or half when its genre is only one of the extra ones the
+     * listen was given beside the main one (#23).
+     */
+    fun favourite(sp: Species, p: Play, g: List<Genre>): Double = when {
+        sp.genres.isEmpty() -> if (likes(sp, p)) 1.0 else 0.0
+        g.firstOrNull()?.let { it in sp.genres } == true -> 1.0
+        g.drop(1).any { it in sp.genres } -> 0.5
+        else -> 0.0
+    }
+
+    private fun likes(sp: Species, p: Play): Boolean = when (sp) {
         Species.LYREBIRD -> byArtist[p.artist]?.first == p.at
         Species.MUSICBOX -> wholeRuns.any { it.first == p.album && it.second <= p.at && p.at - it.second < 3 * 3_600_000L }
         Species.LONGEAR -> p.headphones
@@ -335,7 +376,7 @@ class Studio(
         Species.BAT -> p.source == Source.VINYL || p.source == Source.RADIO
         Species.DRAGON -> p.length >= LONG_SONG
         Species.HOUND -> p.artist == topArtist
-        else -> g != null && g in sp.genres
+        else -> false
     }
 
     val pets: List<PetState> = petList.map { pet ->
@@ -345,9 +386,9 @@ class Studio(
         for (p in plays) if (ranges.any { p.at in it }) {
             ms += p.ms
             if (byArtist[p.artist]?.first == p.at) found++
-            val gg = genreOf(p)
-            if (gg != null) g[gg] = (g[gg] ?: 0L) + p.ms
-            if (favourite(pet.species, p, gg)) fav += p.ms
+            val gg = genresOf(p)
+            for (x in gg) g[x] = (g[x] ?: 0L) + p.ms
+            fav += (p.ms * favourite(pet.species, p, gg)).toLong()
         }
         // A favourite listen counts half again; a greedy one eats a tenth more of everything.
         val greedy = if (pet.nature == Nature.GREEDY) 1.1 else 1.0

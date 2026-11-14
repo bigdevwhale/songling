@@ -3,6 +3,7 @@
     <string name="app_name">Songling</string>
     <string name="listener_name">Songling: что играет</string>
     <string name="widget_name">Логово Songling</string>
+    <string name="widget_den_description">Питомец и сколько музыки сегодня</string>
     <string name="widget_player_name">Плеер Songling</string>
     <string name="widget_player_description">Пластинка или кассета с тем, что играет в любом плеере</string>
     <string name="widget_player_art">Плеер</string>

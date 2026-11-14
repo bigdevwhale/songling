@@ -41,8 +41,8 @@ class Stats(val st: Studio, val f: Filter) {
 
     val plays: List<Play> = st.plays.filter { p ->
         p.at in from until to &&
-            (f.genre == null || st.genreOf(p) == f.genre) &&
-            (f.own == null || st.ownOf(p)?.id == f.own) &&
+            (f.genre == null || f.genre in st.genresOf(p)) &&
+            (f.own == null || st.ownsOf(p).any { it.id == f.own }) &&
             (f.app == null || p.app == f.app) &&
             (f.source == null || p.source == f.source) &&
             (!f.headphones || p.headphones)
@@ -76,10 +76,10 @@ class Stats(val st: Studio, val f: Filter) {
     val tracks get() = top({ it.track }, st::trackTitle, { k -> st.byTrack[k]?.artistName.orEmpty() })
 
     /** Time per genre of one's own, most first. */
-    val ownGenres: List<Pair<app.songling.data.OwnGenre, Long>> get() = plays.mapNotNull { p -> st.ownOf(p)?.let { it to p.ms } }
+    val ownGenres: List<Pair<app.songling.data.OwnGenre, Long>> get() = plays.flatMap { p -> st.ownsOf(p).map { it to p.ms } }
         .groupBy({ it.first.id }, { it }).map { (_, l) -> l.first().first to l.sumOf { it.second } }.sortedByDescending { it.second }
 
-    val genres: List<Pair<Genre, Long>> get() = plays.groupBy { st.genreOf(it) ?: Genre.OTHER }.map { it.key to it.value.sumOf { p -> p.ms } }.sortedByDescending { it.second }
+    val genres: List<Pair<Genre, Long>> get() = plays.flatMap { p -> st.genresOf(p).ifEmpty { listOf(Genre.OTHER) }.map { it to p.ms } }.groupBy({ it.first }, { it.second }).map { it.key to it.value.sum() }.sortedByDescending { it.second }
 
     val hours: LongArray get() = LongArray(24).also { a -> for (p in plays) a[st.hour(p.at)] += p.ms }
     val weekdays: LongArray get() = LongArray(7).also { a -> for (p in plays) a[st.day(p.at).dayOfWeek.value - 1] += p.ms }

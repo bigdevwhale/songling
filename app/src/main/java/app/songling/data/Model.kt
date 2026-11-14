@@ -103,6 +103,8 @@ data class Album(
      * folded into this album. New listens under those keys are put here as they come.
      */
     @ColumnInfo(defaultValue = "") val aliases: String = "",
+    /** Genres beside the main one (#23), comma-separated: a [Genre] name or «own:<id>». */
+    @ColumnInfo(defaultValue = "") val more: String = "",
 )
 
 /** A song: what the catalogue knows, and what you think of it. */
@@ -127,6 +129,8 @@ data class Track(
     @ColumnInfo(defaultValue = "") val own: String = "",
     /** The genre was set by hand: it outranks the album's and the artist's. */
     @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
+    /** Genres beside the main one (#23), comma-separated: a [Genre] name or «own:<id>». */
+    @ColumnInfo(defaultValue = "") val more: String = "",
 )
 
 /** A pet: hatched from an egg of [species], fed by the music played while it was out of the box. */

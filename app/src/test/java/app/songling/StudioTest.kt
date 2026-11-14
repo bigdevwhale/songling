@@ -51,4 +51,40 @@ class StudioTest {
         assertEquals(3 * MIN, st.byArtist[Keys.norm("Скриптонит")]?.ms)
         assertEquals("Скриптонит", st.artistName(Keys.norm("Скриптонит")))
     }
+
+    /** Several genres at once (#23): the listen counts in full for each, the song's list outranks the album's. */
+    @Test fun aListenCountsForEveryGenre() {
+        val p = play("One", t0)
+        val album = duo.copy(genre = Genre.ROCK, pinned = true, more = "POP")
+        val st = studio(listOf(p), listOf(album))
+        assertEquals(listOf(Genre.ROCK, Genre.POP), st.genresOf(p))
+        assertEquals(4 * MIN, st.byGenre[Genre.ROCK])
+        assertEquals(4 * MIN, st.byGenre[Genre.POP])
+        val song = Track(p.track, "One", "A", album = duo.key, genre = Genre.JAZZ, pinned = true, more = "FOLK")
+        assertEquals(listOf(Genre.JAZZ, Genre.FOLK), studio(listOf(p), listOf(album), tracks = listOf(song)).genresOf(p))
+        // A song told by hand with one genre doesn't take the album's extra ones.
+        assertEquals(listOf(Genre.JAZZ), studio(listOf(p), listOf(album), tracks = listOf(song.copy(more = ""))).genresOf(p))
+    }
+
+    /** A pet's genre as the main one is a whole favourite; as an extra one, half (#23). */
+    @Test fun anExtraGenreIsHalfAFavourite() {
+        val p = play("One", t0)
+        val sp = app.songling.domain.Species.BASILISK
+        val st = studio(listOf(p), listOf(duo.copy(genre = Genre.ROCK, pinned = true, more = "POP")))
+        assertEquals(1.0, st.favourite(sp, p, st.genresOf(p)), 0.0)
+        val st2 = studio(listOf(p), listOf(duo.copy(genre = Genre.POP, pinned = true, more = "ROCK")))
+        assertEquals(0.5, st2.favourite(sp, p, st2.genresOf(p)), 0.0)
+        assertEquals(0.0, st2.favourite(app.songling.domain.Species.WHALE, p, st2.genresOf(p)), 0.0)
+    }
+
+    /** A listen's length to the nearest half minute (#24). */
+    @Test fun historyRoundsToHalfMinutes() {
+        fun d(m: Int, s: Int) = app.songling.domain.Words.songDur((m * 60L + s) * 1000, true)
+        assertEquals("1 мин", d(1, 15))
+        assertEquals("1,5 мин", d(1, 16))
+        assertEquals("1,5 мин", d(1, 44))
+        assertEquals("2 мин", d(1, 50))
+        assertEquals("2 мин", d(2, 15))
+        assertEquals("0,5 мин", d(0, 5))
+    }
 }

@@ -8,6 +8,22 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-11-14
+
+### Added
+- Several genres at once for a song or an album (#23): pick as many as fit; the first is the main one and gives the colour. A listen counts in full for each of them – in the genre statistics, filters, goals and new genres. For a pet that likes a genre, it is a whole favourite when that genre is the main one and half a favourite when it is one of the others. A song with its genre set by hand keeps its own list; otherwise it takes its album's.
+- Tap the song playing in the den to open it: how often you heard it, its album, stars, genre (#25).
+- The den widget says what it shows in the widget list (#17).
+
+### Changed
+- The history rounds a listen to the nearest half minute (#24): 1:15 is 1 min, 1:16–1:44 is 1.5 min, 1:50 is 2 min.
+
+<!-- tg
+Новое: у песни и альбома теперь может быть несколько жанров – выбери сколько нужно, первый станет главным. Прослушивание засчитывается в каждый.
+Песню, которая играет в логове, можно нажать – откроется карточка: сколько раз слушал, альбом, звёзды, жанр.
+В истории время округляется до ближайшей половины минуты: 1:50 – это 2 минуты, а не одна.
+-->
+
 ## [1.7.1] - 2026-11-14
 
 ### Added

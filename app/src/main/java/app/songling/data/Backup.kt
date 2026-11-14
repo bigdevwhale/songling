@@ -26,7 +26,7 @@ object Backup {
         o.put("albums", JSONArray(dao.albumList().map { a ->
             JSONObject().put("key", a.key).put("title", a.title).put("artist", a.artistName).put("kind", a.kind.name).put("year", a.year ?: 0).put("genre", a.genre?.name ?: "")
                 .put("genreName", a.genreName).put("cover", a.cover ?: "").put("tracks", a.tracks).put("length", a.length).put("checked", a.checked).put("stars", a.stars)
-                .put("wish", a.wish).put("added", a.added).put("pinned", a.pinned).put("note", a.note).put("own", a.own).put("aliases", a.aliases)
+                .put("wish", a.wish).put("added", a.added).put("pinned", a.pinned).put("note", a.note).put("own", a.own).put("aliases", a.aliases).put("more", a.more)
         }))
         o.put("artists", JSONArray(dao.artists().first().map { a ->
             JSONObject().put("key", a.key).put("name", a.name).put("country", a.country).put("genre", a.genre?.name ?: "").put("checked", a.checked).put("stars", a.stars).put("wish", a.wish).put("added", a.added).put("own", a.own).put("gone", a.gone)
@@ -34,7 +34,7 @@ object Backup {
         o.put("tracks", JSONArray(dao.tracks().first().map { t ->
             JSONObject().put("key", t.key).put("title", t.title).put("artist", t.artistName).put("album", t.album).put("albumName", t.albumName).put("number", t.number)
                 .put("length", t.length).put("year", t.year ?: 0).put("genre", t.genre?.name ?: "").put("checked", t.checked).put("stars", t.stars).put("wish", t.wish)
-                .put("added", t.added).put("loved", t.loved).put("own", t.own).put("pinned", t.pinned)
+                .put("added", t.added).put("loved", t.loved).put("own", t.own).put("pinned", t.pinned).put("more", t.more)
         }))
         o.put("pets", JSONArray(dao.petList().map { p ->
             JSONObject().put("id", p.id).put("species", p.species.name).put("name", p.name).put("laid", p.laid).put("shiny", p.shiny).put("nature", p.nature.name)
@@ -75,11 +75,11 @@ object Backup {
         for (a in arr("albums")) dao.upsert(Album(a.getString("key"), a.getString("title"), a.getString("artist"), kind = Kind.entries.firstOrNull { it.name == a.optString("kind") } ?: Kind.ALBUM,
             year = a.optInt("year").takeIf { it > 0 }, genre = g(a.optString("genre")), genreName = a.optString("genreName"), cover = a.optString("cover").ifBlank { null },
             tracks = a.optInt("tracks"), length = a.optLong("length"), checked = a.optLong("checked"), stars = a.optInt("stars"), wish = a.optBoolean("wish"),
-            added = a.optLong("added"), pinned = a.optBoolean("pinned"), note = a.optString("note"), own = a.optString("own"), aliases = a.optString("aliases")))
+            added = a.optLong("added"), pinned = a.optBoolean("pinned"), note = a.optString("note"), own = a.optString("own"), aliases = a.optString("aliases"), more = a.optString("more")))
         for (a in arr("artists")) dao.upsert(Artist(a.getString("key"), a.getString("name"), a.optString("country"), g(a.optString("genre")), a.optLong("checked"), a.optInt("stars"), a.optBoolean("wish"), a.optLong("added"), a.optString("own"), a.optInt("gone")))
         for (t in arr("tracks")) dao.upsert(Track(t.getString("key"), t.getString("title"), t.getString("artist"), album = t.optString("album"), albumName = t.optString("albumName"),
             number = t.optInt("number"), length = t.optLong("length"), year = t.optInt("year").takeIf { it > 0 }, genre = g(t.optString("genre")), checked = t.optLong("checked"),
-            stars = t.optInt("stars"), wish = t.optBoolean("wish"), added = t.optLong("added"), loved = t.optBoolean("loved"), own = t.optString("own"), pinned = t.optBoolean("pinned")))
+            stars = t.optInt("stars"), wish = t.optBoolean("wish"), added = t.optLong("added"), loved = t.optBoolean("loved"), own = t.optString("own"), pinned = t.optBoolean("pinned"), more = t.optString("more")))
         val ids = HashMap<Long, Long>()
         for (p in arr("pets")) ids[p.getLong("id")] = dao.insert(Pet(species = Species.entries.firstOrNull { it.name == p.getString("species") } ?: Species.LYREBIRD, name = p.optString("name"),
             laid = p.getLong("laid"), shiny = p.optBoolean("shiny"), nature = Nature.entries.firstOrNull { it.name == p.optString("nature") } ?: Nature.CALM,

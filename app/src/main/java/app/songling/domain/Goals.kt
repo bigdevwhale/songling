@@ -26,7 +26,7 @@ class Window(val st: Studio, val from: Long, val to: Long) {
     /** Genres (built-in and one's own) first heard in the window. */
     val newGenres: Set<String> get() {
         val first = HashMap<String, Long>()
-        for (p in st.plays) { if (p.ms < 60_000) continue; val k = st.ownOf(p)?.let { "own:" + it.id } ?: st.genreOf(p)?.name ?: continue; if (k !in first) first[k] = p.at }
+        for (p in st.plays) { if (p.ms < 60_000) continue; for (k in st.genreKeys(p)) if (k !in first) first[k] = p.at }
         return first.filterValues { it in from until to }.keys
     }
     /** Countries whose first artist was heard in the window. */
@@ -35,11 +35,11 @@ class Window(val st: Studio, val from: Long, val to: Long) {
         for (p in st.plays) { val c = st.countryOf(p.artist).ifBlank { continue }; if (c !in first) first[c] = p.at }
         return first.filterValues { it in from until to }.keys
     }
-    val genres: Set<Genre> get() = plays.filter { it.ms >= MIN }.mapNotNull { st.genreOf(it) }.toSet()
+    val genres: Set<Genre> get() = plays.filter { it.ms >= MIN }.flatMap { st.genresOf(it) }.toSet()
     val countries: Set<String> get() = plays.map { it.artist }.toSet().mapNotNull { st.countryOf(it).ifBlank { null } }.toSet()
     val decades: Set<Int> get() = plays.mapNotNull { st.yearOf(it)?.let { y -> y / 10 * 10 } }.toSet()
     val days: Set<LocalDate> get() = plays.groupBy { st.day(it.at) }.filterValues { l -> l.sumOf { it.ms } >= 10 * MIN }.keys
-    fun genreMs(g: Genre) = plays.filter { st.genreOf(it) == g }.sumOf { it.ms }
+    fun genreMs(g: Genre) = plays.filter { g in st.genresOf(it) }.sumOf { it.ms }
 
     /** Things from the «want to hear» list heard in the window. */
     val wishesHeard: Int get() {
@@ -71,7 +71,7 @@ object Goals {
             GoalKind.ARTIST -> (w.plays.filter { g.ref in app.songling.data.Keys.artists(it.artistName) }.sumOf { it.ms } / MIN).toInt()
             GoalKind.ALBUM -> w.whole.count { it.first == g.ref }
             GoalKind.TRACK -> w.plays.count { it.track == g.ref }
-            GoalKind.GENRE -> (if (g.ref.startsWith("own:")) w.plays.filter { st.ownOf(it)?.id == g.ref.removePrefix("own:") }.sumOf { it.ms }
+            GoalKind.GENRE -> (if (g.ref.startsWith("own:")) w.plays.filter { p -> st.ownsOf(p).any { it.id == g.ref.removePrefix("own:") } }.sumOf { it.ms }
                 else Genre.entries.firstOrNull { it.name == g.ref }?.let { w.genreMs(it) } ?: 0L).div(MIN).toInt()
             GoalKind.GENRES -> w.genres.size
             GoalKind.COUNTRIES -> w.countries.size

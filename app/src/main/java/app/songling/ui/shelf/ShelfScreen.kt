@@ -76,7 +76,14 @@ data class Entry(
     val ms: Long, val plays: Int, val last: Long, val stars: Int, val whole: Int, val wish: Boolean, val added: Long, val country: String = "",
     /** A genre of one's own, its id. */
     val own: String = "",
-)
+    /** Genres beside the main one (#23): [Genre] names and «own:<id>». */
+    val more: List<String> = emptyList(),
+) {
+    val genres: List<Genre> get() = listOfNotNull(genre) + more.mapNotNull { k -> Genre.entries.firstOrNull { it.name == k } }
+    val owns: List<String> get() = listOfNotNull(own.ifEmpty { null }) + more.filter { it.startsWith("own:") }.map { it.removePrefix("own:") }
+}
+
+private fun moreList(s: String?): List<String> = s.orEmpty().split(',').filter { it.isNotBlank() }
 
 fun entries(st: Studio, tab: ShelfTab): List<Entry> = when (tab) {
     ShelfTab.ALBUMS, ShelfTab.SINGLES -> st.shelfAlbums.toSet().mapNotNull { k ->
@@ -84,13 +91,14 @@ fun entries(st: Studio, tab: ShelfTab): List<Entry> = when (tab) {
         val single = a?.kind == Kind.SINGLE
         if ((tab == ShelfTab.SINGLES) != single) return@mapNotNull null
         Entry(k, tab, a?.title ?: tl?.name ?: k, a?.artistName ?: tl?.artistName.orEmpty(), a?.cover, a?.genre ?: st.artists[a?.artist ?: ""]?.genre, a?.year,
-            tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, a?.stars ?: 0, tl?.whole ?: 0, a?.wish == true, a?.added ?: tl?.first ?: 0, own = a?.own.orEmpty())
+            tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, a?.stars ?: 0, tl?.whole ?: 0, a?.wish == true, a?.added ?: tl?.first ?: 0, own = a?.own.orEmpty(), more = moreList(a?.more))
     }
     ShelfTab.SONGS -> st.shelfTracks.toSet().map { k ->
         val tr = st.tracks[k]; val tl = st.byTrack[k]
         val al = st.albums[tr?.album ?: ""]
         Entry(k, tab, tr?.title ?: tl?.name ?: k, tr?.artistName ?: tl?.artistName.orEmpty(), al?.cover, tr?.genre ?: al?.genre, tr?.year ?: al?.year,
-            tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, tr?.stars ?: 0, 0, tr?.wish == true, tr?.added ?: tl?.first ?: 0, own = tr?.own?.ifEmpty { null } ?: al?.own.orEmpty())
+            tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, tr?.stars ?: 0, 0, tr?.wish == true, tr?.added ?: tl?.first ?: 0, own = tr?.own?.ifEmpty { null } ?: al?.own.orEmpty(),
+            more = moreList(tr?.more?.ifEmpty { null } ?: al?.more))
     }
     ShelfTab.ARTISTS -> st.shelfArtists.toSet().map { k ->
         val a = st.artists[k]; val tl = st.byArtist[k]
@@ -124,7 +132,7 @@ fun ShelfScreen(st: Studio, nav: Nav) {
     val nq = Keys.norm(q)
     fun pass(e: Entry, gs: Set<Genre>, ds: Set<Int>, r: Boolean, w: Boolean, wi: Boolean) =
         (nq.isEmpty() || Keys.norm(e.title).contains(nq) || Keys.norm(e.sub).contains(nq)) &&
-            (gs.isEmpty() || e.genre in gs) && (owns.isEmpty() || e.own in owns) && (ds.isEmpty() || e.year?.let { it / 10 * 10 } in ds) &&
+            (gs.isEmpty() || e.genres.any { it in gs }) && (owns.isEmpty() || e.owns.any { it in owns }) && (ds.isEmpty() || e.year?.let { it / 10 * 10 } in ds) &&
             (!r || e.stars > 0) && (!w || e.whole > 0) && (!wi || e.wish)
     val list = remember(all, nq, sort, genres, owns, decades, rated, wholeOnly, wishOnly) {
         all.filter { pass(it, genres, decades, rated, wholeOnly, wishOnly) }.let { l ->
@@ -178,8 +186,8 @@ fun ShelfScreen(st: Studio, nav: Nav) {
         } }
         if (sheet == 2) app.songling.ui.Floating { Sheet(onDismiss = { sheet = 0 }) {
             Text(t("Фильтры", "Filters"), style = T.Title)
-            val gs = remember(all) { all.mapNotNull { it.genre }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.map { it.key } }
-            val mine = remember(all) { all.map { it.own }.filter { it.isNotEmpty() }.toSet() }
+            val gs = remember(all) { all.flatMap { it.genres }.groupingBy { it }.eachCount().entries.sortedByDescending { it.value }.map { it.key } }
+            val mine = remember(all) { all.flatMap { it.owns }.toSet() }
             if (mine.isNotEmpty()) {
                 Section(t("Свои жанры", "Your genres"))
                 Flow { for (o in mine) st.owns[o]?.let { og -> Chip(og.name, o in owns, { owns = if (o in owns) owns - o else owns + o }, color = androidx.compose.ui.graphics.Color(og.color)) } }
@@ -331,7 +339,7 @@ private fun ForgetSheet(st: Studio, p: app.songling.data.Play, close: () -> Unit
     app.songling.ui.Floating { Sheet(onDismiss = close) {
         Text(t("Убрать из истории?", "Remove from the history?"), style = T.Title)
         Text("«${p.title}» · ${p.artistName}", style = T.Body, maxLines = 2, overflow = TextOverflow.Ellipsis)
-        Text(date(p.at, ru) + String.format(java.util.Locale.ROOT, ", %02d:%02d · ", st.hour(p.at), java.time.Instant.ofEpochMilli(p.at).atZone(st.zone).minute) + Words.dur(p.ms.coerceAtLeast(60_000), ru), style = T.Small)
+        Text(date(p.at, ru) + String.format(java.util.Locale.ROOT, ", %02d:%02d · ", st.hour(p.at), java.time.Instant.ofEpochMilli(p.at).atZone(st.zone).minute) + Words.songDur(p.ms, ru), style = T.Small)
         Text(t("Это прослушивание пропадёт из статистики, времени питомца и заданий.", "This listen leaves the statistics, the pet's time and the goals."), style = T.Muted)
         Btn(t("Убрать", "Remove"), { co.write { db.dao().delete(p) }; close() }, Modifier.fillMaxWidth())
         Btn(t("Оставить", "Keep it"), close, Modifier.fillMaxWidth(), kind = app.songling.ui.components.Kind.GHOST)
@@ -375,7 +383,7 @@ fun History(st: Studio, nav: Nav, modifier: Modifier = Modifier) {
                     }
                     Column(horizontalAlignment = Alignment.End) {
                         Text(String.format("%02d:%02d", st.hour(p.at), java.time.Instant.ofEpochMilli(p.at).atZone(st.zone).minute), style = T.Small)
-                        Text(if (p.skipped) t("пропуск", "skipped") else Words.dur(p.ms.coerceAtLeast(60_000), ru), style = T.Small.copy(color = if (p.skipped) C.coral else C.faint))
+                        Text(if (p.skipped) t("пропуск", "skipped") else Words.songDur(p.ms, ru), style = T.Small.copy(color = if (p.skipped) C.coral else C.faint))
                     }
                 }
             }

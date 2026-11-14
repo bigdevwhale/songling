@@ -84,7 +84,7 @@ fun AlbumSheet(st: Studio, key: String, nav: Nav) {
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(a.title, style = T.Title, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
             Text(a.artistName, style = T.Body.copy(color = C.lilac), modifier = Modifier.clickable { nav.go(Overlay.ArtistOf(a.artist)) })
-            Text(listOfNotNull(Words.kind(a.kind, ru), a.year?.toString(), genreName(st, a.own, a.genre, ru)).joinToString(" · "), style = T.Small)
+            Text(listOfNotNull(Words.kind(a.kind, ru), a.year?.toString(), genresName(st, a.own, a.genre, a.more, ru)).joinToString(" · "), style = T.Small)
         }
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { Stars(a.stars, size = 28.dp) { save(a.copy(stars = it)) } }
         val heard = tl?.tracks?.size ?: 0
@@ -242,16 +242,17 @@ fun ArtistSheet(st: Studio, key: String, nav: Nav) {
 // ---------------------------------------------------------------- song
 
 @Composable
-fun TrackSheet(st: Studio, key: String, nav: Nav) {
+fun TrackSheet(st: Studio, key: String, nav: Nav, hint: app.songling.listen.NowPlaying? = null) {
     val ru = LocalRu.current
     val co = LocalContext.current.container
     val tl = st.byTrack[key]
-    val tr = st.tracks[key] ?: Track(key, tl?.name ?: key.substringAfter('|'), tl?.artistName ?: st.artistName(key.substringBefore('|')))
+    val tr = st.tracks[key] ?: Track(key, tl?.name ?: hint?.title ?: key.substringAfter('|'), tl?.artistName ?: hint?.artist ?: st.artistName(key.substringBefore('|')),
+        albumName = tl?.albumName ?: hint?.album.orEmpty())
     val al = st.albums[tr.album]
     fun save(x: Track) = co.write { db.dao().upsert(x) }
     Sheet(onDismiss = nav::close) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            app.songling.ui.components.Sleeve(al?.cover, al?.title ?: tr.albumName.ifEmpty { tr.title }, tr.artistName, tr.genre ?: al?.genre, 96.dp)
+            app.songling.ui.components.Sleeve(al?.cover ?: hint?.cover, al?.title ?: tr.albumName.ifEmpty { tr.title }, tr.artistName, tr.genre ?: al?.genre, 96.dp)
             Column(Modifier.weight(1f)) {
                 Text(t("ПЕСНЯ", "SONG") + ((tr.year ?: al?.year)?.let { " · $it" } ?: ""), style = T.Eyebrow)
                 Text(tr.title, style = T.Title)
@@ -279,7 +280,11 @@ fun TrackSheet(st: Studio, key: String, nav: Nav) {
             })
         }
         Section(t("Жанр", "Genre"))
-        GenrePick(st, tr.genre ?: al?.genre, tr.own, { save(tr.copy(genre = it, own = "", pinned = it != null)) }, { save(tr.copy(own = it)) })
+        // Several genres at once (#23): the song's own list once it was told by hand, else the album's.
+        val trMore = (if (tr.more.isNotEmpty() || tr.pinned || tr.own.isNotEmpty()) tr.more else al?.more.orEmpty()).split(',').filter { it.isNotBlank() }
+        GenresPick(st, tr.genre ?: al?.genre, tr.own, trMore) { g, o, m ->
+            save(tr.copy(genre = g, own = o, more = m.joinToString(","), pinned = if (o.isEmpty()) g != null else tr.pinned || g != null))
+        }
         if (tl == null) Btn(t("Убрать с полки", "Remove from the shelf"), { co.write { db.dao().delete(tr) }; nav.close() }, Modifier.fillMaxWidth(), kind = BtnKind.GHOST)
         else {
             var sure by remember(key) { mutableStateOf(false) }

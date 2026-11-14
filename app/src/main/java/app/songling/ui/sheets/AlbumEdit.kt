@@ -108,6 +108,7 @@ fun AlbumEditSheet(st: Studio, key: String?, nav: Nav) {
 
     var genre by remember { mutableStateOf(old?.genre) }
     var own by remember { mutableStateOf(old?.own.orEmpty()) }
+    var more by remember { mutableStateOf(old?.more.orEmpty().split(',').filter { it.isNotBlank() }) }
     var genreOpen by remember { mutableStateOf(false) }
     // The song whose title is being put right (only the ones typed in here), and whether all the heard ones are shown.
     var renaming by remember { mutableStateOf(-1) }
@@ -115,7 +116,7 @@ fun AlbumEditSheet(st: Studio, key: String?, nav: Nav) {
     val newKey = Keys.album(artist, title)
     val renamed = key != null && title.isNotBlank() && artist.isNotBlank() && newKey != key
     val saveAll = {
-        val name = title.trim(); val who = artist.trim(); val list = songs.toList(); val y = year.toIntOrNull(); val k = kind; val pic = cover; val alias = keepAlias; val g = genre; val o = own
+        val name = title.trim(); val who = artist.trim(); val list = songs.toList(); val y = year.toIntOrNull(); val k = kind; val pic = cover; val alias = keepAlias; val g = genre; val o = own; val mo = more.joinToString(",")
         co.write {
             val dao = db.dao()
             val now = System.currentTimeMillis()
@@ -138,7 +139,7 @@ fun AlbumEditSheet(st: Studio, key: String?, nav: Nav) {
                 dao.moveTrack(tk, newKey, name)
                 length += tr.length
             }
-            dao.upsert(base.copy(key = newKey, title = name, artistName = who, artist = Keys.artist(who), kind = k, year = y ?: base.year, cover = pic, genre = g ?: base.genre, own = o,
+            dao.upsert(base.copy(key = newKey, title = name, artistName = who, artist = Keys.artist(who), kind = k, year = y ?: base.year, cover = pic, genre = g ?: base.genre, own = o, more = mo,
                 tracks = list.size, length = if (length > 0) length else base.length, checked = maxOf(base.checked, now), pinned = true,
                 added = if (base.added == 0L) now else base.added, aliases = aliases.joinToString(",")))
             kick()
@@ -172,10 +173,11 @@ fun AlbumEditSheet(st: Studio, key: String?, nav: Nav) {
         Row(Modifier.fillMaxWidth().clip(androidx.compose.foundation.shape.RoundedCornerShape(14.dp)).background(C.surface2).clickable { genreOpen = !genreOpen }.padding(horizontal = 14.dp, vertical = 13.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(t("Жанр", "Genre"), style = T.Strong, modifier = Modifier.weight(1f))
-            Text(genreName(st, own, genre, ru) ?: t("не выбран", "not set"), style = T.Small.copy(color = genreColour(st, own, genre) ?: C.faint))
+            Text(genresName(st, own, genre, more.joinToString(","), ru) ?: t("не выбран", "not set"), style = T.Small.copy(color = genreColour(st, own, genre) ?: C.faint),
+                maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             Sign(if (genreOpen) Glyph.UP else Glyph.DOWN, color = C.faint, size = 12.dp)
         }
-        if (genreOpen) GenrePick(st, genre, own, { genre = it; own = "" }, { own = it })
+        if (genreOpen) GenresPick(st, genre, own, more) { g, o, m -> genre = g; own = o; more = m }
 
         Section(t("Песни", "Songs"), if (songs.isEmpty()) null else "${songs.size}")
         if (songs.isEmpty()) Text(t("Пока ни одной. Впиши название ниже или возьми из прослушанного.", "None yet. Type a title below, or take one from what you heard."), style = T.Muted)

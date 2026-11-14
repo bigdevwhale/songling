@@ -73,7 +73,8 @@ enum class Tab { DEN, SHELF, SAGA, GOALS }
 sealed class Overlay {
     data class AlbumOf(val key: String) : Overlay()
     data class ArtistOf(val key: String) : Overlay()
-    data class TrackOf(val key: String) : Overlay()
+    /** A song's sheet; [hint] names a song the shelf doesn't know yet (the one playing now, #25). */
+    data class TrackOf(val key: String, val hint: app.songling.listen.NowPlaying? = null) : Overlay()
     /** Putting an album, single or song on the shelf. */
     data class Add(val wish: Boolean = true) : Overlay()
     /** A listen the phone didn't hear: vinyl, radio, a concert. */
@@ -215,7 +216,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                 when (val o = overlay) {
                     is Overlay.AlbumOf -> app.songling.ui.sheets.AlbumSheet(studio, o.key, nav)
                     is Overlay.ArtistOf -> app.songling.ui.sheets.ArtistSheet(studio, o.key, nav)
-                    is Overlay.TrackOf -> app.songling.ui.sheets.TrackSheet(studio, o.key, nav)
+                    is Overlay.TrackOf -> app.songling.ui.sheets.TrackSheet(studio, o.key, nav, o.hint)
                     is Overlay.Add -> app.songling.ui.sheets.AddSheet(studio, o.wish, nav)
                     is Overlay.Log -> app.songling.ui.sheets.LogSheet(studio, o.concert, nav)
                     Overlay.PetInfo -> app.songling.ui.den.PetSheet(studio, nav)

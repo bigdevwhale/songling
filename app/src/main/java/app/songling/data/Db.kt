@@ -209,9 +209,9 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 5, exportSchema = true,
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 6, exportSchema = true,
     autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4),
-        androidx.room.AutoMigration(from = 4, to = 5)])
+        androidx.room.AutoMigration(from = 4, to = 5), androidx.room.AutoMigration(from = 5, to = 6)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao

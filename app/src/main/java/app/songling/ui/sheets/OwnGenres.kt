@@ -61,6 +61,48 @@ fun GenrePick(st: Studio, current: Genre?, own: String, onPick: (Genre?) -> Unit
     }
 }
 
+/**
+ * Picks one genre or several (#23). The first one picked is the main one – the colour and the cover go by it – and
+ * the rest go to [more]; a listen counts in full for every one of them. [onChange] gets the main built-in genre, the
+ * main genre of one's own (or ""), and the rest as tokens: a [Genre] name or «own:<id>».
+ */
+@Composable
+fun GenresPick(st: Studio, main: Genre?, own: String, more: List<String>, onChange: (Genre?, String, List<String>) -> Unit) {
+    val ru = LocalRu.current
+    var making by remember { mutableStateOf(false) }
+    val picked = (listOfNotNull(if (own.isNotEmpty()) "own:$own" else main?.name) + more).distinct()
+    fun set(list: List<String>) {
+        val first = list.firstOrNull()
+        when {
+            first == null -> onChange(null, "", emptyList())
+            first.startsWith("own:") -> onChange(main, first.removePrefix("own:"), list.drop(1))
+            else -> onChange(Genre.entries.firstOrNull { it.name == first }, "", list.drop(1))
+        }
+    }
+    fun toggle(k: String) = set(if (k in picked) picked - k else picked + k)
+    Text(if (picked.size > 1) t("Главный – ${tokenName(st, picked.first(), true)}: по нему цвет. Считаются все.", "The main one is ${tokenName(st, picked.first(), false)}: the colour goes by it. All of them count.")
+        else t("Можно выбрать несколько – первый станет главным.", "Pick several if you like – the first one is the main one."), style = T.Small)
+    Flow {
+        for (o in st.s.own) Chip(o.name, "own:${o.id}" in picked, { toggle("own:" + o.id) }, color = Color(o.color))
+        Chip(t("+ свой жанр", "+ your own"), false, { making = true }, color = C.lilac)
+    }
+    Flow {
+        for (g in Genre.entries) Chip(Words.genre(g, ru), g.name in picked, { toggle(g.name) }, color = C.genre(g))
+    }
+    if (making) Floating {
+        OwnGenreSheet(st, null, onSaved = { g -> set(picked + ("own:" + g.id)); making = false }, onClose = { making = false })
+    }
+}
+
+private fun tokenName(st: Studio, k: String, ru: Boolean): String =
+    if (k.startsWith("own:")) st.owns[k.removePrefix("own:")]?.name ?: "?" else Genre.entries.firstOrNull { it.name == k }?.let { Words.genre(it, ru) } ?: k
+
+/** A thing's genres in a line: the main one, then the rest (#23). */
+fun genresName(st: Studio, own: String, g: Genre?, more: String, ru: Boolean): String? {
+    val rest = more.split(',').filter { it.isNotBlank() }.map { tokenName(st, it, ru) }
+    return (listOfNotNull(genreName(st, own, g, ru)) + rest).distinct().joinToString(", ").ifEmpty { null }
+}
+
 /** Make or change a genre of one's own: a name, a colour and what it's closest to. */
 @Composable
 fun OwnGenreSheet(st: Studio, old: OwnGenre?, onSaved: (OwnGenre) -> Unit, onClose: () -> Unit) {

@@ -3,6 +3,7 @@
     <string name="app_name">Songling</string>
     <string name="listener_name">Songling: what is playing</string>
     <string name="widget_name">Songling den</string>
+    <string name="widget_den_description">Your pet and today\'s music</string>
     <string name="widget_player_name">Songling player</string>
     <string name="widget_player_description">A record or a tape with what plays in any player</string>
     <string name="widget_player_art">The player</string>

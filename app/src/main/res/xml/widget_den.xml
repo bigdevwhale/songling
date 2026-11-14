@@ -7,4 +7,5 @@
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/widget_den"
+    android:description="@string/widget_den_description"
     android:widgetCategory="home_screen" />

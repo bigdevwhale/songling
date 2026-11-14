@@ -122,7 +122,8 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
         return
     }
     if (np != null) {
-        Row(Modifier.fillMaxWidth().card().padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        // A tap opens the song: how often it was heard, its album, stars and genre (#25).
+        Row(Modifier.fillMaxWidth().card().clickable { nav.go(Overlay.TrackOf(app.songling.data.Keys.track(np.artist, np.title), np)) }.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             app.songling.ui.components.Sleeve(np.cover, np.album.ifEmpty { np.title }, np.artist, null, 48.dp)
             Column(Modifier.weight(1f)) {
                 Text(np.title, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
