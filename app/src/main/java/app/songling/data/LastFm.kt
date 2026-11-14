@@ -21,7 +21,32 @@ object LastFm {
 
     class Failure(message: String) : Exception(message)
 
-    data class Page(val plays: List<Play>, val pages: Int)
+    /** [images]: a picture Last.fm has for an album, by album key, for albums the catalogue finds no cover for. */
+    data class Page(val plays: List<Play>, val pages: Int, val images: Map<String, String> = emptyMap())
+
+    /** Last.fm's grey star, shown when it has no picture. */
+    private const val NO_PICTURE = "2a96cbd8b46e442fc41c2b86b821562f"
+
+    /** The largest picture of a track's album, or null. */
+    fun image(t: JSONObject): String? {
+        val arr = t.optJSONArray("image") ?: return null
+        return (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optString("#text")?.ifBlank { null } }.lastOrNull()?.takeIf { NO_PICTURE !in it }
+    }
+
+    /**
+     * Gives album [key] Last.fm's picture [url] when it has no cover yet (the catalogue found none): saved like any
+     * cover, so the shelf has it too. Returns the cover's file, or null.
+     */
+    suspend fun cover(ctx: android.content.Context, dao: MusicDao, key: String, url: String?): String? {
+        if (key.isEmpty()) return null
+        val a = dao.album(key)
+        a?.cover?.let { return it }
+        if (url == null) return null
+        val f = Covers.file(ctx, Covers.nameFor(key))
+        val name = if (f.exists()) f.name else Covers.download(ctx, key, url) ?: return null
+        if (a != null) dao.upsert(a.copy(cover = name))
+        return name
+    }
 
     /** Calls [method] with [args]; the parsed answer, or a [Failure] with Last.fm's own words. */
     private fun call(method: String, args: Map<String, String>): JSONObject {
@@ -47,8 +72,13 @@ object LastFm {
     /** The player's package a Last.fm «now playing» is shown under. */
     const val APP = "fm.last"
 
-    /** What [user] is playing right now on any device, as Last.fm says, or null. */
-    fun now(user: String): app.songling.listen.NowPlaying? = playing(call("user.getrecenttracks", mapOf("user" to user, "limit" to "1")))
+    /** What [user] is playing right now on any device, as Last.fm says, with the album's picture; or null. */
+    fun now(user: String): Pair<app.songling.listen.NowPlaying, String?>? {
+        val o = call("user.getrecenttracks", mapOf("user" to user, "limit" to "1"))
+        val n = playing(o) ?: return null
+        val t = o.optJSONObject("recenttracks")?.let { r -> r.optJSONArray("track")?.optJSONObject(0) ?: r.optJSONObject("track") }
+        return n to t?.let(::image)
+    }
 
     fun playing(o: JSONObject): app.songling.listen.NowPlaying? {
         val r = o.optJSONObject("recenttracks") ?: return null
@@ -64,6 +94,7 @@ object LastFm {
         val r = o.optJSONObject("recenttracks") ?: return Page(emptyList(), 0)
         val arr = r.optJSONArray("track") ?: r.optJSONObject("track")?.let { JSONArray().put(it) } ?: JSONArray()
         val out = ArrayList<Play>()
+        val images = HashMap<String, String>()
         for (i in 0 until arr.length()) {
             val t = arr.optJSONObject(i) ?: continue
             // What's playing right now has no date yet: it comes once it's scrobbled.
@@ -73,25 +104,28 @@ object LastFm {
             val artist = t.optJSONObject("artist")?.let { it.optString("#text").ifBlank { it.optString("name") } }.orEmpty().ifBlank { continue }
             val album = t.optJSONObject("album")?.optString("#text").orEmpty()
             val known = length(Keys.track(artist, title))
+            if (album.isNotBlank()) image(t)?.let { images.putIfAbsent(Keys.album(artist, album), it) }
             out += Play(at = uts * 1000, ms = if (known > 0) known else GUESS_MS, title = title, artistName = artist, albumName = album, length = known,
                 source = Source.LASTFM, app = APP, whole = true, ref = "fm:$uts:${title.take(40)}")
         }
         val pages = r.optJSONObject("@attr")?.optString("totalPages")?.toIntOrNull() ?: 1
-        return Page(out, pages)
+        return Page(out, pages, images)
     }
 
     /**
      * Brings in what [user] scrobbled after [from] (seconds): new listens written, the ones already here left out.
      * Returns how many were added and the newest scrobble's time, to start from next time.
      */
-    suspend fun sync(dao: MusicDao, user: String, from: Long): Pair<Int, Long> {
+    suspend fun sync(ctx: android.content.Context, dao: MusicDao, user: String, from: Long): Pair<Int, Long> {
         val lengths = HashMap<String, Long>()
         dao.tracks().first().forEach { if (it.length > 0) lengths[it.key] = it.length }
         val all = ArrayList<Play>()
+        val images = HashMap<String, String>()
         var page = 1
         while (page <= 10) {
             val p = recent(user, from, page) { lengths[it] ?: 0L }
             all += p.plays
+            images.putAll(p.images)
             if (page >= p.pages) break
             page++
         }
@@ -106,6 +140,11 @@ object LastFm {
         for (p in fresh.distinctBy { it.artist }) dao.insertArtist(Artist(p.artist, Keys.mainArtist(p.artistName)))
         for (p in fresh.distinctBy { it.track }) dao.insertTrack(Track(p.track, p.title, p.artistName, album = p.album, albumName = p.albumName))
         for (p in fresh.filter { it.album.isNotEmpty() }.distinctBy { it.album }) dao.insertAlbum(Album(p.album, p.albumName, p.artistName))
+        // Albums the catalogue knows no cover for get Last.fm's picture.
+        for (p in fresh.filter { it.album.isNotEmpty() }.distinctBy { it.album }) {
+            val a = dao.album(p.album) ?: continue
+            if (a.cover == null && a.checked > 0) cover(ctx, dao, p.album, images[Keys.album(p.artistName, p.albumName)] ?: images[p.album])
+        }
         return added to maxOf(from, newest)
     }
 }

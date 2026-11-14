@@ -3,7 +3,8 @@ package app.songling.domain
 /** Things for the den, bought with plectrums. */
 enum class Item(val price: Int) {
     RUG(20), PLANT(20), GARLAND(25), CANDLES(25), POSTER(30), CASSETTES(35), LAVA(35), STARS(40),
-    SHELF(45), SPEAKERS(50), HEADPHONES(40), TURNTABLE(60), NEON(70), DISCO(80), GRAMOPHONE(90), CLOCK(30);
+    SHELF(45), SPEAKERS(50), HEADPHONES(40), TURNTABLE(60), NEON(70), DISCO(80), GRAMOPHONE(90), CLOCK(30),
+    METRONOME(35), BONGOS(55), GUITAR(75), GOLD_RECORD(100);
 
     fun name(ru: Boolean) = when (this) {
         RUG -> Words.t(ru, "Круглый ковёр", "Round rug")
@@ -22,6 +23,10 @@ enum class Item(val price: Int) {
         DISCO -> Words.t(ru, "Диско-шар", "Disco ball")
         GRAMOPHONE -> Words.t(ru, "Граммофон", "Gramophone")
         CLOCK -> Words.t(ru, "Часы", "Clock")
+        METRONOME -> Words.t(ru, "Метроном", "Metronome")
+        BONGOS -> Words.t(ru, "Бонго", "Bongos")
+        GUITAR -> Words.t(ru, "Электрогитара", "Electric guitar")
+        GOLD_RECORD -> Words.t(ru, "Золотой диск", "Gold record")
     }
 
     fun note(ru: Boolean) = when (this) {
@@ -32,6 +37,9 @@ enum class Item(val price: Int) {
         CLOCK -> Words.t(ru, "Часы-пластинка, показывают настоящее время", "A record clock that tells the real time")
         CANDLES -> Words.t(ru, "Горят на подоконнике", "Burning on the sill")
         HEADPHONES -> Words.t(ru, "Висят на крючке", "On a hook")
+        METRONOME -> Words.t(ru, "Стоит на подоконнике", "On the window sill")
+        GUITAR -> Words.t(ru, "Висит на стене у окна", "On the wall by the window")
+        GOLD_RECORD -> Words.t(ru, "В рамке над проигрывателем", "Framed above the turntable")
         else -> ""
     }
 }

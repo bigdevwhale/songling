@@ -22,6 +22,26 @@ data class OwnGenre(val id: String, val name: String, val color: Long, val base:
     }
 }
 
+/**
+ * One pet's room (#26): the things bought for it («wall:<name>» for wallpaper), those put away, the wallpaper up and
+ * what hangs in the two frames. Each pet furnishes its own.
+ */
+data class Room(
+    val bought: Set<String> = emptySet(),
+    val hidden: Set<String> = emptySet(),
+    val wall: String = "PLUM",
+    val posters: List<String> = listOf("", ""),
+) {
+    fun json(): JSONObject = JSONObject().put("bought", JSONArray(bought.toList())).put("hidden", JSONArray(hidden.toList())).put("wall", wall).put("posters", JSONArray(posters))
+
+    companion object {
+        fun of(o: JSONObject): Room {
+            fun set(k: String) = o.optJSONArray(k)?.let { a -> (0 until a.length()).map { a.getString(it) }.toSet() } ?: emptySet()
+            return Room(set("bought"), set("hidden"), o.optString("wall", "PLUM"), o.optJSONArray("posters")?.let { a -> List(2) { i -> a.optString(i, "") } } ?: listOf("", ""))
+        }
+    }
+}
+
 data class Settings(
     val onboarded: Boolean = false,
     /** The pet out of its box now; null before the first egg is chosen. */
@@ -93,7 +113,32 @@ data class Settings(
     val lastfmFrom: Long = 0,
     val lastfmAt: Long = 0,
     val lastfmError: String = "",
+    /**
+     * The rooms of the pets in their boxes, by pet id (#26). [bought], [hidden], [wall] and [posters] are the room of
+     * the pet out now; bringing out another one swaps them ([switchRoom]).
+     */
+    val rooms: Map<String, Room> = emptyMap(),
+    /** The one shared den of before was given to every pet, once. */
+    val roomsSplit: Boolean = false,
 ) {
+    /** The room of the pet out now. */
+    val room: Room get() = Room(bought, hidden, wall, posters)
+
+    /** Every pet's room, the one out now included. */
+    val allRooms: List<Room> get() = rooms.values + room
+
+    /** Puts the pet out now's room away and brings out pet [to]'s (an empty one for a new pet). */
+    fun switchRoom(to: Long?): Settings {
+        if (to == pet) return this
+        val kept = if (pet != null) rooms + (pet.toString() to room) else rooms
+        val next = to?.let { kept[it.toString()] } ?: Room()
+        return copy(pet = to, bought = next.bought, hidden = next.hidden, wall = next.wall, posters = next.posters, rooms = kept - to.toString())
+    }
+
+    /** Once: every pet [ids] gets a copy of the den shared before rooms were each pet's own. */
+    fun splitRooms(ids: List<Long>): Settings =
+        if (roomsSplit) this else copy(roomsSplit = true, rooms = rooms + ids.filter { it != pet }.associate { it.toString() to room })
+
     fun json(): String = JSONObject()
         .put("onboarded", onboarded).put("pet", pet ?: -1).put("spent", spent)
         .put("bought", JSONArray(bought.toList())).put("hidden", JSONArray(hidden.toList()))
@@ -105,6 +150,7 @@ data class Settings(
         .put("lat", if (lat.isNaN()) JSONObject.NULL else lat).put("lon", if (lon.isNaN()) JSONObject.NULL else lon).put("outside", outside)
         .put("feats", JSONArray(feats.toList()))
         .put("lastfm", lastfm).put("lastfmFrom", lastfmFrom).put("lastfmAt", lastfmAt).put("lastfmError", lastfmError)
+        .put("rooms", JSONObject().also { o -> rooms.forEach { (k, r) -> o.put(k, r.json()) } }).put("roomsSplit", roomsSplit)
         .toString()
 
     companion object {
@@ -132,6 +178,8 @@ data class Settings(
                 own = o.optJSONArray("own")?.let { a -> (0 until a.length()).mapNotNull { runCatching { OwnGenre.of(a.getJSONObject(it)) }.getOrNull() } } ?: emptyList(),
                 posters = o.optJSONArray("posters")?.let { a -> List(2) { i -> a.optString(i, "") } } ?: d.posters,
                 lastfm = o.optString("lastfm"), lastfmFrom = o.optLong("lastfmFrom"), lastfmAt = o.optLong("lastfmAt"), lastfmError = o.optString("lastfmError"),
+                rooms = o.optJSONObject("rooms")?.let { r -> r.keys().asSequence().associateWith { k -> Room.of(r.getJSONObject(k)) } } ?: emptyMap(),
+                roomsSplit = o.optBoolean("roomsSplit"),
             )
         }
     }

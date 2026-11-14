@@ -56,7 +56,7 @@ class AppContainer(context: Context) {
         scrobbling = scope.launch(Dispatchers.IO) {
             val s = settings.now()
             if (s.lastfm.isBlank()) return@launch
-            val r = runCatching { LastFm.sync(db.dao(), s.lastfm, s.lastfmFrom) }
+            val r = runCatching { LastFm.sync(app, db.dao(), s.lastfm, s.lastfmFrom) }
             val now = System.currentTimeMillis()
             r.onSuccess { (added, newest) ->
                 settings.update { if (it.lastfm == s.lastfm) it.copy(lastfmFrom = newest, lastfmAt = now, lastfmError = "") else it }
@@ -104,7 +104,8 @@ class AppContainer(context: Context) {
         val now = System.currentTimeMillis()
         putAway(now)
         val id = db.dao().insert(Pet(species = sp, laid = now, shiny = rnd.nextInt(16) == 0, nature = Nature.entries[rnd.nextInt(Nature.entries.size)]))
-        settings.update { it.copy(pet = id, seen = it.seen + sp.name) }
+        // A new pet starts with a room of its own, empty (#26).
+        settings.update { it.switchRoom(id).copy(seen = it.seen + sp.name) }
     }
 
     /** Brings a pet out of the box; the one out before goes in. */
@@ -112,7 +113,7 @@ class AppContainer(context: Context) {
         val now = System.currentTimeMillis()
         putAway(now)
         db.dao().petList().firstOrNull { it.id == id }?.let { p -> db.dao().update(p.copy(spans = p.spans + ",$now-0")) }
-        settings.update { it.copy(pet = id) }
+        settings.update { it.switchRoom(id) }
     }
 
     private suspend fun putAway(now: Long) {
@@ -131,6 +132,8 @@ class SonglingApp : Application() {
         else {
             // Listens clocked longer than their song by an older version (#10).
             container.scope.launch { runCatching { container.db.dao().trimOverlong() } }
+            // The den shared by all pets before #26 becomes each pet's own room, once.
+            container.scope.launch { runCatching { val ids = container.db.dao().petList().map { it.id }; container.settings.update { it.splitRooms(ids) } } }
             container.kick()
             container.followLastFm()
         }

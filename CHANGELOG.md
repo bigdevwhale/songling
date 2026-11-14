@@ -8,6 +8,25 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-11-14
+
+### Added
+- Four music things for the den (#26): a metronome on the sill (35), bongos on the floor (55), an electric guitar on the wall by the window (75) and a framed gold record above the turntable (100).
+
+### Changed
+- Each pet has a room of its own (#26): things and wallpaper are bought for the pet out now, and bringing out another pet brings out its room. A new pet starts with an empty one. What was bought before stays with every pet you have.
+
+### Fixed
+- Without the shelf, the lava lamp and the tapes stand on the window sill instead of hanging in the air.
+- What plays on Last.fm shows in the den even while the phone's players aren't heard; the note about that comes under it instead of in its place.
+- An album the catalogue finds no cover for takes Last.fm's picture, in the den and on the shelf.
+
+<!-- tg
+Новое: у каждого питомца теперь своя комната – вещи и обои покупаются для того, кто сейчас в логове. Всё купленное раньше осталось у каждого.
+В магазине четыре музыкальные вещи: метроном, бонго, электрогитара и золотой диск.
+Исправлено: без шкафа лава-лампа и кассеты стоят на подоконнике, а не висят в воздухе. Песня с Last.fm в логове видна всегда и с обложкой.
+-->
+
 ## [1.9.0] - 2026-11-14
 
 ### Added

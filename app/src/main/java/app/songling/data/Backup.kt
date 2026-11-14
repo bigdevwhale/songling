@@ -88,7 +88,11 @@ object Backup {
             period = Period.entries.firstOrNull { it.name == x.optString("period") } ?: Period.MONTH, ref = x.optString("ref"), label = x.optString("label"),
             created = x.optLong("created"), until = x.optLong("until"), archived = x.optBoolean("archived")))
         val s = Settings.of(o.optString("settings"))
-        store.update { s.copy(pet = s.pet?.let { ids[it] }) }
+        // Pets get new ids: their rooms follow them (#26); a backup from before rooms gives every pet the shared den.
+        store.update {
+            s.copy(pet = s.pet?.let { ids[it] }, rooms = s.rooms.mapNotNull { (k, r) -> k.toLongOrNull()?.let { ids[it] }?.let { it.toString() to r } }.toMap())
+                .splitRooms(ids.values.toList())
+        }
         return arr("plays").size
     }
 }

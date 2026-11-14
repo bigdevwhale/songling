@@ -110,4 +110,22 @@ class StudioTest {
         assertEquals(listOf(other, again), app.songling.data.Import.fresh(listOf(dup, again, other), listOf(heard)))
         assertEquals(listOf(dup, again), app.songling.data.Import.fresh(listOf(again, dup), emptyList()))
     }
+
+    /** Each pet has its own room (#26): bringing out another puts this one away; a new pet starts empty; the shared den of before goes to every pet. */
+    @Test fun eachPetHasItsOwnRoom() {
+        val shared = Settings(pet = 1, bought = setOf("RUG", "wall:ROSE"), wall = "ROSE")
+        val split = shared.splitRooms(listOf(1, 2))
+        assertEquals(setOf("RUG", "wall:ROSE"), split.rooms["2"]?.bought)
+        assertEquals(split, split.splitRooms(listOf(1, 2, 3)))
+        val two = split.switchRoom(2).copy(bought = setOf("RUG", "wall:ROSE", "DISCO"))
+        assertEquals(2L, two.pet)
+        val back = two.switchRoom(1)
+        assertEquals(setOf("RUG", "wall:ROSE"), back.bought)
+        assertEquals("ROSE", back.wall)
+        assertEquals(setOf("RUG", "wall:ROSE", "DISCO"), back.rooms["2"]?.bought)
+        val fresh = back.switchRoom(3)
+        assertEquals(emptySet<String>(), fresh.bought)
+        assertEquals("PLUM", fresh.wall)
+        assertEquals(setOf("1", "2"), fresh.rooms.keys)
+    }
 }

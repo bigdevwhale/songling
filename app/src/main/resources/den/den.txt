@@ -19,6 +19,10 @@ garland 138 0 58 13
 stars 153 44 29 14 flip
 poster 5 1 39 38
 band 128 10 32 37
+guitar 47 10 20 47
+gold_record 147 57 20 20
+metronome 67 48 12 16
+bongos 0 116 28 15
 turntable.label 170 86 4 3
 speakers.cone 7 25 4
 shelf.x 13 42

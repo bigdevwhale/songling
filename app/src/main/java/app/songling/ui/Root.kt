@@ -171,8 +171,14 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                 while (true) {
                     val before = elsewhere
                     elsewhere = if (c.tracker.now.value?.playing == true) null
-                        else withContext(Dispatchers.IO) { runCatching { app.songling.data.LastFm.now(s.lastfm) }.getOrNull() }
-                            ?.let { n -> n.copy(cover = shelf[app.songling.data.Keys.album(n.artist, n.album)]?.cover) }
+                        else withContext(Dispatchers.IO) {
+                            runCatching {
+                                val (n, image) = app.songling.data.LastFm.now(s.lastfm) ?: return@runCatching null
+                                val key = if (n.album.isBlank()) "" else app.songling.data.Keys.album(n.artist, n.album)
+                                // The shelf's cover, else Last.fm's picture (kept as the album's cover when it has none).
+                                n.copy(cover = shelf[key]?.cover ?: app.songling.data.LastFm.cover(ctx, c.db.dao(), key, image))
+                            }.getOrNull()
+                        }
                     // A new song there means the last one is being scrobbled: bring it in half a minute later (Last.fm takes a
                     // moment), not in a quarter of an hour.
                     if (before != null && (elsewhere?.title != before.title || elsewhere?.artist != before.artist)) c.scope.launch { delay(30_000); c.syncLastFm() }

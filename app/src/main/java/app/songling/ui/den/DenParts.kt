@@ -87,6 +87,9 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
     val ctx = LocalContext.current
     val ru = LocalRu.current
     val co = ctx.container
+    // What plays on Last.fm shows even when the phone itself isn't heard: the warning about that comes under it.
+    val fm = np?.takeIf { it.app == app.songling.data.LastFm.APP }
+    if (fm != null) PlayingRow(fm, nav)
     if (!enabled && !app.songling.BuildConfig.DEMO) {
         Row(Modifier.fillMaxWidth().paper(22.dp).clip(R8.Lg).background(C.coralSoft)
             .clickable { ctx.startActivity(Intent(AndroidSettings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -121,20 +124,11 @@ fun NowLine(st: Studio, np: NowPlaying?, enabled: Boolean, nav: Nav) {
         }
         return
     }
-    if (np != null) {
-        // A tap opens the song: how often it was heard, its album, stars and genre (#25).
-        Row(Modifier.fillMaxWidth().card().clickable { nav.go(Overlay.TrackOf(app.songling.data.Keys.track(np.artist, np.title), np)) }.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            app.songling.ui.components.Sleeve(np.cover, np.album.ifEmpty { np.title }, np.artist, null, 48.dp)
-            Column(Modifier.weight(1f)) {
-                Text(np.title, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(np.artist, style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (np.length > 0) Bar(np.ms / np.length.toFloat(), Modifier.fillMaxWidth().padding(top = 4.dp), color = C.mint)
-            }
-            Text(when { np.app == app.songling.data.LastFm.APP -> "Last.fm"; np.playing -> t("играет", "playing"); else -> t("пауза", "paused") },
-                style = T.Small.copy(color = if (np.playing) C.mint else C.faint))
-        }
+    if (np != null && fm == null) {
+        PlayingRow(np, nav)
         return
     }
+    if (fm != null) return
     val unstuck = st.s.unstuck > 0 && st.day(st.s.unstuck) == st.today
     val e = if (st.s.earworm && !unstuck) st.earworm else null
     val f = if (st.s.earworm && unstuck) st.forgotten else null
@@ -211,5 +205,21 @@ private fun androidx.compose.foundation.layout.RowScope.Action(icon: Int, label:
             Image(ImageBitmap.imageResource(icon), null, Modifier.size(24.dp), filterQuality = FilterQuality.Low, colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(C.muted))
         }
         Text(label + (badge?.let { " $it" } ?: ""), style = T.Small.copy(color = C.muted), maxLines = 1, textAlign = TextAlign.Center)
+    }
+}
+
+/** What plays now, in a player here or on Last.fm; a tap opens the song (#25). */
+@Composable
+private fun PlayingRow(np: NowPlaying, nav: Nav) {
+    // A tap opens the song: how often it was heard, its album, stars and genre (#25).
+    Row(Modifier.fillMaxWidth().card().clickable { nav.go(Overlay.TrackOf(app.songling.data.Keys.track(np.artist, np.title), np)) }.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        app.songling.ui.components.Sleeve(np.cover, np.album.ifEmpty { np.title }, np.artist, null, 48.dp)
+        Column(Modifier.weight(1f)) {
+            Text(np.title, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(np.artist, style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (np.length > 0) Bar(np.ms / np.length.toFloat(), Modifier.fillMaxWidth().padding(top = 4.dp), color = C.mint)
+        }
+        Text(when { np.app == app.songling.data.LastFm.APP -> "Last.fm"; np.playing -> t("играет", "playing"); else -> t("пауза", "paused") },
+            style = T.Small.copy(color = if (np.playing) C.mint else C.faint))
     }
 }

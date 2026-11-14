@@ -52,4 +52,12 @@ class LastFmTest {
         val done = """{"recenttracks":{"track":[{"artist":{"#text":"A"},"name":"B","date":{"uts":"5"}}]}}"""
         assertEquals(null, LastFm.playing(JSONObject(done)))
     }
+
+    /** The largest picture is taken; Last.fm's grey star stands for none. */
+    @Test fun takesTheAlbumPicture() {
+        val t = JSONObject("""{"image":[{"size":"small","#text":"https://x/34s/a.png"},{"size":"extralarge","#text":"https://x/300x300/a.png"}]}""")
+        assertEquals("https://x/300x300/a.png", LastFm.image(t))
+        val star = JSONObject("""{"image":[{"size":"extralarge","#text":"https://x/300x300/2a96cbd8b46e442fc41c2b86b821562f.png"}]}""")
+        assertEquals(null, LastFm.image(star))
+    }
 }

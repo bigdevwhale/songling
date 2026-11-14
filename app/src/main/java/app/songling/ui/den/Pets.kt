@@ -323,7 +323,11 @@ fun ShopPage(st: Studio, nav: Nav) {
                 co.write { settings.update { s -> if (tw.price == 0 || "wall:${tw.name}" in s.bought) s.copy(wall = tw.name) else s.copy(wall = tw.name, spent = s.spent + tw.price, bought = s.bought + "wall:${tw.name}") } }
                 tryWall = null
             }, onCancel = { tryWall = null }, haveLabel = t("Поклеить", "Put up"))
-            else -> Text(t("Нажми на вещь – она появится в комнате. Понравится – купи.", "Tap a thing to try it in the room. Like it? Buy it."), style = T.Muted)
+            else -> {
+                // Each pet has a room of its own (#26): say whose this one is.
+                st.pet?.let { p -> Text(t("Это комната питомца ${p.pet.title(true)} – у каждого питомца своя.", "This is ${p.pet.title(false)}'s room – each pet has its own."), style = T.Strong) }
+                Text(t("Нажми на вещь – она появится в комнате. Понравится – купи.", "Tap a thing to try it in the room. Like it? Buy it."), style = T.Muted)
+            }
         }
         if (Item.POSTER.name in st.s.bought && Item.POSTER.name !in st.s.hidden) {
             Text(t("Постеры на стене", "Posters on the wall"), style = T.Strong)

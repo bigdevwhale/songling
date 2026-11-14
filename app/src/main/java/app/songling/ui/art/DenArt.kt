@@ -49,9 +49,11 @@ object DenArt {
 
     fun draw(b: Buf, d: DenLook, tick: Int) {
         b.clear()
+        val i = d.items
+        // Without the shelf, what stands on it goes to the window sill instead of hanging in the air.
+        Drawn.noShelf.set(Item.SHELF !in i)
         if (!Drawn.put(b, "wall_" + d.wall.name.lowercase())) room(b, d)
         window(b, d, tick)
-        val i = d.items
         // The drawn things (tools/den.py) where there are pictures of them; the ones drawn in code otherwise.
         if (Item.STARS in i) { val dark = d.hour >= 20 || d.hour < 6; if (!Drawn.each(b, "stars") { k -> if (!dark) .45f else if ((tick / 7 + k) % 5 == 0) .6f else 1f }) stars(b, d, tick) }
         if (Item.POSTER in i) { if (Drawn.has("poster") && Drawn.has("band")) framed(b, d) else { poster(b, d.posters.getOrNull(0)); band(b, d.posters.getOrNull(1)) } }
@@ -59,6 +61,9 @@ object DenArt {
         if (Item.CLOCK in i) { val c = Drawn.spot("clock.centre"); if (c != null && Drawn.put(b, "clock")) hands(b, d, c) else clock(b, d) }
         if (Item.NEON in i) neonDrawn(b, tick)
         if (Item.HEADPHONES in i) { if (!Drawn.put(b, "headphones")) headphones(b) }
+        // The music things (#26): pictures only, nothing drawn in code instead.
+        if (Item.GUITAR in i) Drawn.put(b, "guitar")
+        if (Item.GOLD_RECORD in i) { if (Drawn.put(b, "gold_record")) Drawn.glow(b, "gold_record", rgb(0xFFD860), .03f) }
         if (Item.RUG in i) { if (!Drawn.put(b, "rug")) rug(b) }
         if (Item.SHELF in i) { if (Drawn.put(b, "shelf")) spines(b, d.spines) else shelf(b, d.spines) }
         if (Item.CASSETTES in i) { if (!Drawn.put(b, "cassettes")) cassettes(b) }
@@ -67,6 +72,8 @@ object DenArt {
         if (Item.TURNTABLE in i) { if (Drawn.put(b, "turntable")) record(b, d, tick) else turntable(b, d, tick) }
         if (Item.PLANT in i) { if (!Drawn.sway(b, "plant", if ((tick / 12) % 2 == 0) 0 else 1)) plant(b, tick) }
         if (Item.GRAMOPHONE in i) { if (!Drawn.put(b, "gramophone")) gramophone(b) }
+        if (Item.METRONOME in i) Drawn.put(b, "metronome")
+        if (Item.BONGOS in i) Drawn.put(b, "bongos")
         if (Item.CANDLES in i) { if (Drawn.put(b, "candles")) Drawn.glow(b, "candles", rgb(0xFFC060), if ((tick / 3) % 3 == 0) .05f else .035f) else candles(b, tick) }
         // The pet, feet on the rug.
         d.pet?.let { look ->
@@ -98,6 +105,10 @@ object DenArt {
         Item.DISCO -> intArrayOf(156, 0, 28, 26)
         Item.GRAMOPHONE -> intArrayOf(18, 82, 34, 38)
         Item.CLOCK -> intArrayOf(19, 55, 23, 23)
+        Item.METRONOME -> intArrayOf(65, 46, 16, 20)
+        Item.BONGOS -> intArrayOf(0, 112, 30, 20)
+        Item.GUITAR -> intArrayOf(45, 8, 24, 52)
+        Item.GOLD_RECORD -> intArrayOf(145, 55, 24, 24)
     }
 
     private val thumbs = HashMap<String, Buf>()
@@ -534,8 +545,21 @@ object DenArt {
         }
         private val bufs = HashMap<String, Buf?>()
 
+        /** Whether the den being drawn (on this thread) has no shelf: then [ON_SHELF] stand on the window sill. */
+        val noShelf: ThreadLocal<Boolean> = ThreadLocal.withInitial { false }
+
+        /** What stands on the shelf, and how far it moves to stand on the sill to the right of the candles. */
+        private val ON_SHELF = mapOf("lava" to intArrayOf(86, 2), "cassettes" to intArrayOf(90, 2))
+
         /** Where [name] stands: x, y, w, h, flipped (1 or 0), once for each place. */
-        fun places(name: String): List<IntArray> = table.filter { it.first == name }.map { (_, v) -> if (v.size >= 5) v else v + 0 }
+        fun places(name: String): List<IntArray> {
+            val move = if (noShelf.get() == true) ON_SHELF[name] else null
+            return table.filter { it.first == name }.map { (_, v) ->
+                val p = if (v.size >= 5) v.copyOf() else v + 0
+                if (move != null) { p[0] += move[0]; p[1] += move[1] }
+                p
+            }
+        }
         fun spot(name: String): IntArray? = table.firstOrNull { it.first == name }?.second
         fun has(name: String) = buf(name) != null
 

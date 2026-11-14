@@ -37,6 +37,9 @@ class RenderDen {
         val b = Buf(DenArt.W, DenArt.H, Buf.FINE)
         DenArt.draw(b, DenLook(items = setOf(Item.RUG, Item.SHELF, Item.SPEAKERS, Item.TURNTABLE, Item.PLANT, Item.POSTER, Item.GARLAND, Item.CANDLES), hour = 22, spines = spines, playing = true), 3)
         save(b, "evening")
+        // Without the shelf: what stood on it goes to the window sill.
+        DenArt.draw(b, DenLook(items = Item.entries.toSet() - Item.SHELF, hour = 14, minute = 40, spines = spines, playing = true), 0)
+        save(b, "no_shelf")
         for (i in Item.entries) save(DenArt.thumb(i, Wall.PLUM), "thumb_${i.name.lowercase()}", 6)
     }
 }

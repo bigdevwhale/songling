@@ -33,6 +33,7 @@ SHEETS = {
     "items_small": ["plant", "lava", "cassettes", "candles"],
     "items_wall": ["clock", "neon", "headphones", "disco"],
     "items_deco": ["rug", "garland", "stars", "frames"],
+    "items_music": ["guitar", "gold_record", "metronome", "bongos"],
 }
 
 # Where each thing goes, in den pixels: the box it's fitted into, and how it sits in that box
@@ -54,6 +55,12 @@ PLACES = {
     "disco": [((161, 0, 20, 27), "top")],
     "gramophone": [((18, 80, 32, 40), "bottom")],
     "clock": [((46, 64, 14, 14), "centre")],
+    # The music things (#26): the wall left of the window, the wall above the turntable, the sill left of the
+    # candles, the floor's front left corner.
+    "guitar": [((47, 10, 20, 50), "top")],
+    "gold_record": [((147, 57, 20, 21), "centre")],
+    "metronome": [((67, 46, 12, 18), "bottom")],
+    "bongos": [((0, 108, 28, 23), "bottom")],
 }
 # The two frames: the picture inside each lands on the den's poster spots (DenArt.POSTER_RECTS).
 FRAMES = [("poster", (12, 8, 26, 26)), ("band", (134, 16, 20, 20))]

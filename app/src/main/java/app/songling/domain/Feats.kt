@@ -265,13 +265,13 @@ object Feats {
             Feat.GROWN -> st.pets.count { it.stage >= Stage.ADULT }
             Feat.ANCIENT -> st.pets.count { it.stage == Stage.ANCIENT }
             Feat.SHINY -> st.pets.count { it.pet.shiny }
-            Feat.COSY -> st.s.bought.count { b -> Item.entries.any { it.name == b } }
+            Feat.COSY -> st.s.allRooms.maxOf { r -> r.bought.count { b -> Item.entries.any { it.name == b } } }
             Feat.QUESTS -> st.s.claimed.size
             Feat.GOALS -> st.goalsDone
             Feat.FORMS -> st.pets.mapNotNull { it.form }.toSet().size
             Feat.GOURMET -> (st.pets.sumOf { it.favMs } / HOUR).toInt()
             Feat.STROKES -> st.s.strokes
-            Feat.WALLS -> st.s.bought.count { it.startsWith("wall:") }
+            Feat.WALLS -> st.s.allRooms.maxOf { r -> r.bought.count { it.startsWith("wall:") } }
             Feat.SPENT -> st.s.spent
         }
     }
