@@ -8,6 +8,8 @@
 
 *Слушайте музыку в любом плеере – питомец её услышит, будет танцевать и расти. А ещё полка с альбомами, статистика, цели и логово, которое можно обставить. Бесплатно, без рекламы и регистрации.*
 
+<a href="https://play.google.com/store/apps/details?id=app.songling"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/ru_badge_web_generic.png" alt="Доступно в Google Play" height="80" /></a>
+
 [![Android CI](https://github.com/bigdevwhale/songling/actions/workflows/android.yml/badge.svg)](https://github.com/bigdevwhale/songling/actions/workflows/android.yml)
 [![Google Play](https://img.shields.io/badge/Google_Play-скачать-34A853?logo=googleplay&logoColor=white)](https://play.google.com/store/apps/details?id=app.songling)
 [![Release](https://img.shields.io/github/v/release/bigdevwhale/songling?color=C8553D&label=download&logo=android)](https://github.com/bigdevwhale/songling/releases/latest)
@@ -19,7 +21,7 @@
 
 <img src="docs/screenshots/ru/1-den.jpg" width="200" /> <img src="docs/screenshots/ru/3-album.jpg" width="200" /> <img src="docs/screenshots/ru/6-bestiary.jpg" width="200" /> <img src="docs/screenshots/ru/4-saga.jpg" width="200" />
 
-**[Скачать в Google Play](https://play.google.com/store/apps/details?id=app.songling)** · [Скачать APK](https://github.com/bigdevwhale/songling/releases/latest/download/Songling.apk) · Android 9+
+[Скачать APK](https://github.com/bigdevwhale/songling/releases/latest/download/Songling.apk) · Android 9+
 
 </div>
 
