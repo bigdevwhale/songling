@@ -60,9 +60,12 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         fun clean(title: String) = title.replace(Regex(""" - (Single|EP)$"""), "")
 
         /** Albums for a free search, for adding by hand. */
-        fun searchAlbums(q: String, ru: Boolean): List<Found> {
-            val body = get("https://itunes.apple.com/search?media=music&entity=album&limit=20&term=${enc(q)}&country=${if (ru) "ru" else "us"}") ?: return emptyList()
-            val arr = JSONObject(body).optJSONArray("results") ?: return emptyList()
+        fun searchAlbums(q: String, ru: Boolean): List<Found> = albumsOrNull(q, ru).orEmpty()
+
+        /** The same, null when the store didn't answer (offline, or asked too often): not the same as nothing found. */
+        private fun albumsOrNull(q: String, ru: Boolean): List<Found>? {
+            val body = get("https://itunes.apple.com/search?media=music&entity=album&limit=20&term=${enc(q)}&country=${if (ru) "ru" else "us"}") ?: return null
+            val arr = runCatching { JSONObject(body).optJSONArray("results") }.getOrNull() ?: return null
             return (0 until arr.length()).map { arr.getJSONObject(it) }.map { o ->
                 val title = o.optString("collectionName"); val n = o.optInt("trackCount")
                 Found(clean(title), o.optString("artistName"), year(o), o.optString("primaryGenreName"), n, art(o), kindOf(title, n), o.optLong("collectionId"))
@@ -70,16 +73,53 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         }
 
         /** Songs for a free search, for adding by hand. */
-        fun searchTracks(q: String, ru: Boolean): List<FoundTrack> {
-            val body = get("https://itunes.apple.com/search?media=music&entity=song&limit=20&term=${enc(q)}&country=${if (ru) "ru" else "us"}") ?: return emptyList()
-            val arr = JSONObject(body).optJSONArray("results") ?: return emptyList()
+        fun searchTracks(q: String, ru: Boolean): List<FoundTrack> = tracksOrNull(q, ru).orEmpty()
+
+        private fun tracksOrNull(q: String, ru: Boolean): List<FoundTrack>? {
+            val body = get("https://itunes.apple.com/search?media=music&entity=song&limit=20&term=${enc(q)}&country=${if (ru) "ru" else "us"}") ?: return null
+            val arr = runCatching { JSONObject(body).optJSONArray("results") }.getOrNull() ?: return null
             return (0 until arr.length()).map { arr.getJSONObject(it) }.map { o ->
                 FoundTrack(o.optString("trackName"), o.optString("artistName"), clean(o.optString("collectionName")), o.optInt("trackNumber"),
                     o.optLong("trackTimeMillis"), year(o), o.optString("primaryGenreName"), art(o), o.optInt("trackCount"))
             }
         }
 
-        private fun close(a: String, b: String) = Keys.norm(a) == Keys.norm(b) || Keys.norm(a).startsWith(Keys.norm(b)) || Keys.norm(b).startsWith(Keys.norm(a))
+        private fun close(a: String, b: String): Boolean {
+            val x = Keys.norm(a); val y = Keys.norm(b)
+            return x.isNotEmpty() && y.isNotEmpty() && (x == y || x.startsWith(y) || y.startsWith(x))
+        }
+
+        private val cyrillic = Regex("""\p{IsCyrillic}""")
+
+        /**
+         * The stores to ask, likeliest first. By the name's own letters, not the phone's language: the US store spells
+         * «Король и Шут» as «Korol I Shut», which doesn't match, and a Russian song on an English phone went unfound.
+         */
+        fun stores(vararg names: String): List<Boolean> = if (names.any { cyrillic.containsMatchIn(it) }) listOf(true, false) else listOf(false, true)
+
+        /** An artist's MusicBrainz tags that name a style of music (not «british» or «seen live»), with their votes, most first. */
+        private fun musicTags(o: JSONObject?): List<Pair<String, Int>> {
+            val tags = o?.optJSONArray("tags") ?: return emptyList()
+            return (0 until tags.length()).mapNotNull { i ->
+                val t = tags.optJSONObject(i) ?: return@mapNotNull null
+                val name = t.optString("name").trim().lowercase()
+                if (Genre.of(name).let { it == null || it == Genre.OTHER }) null else name to t.optInt("count", 1).coerceAtLeast(1)
+            }.sortedByDescending { it.second }
+        }
+
+        /** The genre most of an artist's tags point to (weighted by votes), or null. */
+        fun tagGenre(o: JSONObject?): Genre? =
+            musicTags(o).groupBy({ Genre.of(it.first)!! }, { it.second }).maxByOrNull { it.value.sum() }?.key
+
+        /** The artist's styles as the tags name them, the three most voted. */
+        fun styles(o: JSONObject?): List<String> = musicTags(o).map { it.first }.distinct().take(3)
+
+        /** Whether a MusicBrainz artist is the one called [name]: by its name, the name it sorts by, or an alias. */
+        fun named(o: JSONObject, name: String): Boolean {
+            if (close(o.optString("name"), name) || close(o.optString("sort-name"), name)) return true
+            val aliases = o.optJSONArray("aliases") ?: return false
+            return (0 until aliases.length()).any { i -> aliases.optJSONObject(i)?.let { close(it.optString("name"), name) } == true }
+        }
     }
 
     private val lock = Mutex()
@@ -89,18 +129,36 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         if (!lock.tryLock()) return@withContext
         try {
             var n = 0
-            for (t in dao.uncheckedTracks(max)) { track(t); n++; delay(1_500) }
-            for (a in dao.uncheckedAlbums(max)) { album(a); n++; delay(1_500) }
-            for (a in dao.uncheckedArtists(max)) { artist(a); n++; delay(1_100) }
+            val before = System.currentTimeMillis() - RETRY
+            for (t in dao.uncheckedTracks(max, before)) { track(t); n++; delay(1_500) }
+            for (a in dao.uncheckedAlbums(max, before)) { album(a); n++; delay(1_500) }
+            for (a in dao.uncheckedArtists(max, before)) { artist(a); n++; delay(1_500) }
         } finally { lock.unlock() }
     }
 
+    /**
+     * Asks the [stores] in turn for the first [pick] that fits, a pause between them. Null with [failed] set when a store
+     * didn't answer, so the thing is asked again in an hour rather than in two weeks.
+     */
+    private class Asked<T>(val hit: T?, val failed: Boolean)
+    private suspend fun <R, T> ask(stores: List<Boolean>, search: (Boolean) -> List<R>?, pick: (List<R>) -> T?): Asked<T> {
+        var failed = false
+        stores.forEachIndexed { i, ru ->
+            if (i > 0) delay(1_500)
+            val hits = runCatching { search(ru) }.getOrNull()
+            if (hits == null) failed = true else pick(hits)?.let { return Asked(it, false) }
+        }
+        return Asked(null, failed)
+    }
+    private val later get() = System.currentTimeMillis() - RETRY + HOUR
+
     /** A song heard: its album (when the player didn't say), genre and year. */
     private suspend fun track(t: Track) {
-        val ru = ctx.resources.configuration.locales[0].language == "ru"
-        val hits = runCatching { searchTracks("${t.artistName} ${t.title}", ru) }.getOrDefault(emptyList())
-        val hit = hits.firstOrNull { close(it.title, t.title) && close(Keys.mainArtist(it.artist), Keys.mainArtist(t.artistName)) }
-        if (hit == null) { dao.upsert(t.copy(checked = System.currentTimeMillis())); return }
+        val asked = ask(stores(t.artistName, t.title), { ru -> tracksOrNull("${t.artistName} ${t.title}", ru) }) { hits ->
+            hits.firstOrNull { close(it.title, t.title) && close(Keys.mainArtist(it.artist), Keys.mainArtist(t.artistName)) }
+        }
+        val hit = asked.hit
+        if (hit == null) { dao.upsert(t.copy(checked = if (asked.failed) later else System.currentTimeMillis())); return }
         val albumKey = t.album.ifEmpty { Keys.album(t.artistName, hit.album) }
         dao.upsert(t.copy(checked = System.currentTimeMillis(), number = hit.number, length = if (t.length > 0) t.length else hit.length,
             year = t.year ?: hit.year, genre = t.genre ?: Genre.of(hit.genreName), album = albumKey, albumName = t.albumName.ifEmpty { hit.album }))
@@ -110,11 +168,12 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
     }
 
     private suspend fun album(a: Album) {
-        val ru = ctx.resources.configuration.locales[0].language == "ru"
-        val hits = runCatching { searchAlbums("${Keys.mainArtist(a.artistName)} ${a.title}", ru) }.getOrDefault(emptyList())
-        val hit = hits.firstOrNull { close(it.title, a.title) && close(Keys.mainArtist(it.artist), Keys.mainArtist(a.artistName)) }
-            ?: hits.firstOrNull { close(it.title, a.title) }
-        if (hit == null) { dao.upsert(a.copy(checked = System.currentTimeMillis())); return }
+        val asked = ask(stores(a.artistName, a.title), { ru -> albumsOrNull("${Keys.mainArtist(a.artistName)} ${a.title}", ru) }) { hits ->
+            hits.firstOrNull { close(it.title, a.title) && close(Keys.mainArtist(it.artist), Keys.mainArtist(a.artistName)) }
+                ?: hits.firstOrNull { close(it.title, a.title) }
+        }
+        val hit = asked.hit
+        if (hit == null) { dao.upsert(a.copy(checked = if (asked.failed) later else System.currentTimeMillis())); return }
         val cover = a.cover ?: hit.art?.let { Covers.download(ctx, a.key, it) }
         // Its length, from the album's track list.
         val length = runCatching {
@@ -143,9 +202,11 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
     }
 
     private suspend fun artist(a: Artist) {
-        val body = get("https://musicbrainz.org/ws/2/artist/?fmt=json&limit=3&query=${enc("artist:\"${a.name}\"")}")
-        val arr = body?.let { runCatching { JSONObject(it).optJSONArray("artists") }.getOrNull() }
-        val o = arr?.let { (0 until it.length()).map { i -> it.getJSONObject(i) }.firstOrNull { x -> close(x.optString("name"), a.name) } }
+        val q = a.name.replace("\"", "")
+        val body = get("https://musicbrainz.org/ws/2/artist/?fmt=json&limit=5&query=${enc("artist:\"$q\" OR alias:\"$q\"")}")
+        if (body == null) { dao.upsert(a.copy(checked = later)); return }  // offline or busy: again in an hour
+        val arr = runCatching { JSONObject(body).optJSONArray("artists") }.getOrNull()
+        val o = arr?.let { (0 until it.length()).map { i -> it.getJSONObject(i) }.firstOrNull { x -> x.optInt("score") >= 80 && named(x, a.name) } }
         val country = o?.optString("country")?.takeIf { it.length == 2 }
             ?: o?.optJSONObject("area")?.optJSONArray("iso-3166-1-codes")?.optString(0)?.takeIf { it.length == 2 }
             ?: o?.optJSONObject("begin-area")?.optJSONArray("iso-3166-1-codes")?.optString(0)?.takeIf { it.length == 2 }
@@ -154,8 +215,8 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         val life = o?.optJSONObject("life-span")
         val gone = if (o?.optString("type") == "Person" && life?.optBoolean("ended") == true) (life.optString("end").take(4).toIntOrNull() ?: 1) else -1
         val now = dao.artist(a.key) ?: a
-        dao.upsert(now.copy(checked = if (o == null) System.currentTimeMillis() - (System.currentTimeMillis() % RETRY) else System.currentTimeMillis(),
-            country = now.country.ifBlank { country }, gone = gone))
+        dao.upsert(now.copy(checked = System.currentTimeMillis(), country = now.country.ifBlank { country }, gone = gone, tagGenre = tagGenre(o) ?: now.tagGenre,
+            styles = styles(o).joinToString(",").ifEmpty { now.styles }))
     }
 
     /** Makes sure the catalogue rows exist for a new listen, so they get looked up. */

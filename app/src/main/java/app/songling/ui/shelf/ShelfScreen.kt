@@ -90,20 +90,20 @@ fun entries(st: Studio, tab: ShelfTab): List<Entry> = when (tab) {
         val a = st.albums[k]; val tl = st.byAlbum[k]
         val single = a?.kind == Kind.SINGLE
         if ((tab == ShelfTab.SINGLES) != single) return@mapNotNull null
-        Entry(k, tab, a?.title ?: tl?.name ?: k, a?.artistName ?: tl?.artistName.orEmpty(), a?.cover, a?.genre ?: st.artists[a?.artist ?: ""]?.genre, a?.year,
+        Entry(k, tab, a?.title ?: tl?.name ?: k, a?.artistName ?: tl?.artistName.orEmpty(), a?.cover, a?.genre ?: st.artists[a?.artist ?: ""]?.let { it.genre ?: it.tagGenre }, a?.year,
             tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, a?.stars ?: 0, tl?.whole ?: 0, a?.wish == true, a?.added ?: tl?.first ?: 0, own = a?.own.orEmpty(), more = moreList(a?.more))
     }
     ShelfTab.SONGS -> st.shelfTracks.toSet().map { k ->
         val tr = st.tracks[k]; val tl = st.byTrack[k]
         val al = st.albums[tr?.album ?: ""]
-        Entry(k, tab, tr?.title ?: tl?.name ?: k, tr?.artistName ?: tl?.artistName.orEmpty(), al?.cover, tr?.genre ?: al?.genre, tr?.year ?: al?.year,
+        Entry(k, tab, tr?.title ?: tl?.name ?: k, tr?.artistName ?: tl?.artistName.orEmpty(), al?.cover, tr?.genre ?: al?.genre ?: st.artists[tr?.artist ?: ""]?.tagGenre, tr?.year ?: al?.year,
             tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, tr?.stars ?: 0, 0, tr?.wish == true, tr?.added ?: tl?.first ?: 0, own = tr?.own?.ifEmpty { null } ?: al?.own.orEmpty(),
             more = moreList(tr?.more?.ifEmpty { null } ?: al?.more))
     }
     ShelfTab.ARTISTS -> st.shelfArtists.toSet().map { k ->
         val a = st.artists[k]; val tl = st.byArtist[k]
         val top = tl?.albums?.maxByOrNull { st.byAlbum[it]?.ms ?: 0 }
-        Entry(k, tab, st.artistName(k), "", st.albums[top ?: ""]?.cover, a?.genre ?: st.albums[top ?: ""]?.genre, null,
+        Entry(k, tab, st.artistName(k), "", st.albums[top ?: ""]?.cover, a?.genre ?: st.albums[top ?: ""]?.genre ?: a?.tagGenre, null,
             tl?.ms ?: 0, tl?.plays ?: 0, tl?.last ?: 0, a?.stars ?: 0, 0, a?.wish == true, a?.added ?: tl?.first ?: 0, a?.country.orEmpty(), own = a?.own.orEmpty())
     }
     ShelfTab.WISH -> (entries(st, ShelfTab.ALBUMS) + entries(st, ShelfTab.SINGLES) + entries(st, ShelfTab.SONGS) + entries(st, ShelfTab.ARTISTS)).filter { it.wish }

@@ -111,7 +111,8 @@ class Studio(
         if (a?.pinned == true && a.genre != null) return a.genre
         artists[p.artist]?.genre?.let { return it }
         val guess = listOfNotNull(t?.genre, a?.genre)
-        return guess.firstOrNull { it != Genre.OTHER } ?: guess.firstOrNull()
+        // The artist's tags (MusicBrainz) when the song and its album say nothing useful.
+        return guess.firstOrNull { it != Genre.OTHER } ?: artists[p.artist]?.tagGenre ?: guess.firstOrNull()
     }
     fun yearOf(p: Play): Int? = tracks[p.track]?.year ?: albums[p.album]?.year
     /**

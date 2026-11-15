@@ -89,6 +89,73 @@ interface MusicDao {
     @Query("DELETE FROM artists WHERE `key` = :artist")
     suspend fun forgetArtistRow(artist: String)
 
+    @Query("SELECT (SELECT COUNT(*) FROM plays WHERE artist = :artist) + (SELECT COUNT(*) FROM tracks WHERE artist = :artist) + (SELECT COUNT(*) FROM albums WHERE artist = :artist)")
+    suspend fun usesOfArtist(artist: String): Int
+
+    @Query("SELECT * FROM tracks")
+    suspend fun trackList(): List<Track>
+
+    @Query("SELECT * FROM goals")
+    suspend fun goalList(): List<Goal>
+
+    /**
+     * Keys an older version read differently from the name (it split «Король и Шут» into «Король» and «Шут»): each
+     * listen's, song's and album's artist key worked out again from its name, with the keys that begin with it. Only
+     * rows that differ are touched, so it's cheap to run on every start, and after a restore of an old backup.
+     */
+    @Transaction
+    suspend fun rekeyArtists() {
+        val memo = HashMap<String, String>()
+        fun key(name: String) = memo.getOrPut(name) { Keys.artist(name) }
+        fun move(k: String, from: String, to: String) = if (k.startsWith("$from|")) to + k.substring(from.length) else k
+        val moved = HashMap<String, MutableMap<String, String>>()  // old key → new key → a name it came from
+        fun fresh(old: String, name: String): String? {
+            val n = key(name)
+            if (n == old || n.isEmpty()) return null
+            moved.getOrPut(old) { HashMap() }.putIfAbsent(n, name)
+            return n
+        }
+        // Albums first, then songs: what points at an album or a song (a listen folded into another artist's album,
+        // an alias, a goal) follows it by its old key, whoever's name the pointer carries.
+        val albumMoves = HashMap<String, String>()
+        val albums = albumList()
+        for (a in albums) { val n = fresh(a.artist, a.artistName) ?: continue; move(a.key, a.artist, n).let { if (it != a.key) albumMoves[a.key] = it } }
+        fun albumOf(k: String, from: String, to: String?) = albumMoves[k] ?: if (to != null) move(k, from, to) else k
+        for (a in albums) {
+            val n = key(a.artistName).takeIf { it != a.artist && it.isNotEmpty() }
+            val aliases = if (a.aliases.isEmpty()) "" else a.aliases.split(',').joinToString(",") { albumMoves[it] ?: if (n != null) move(it, a.artist, n) else it }
+            val k = albumMoves[a.key] ?: a.key
+            if (n == null && aliases == a.aliases) continue
+            if (k != a.key) { delete(a); insertAlbum(a.copy(key = k, artist = n ?: a.artist, aliases = aliases)) } else upsert(a.copy(artist = n ?: a.artist, aliases = aliases))
+        }
+        val trackMoves = HashMap<String, String>()
+        for (t in trackList()) {
+            val n = fresh(t.artist, t.artistName)
+            val k = if (n != null) move(t.key, t.artist, n) else t.key
+            val al = albumOf(t.album, t.artist, n)
+            if (n == null && al == t.album) continue
+            if (k != t.key) { trackMoves[t.key] = k; delete(t); insertTrack(t.copy(key = k, artist = n ?: t.artist, album = al)) } else upsert(t.copy(artist = n ?: t.artist, album = al))
+        }
+        for (p in playList()) {
+            val n = fresh(p.artist, p.artistName)
+            val tr = trackMoves[p.track] ?: if (n != null) move(p.track, p.artist, n) else p.track
+            val al = albumOf(p.album, p.artist, n)
+            if (n != null || tr != p.track || al != p.album) update(p.copy(artist = n ?: p.artist, track = tr, album = al))
+        }
+        if (moved.isEmpty()) return
+        for (g in goalList()) {
+            val ref = albumMoves[g.ref] ?: trackMoves[g.ref] ?: moved[g.ref]?.keys?.singleOrNull() ?: continue
+            update(g.copy(ref = ref))
+        }
+        for ((old, news) in moved) {
+            val row = artist(old)
+            // What you set by hand stays; what the catalogue said was about the wrong name, so it's asked again.
+            for ((n, name) in news) if (artist(n) == null)
+                insertArtist((row ?: Artist(n, "")).copy(key = n, name = Keys.mainArtist(name), country = "", checked = 0, gone = 0, tagGenre = null, styles = ""))
+            if (usesOfArtist(old) == 0) forgetArtistRow(old)
+        }
+    }
+
     @Query("SELECT * FROM plays WHERE album = :album ORDER BY at DESC LIMIT 1")
     suspend fun lastOfAlbum(album: String): Play?
 
@@ -131,8 +198,9 @@ interface MusicDao {
     @Query("DELETE FROM tracks WHERE album = :album")
     suspend fun forgetTracks(album: String)
 
-    @Query("SELECT * FROM albums WHERE checked = 0 LIMIT :n")
-    suspend fun uncheckedAlbums(n: Int): List<Album>
+    /** New albums, then ones with no genre last looked up before [before]: catalogues fill in, and lookups fail. */
+    @Query("SELECT * FROM albums WHERE checked = 0 OR (genre IS NULL AND pinned = 0 AND checked < :before) ORDER BY checked LIMIT :n")
+    suspend fun uncheckedAlbums(n: Int, before: Long): List<Album>
 
     // --- artists
     @Query("SELECT * FROM artists")
@@ -145,8 +213,8 @@ interface MusicDao {
     @Upsert suspend fun upsert(a: Artist)
 
     /** Artists never looked up, or looked up before the app knew to ask whether they're still alive. */
-    @Query("SELECT * FROM artists WHERE checked = 0 OR gone = 0 LIMIT :n")
-    suspend fun uncheckedArtists(n: Int): List<Artist>
+    @Query("SELECT * FROM artists WHERE checked = 0 OR gone = 0 OR ((country = '' OR tagGenre IS NULL) AND checked < :before) ORDER BY checked LIMIT :n")
+    suspend fun uncheckedArtists(n: Int, before: Long): List<Artist>
 
     // --- tracks
     @Query("SELECT * FROM tracks")
@@ -159,8 +227,8 @@ interface MusicDao {
     @Upsert suspend fun upsert(t: Track)
     @Delete suspend fun delete(t: Track)
 
-    @Query("SELECT * FROM tracks WHERE checked = 0 LIMIT :n")
-    suspend fun uncheckedTracks(n: Int): List<Track>
+    @Query("SELECT * FROM tracks WHERE checked = 0 OR (genre IS NULL AND pinned = 0 AND checked < :before) ORDER BY checked LIMIT :n")
+    suspend fun uncheckedTracks(n: Int, before: Long): List<Track>
 
     // --- pets
     @Query("SELECT * FROM pets ORDER BY laid")
@@ -209,12 +277,25 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 6, exportSchema = true,
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 7, exportSchema = true,
     autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4),
-        androidx.room.AutoMigration(from = 4, to = 5), androidx.room.AutoMigration(from = 5, to = 6)])
+        androidx.room.AutoMigration(from = 4, to = 5), androidx.room.AutoMigration(from = 5, to = 6),
+        androidx.room.AutoMigration(from = 6, to = 7, spec = MusicDb.LookAgain::class)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao
+
+    /**
+     * 7: what an older version couldn't find (it asked the store of the phone's language, so «Король и Шут» came back
+     * as «Korol I Shut» on an English phone) is looked up once more, artists for the genre their tags suggest too.
+     */
+    class LookAgain : androidx.room.migration.AutoMigrationSpec {
+        override fun onPostMigrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+            db.execSQL("UPDATE tracks SET checked = 0 WHERE genre IS NULL AND pinned = 0")
+            db.execSQL("UPDATE albums SET checked = 0 WHERE genre IS NULL AND pinned = 0")
+            db.execSQL("UPDATE artists SET checked = 0")
+        }
+    }
 
     companion object {
         fun create(context: Context): MusicDb = Room.databaseBuilder(context, MusicDb::class.java, "songling.db").build()

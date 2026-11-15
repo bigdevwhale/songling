@@ -36,7 +36,8 @@ enum class Genre(val argb: Long, val form: Form) {
             val n = name?.lowercase()?.trim().orEmpty()
             if (n.isEmpty()) return null
             return when {
-                "metal" in n || "метал" in n -> METAL
+                // «-core» styles grew out of metal: metalcore, deathcore, electronicore (hardcore itself is punk).
+                "metal" in n || "метал" in n || (n.endsWith("core") && "hardcore" !in n) -> METAL
                 "punk" in n || "hardcore" in n || "панк" in n -> PUNK
                 "alternative" in n || "indie" in n || "альтерн" in n || "инди" in n || "grunge" in n || "shoegaze" in n -> ALT
                 "hip" in n || "rap" in n || "рэп" in n || "хип" in n || "trap" in n || "grime" in n -> HIPHOP

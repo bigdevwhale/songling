@@ -79,6 +79,20 @@ class Stats(val st: Studio, val f: Filter) {
     val ownGenres: List<Pair<app.songling.data.OwnGenre, Long>> get() = plays.flatMap { p -> st.ownsOf(p).map { it to p.ms } }
         .groupBy({ it.first.id }, { it }).map { (_, l) -> l.first().first to l.sumOf { it.second } }.sortedByDescending { it.second }
 
+    /**
+     * The styles inside each genre, most-listened first: a listen's artist's styles go to the genres that listen counted
+     * for, so «рок» shows what kinds of rock it was made of.
+     */
+    val stylesIn: Map<Genre, List<String>> get() {
+        val time = HashMap<Genre, HashMap<String, Long>>()
+        for (p in plays) {
+            val styles = st.artists[p.artist]?.styles.orEmpty().split(',').filter { it.isNotBlank() }
+            if (styles.isEmpty()) continue
+            for (g in st.genresOf(p).ifEmpty { listOf(Genre.OTHER) }) for (s in styles) time.getOrPut(g) { HashMap() }.merge(s, p.ms, Long::plus)
+        }
+        return time.mapValues { (_, m) -> m.entries.sortedByDescending { it.value }.map { it.key } }
+    }
+
     val genres: List<Pair<Genre, Long>> get() = plays.flatMap { p -> st.genresOf(p).ifEmpty { listOf(Genre.OTHER) }.map { it to p.ms } }.groupBy({ it.first }, { it.second }).map { it.key to it.value.sum() }.sortedByDescending { it.second }
 
     val hours: LongArray get() = LongArray(24).also { a -> for (p in plays) a[st.hour(p.at)] += p.ms }

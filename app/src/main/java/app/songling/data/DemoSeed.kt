@@ -11,24 +11,26 @@ import kotlin.random.Random
 
 /** A den four months into listening, for the demo build and screenshots. */
 object DemoSeed {
-    private class A(val artist: String, val title: String, val year: Int, val genre: Genre, val country: String, val songs: List<String>, val weight: Int)
+    private class A(val artist: String, val title: String, val year: Int, val genre: Genre, val country: String, val songs: List<String>, val weight: Int, val styles: String = "")
 
     private val ALBUMS = listOf(
-        A("Radiohead", "OK Computer", 1997, Genre.ALT, "GB", listOf("Airbag", "Paranoid Android", "Subterranean Homesick Alien", "Exit Music (For a Film)", "Let Down", "Karma Police", "No Surprises", "Lucky"), 9),
-        A("Miles Davis", "Kind of Blue", 1959, Genre.JAZZ, "US", listOf("So What", "Freddie Freeloader", "Blue in Green", "All Blues", "Flamenco Sketches"), 8),
-        A("Daft Punk", "Discovery", 2001, Genre.DANCE, "FR", listOf("One More Time", "Aerodynamic", "Digital Love", "Harder, Better, Faster, Stronger", "Something About Us", "Face to Face"), 6),
-        A("Кино", "Группа крови", 1988, Genre.ROCK, "RU", listOf("Группа крови", "Закрой за мной дверь, я ухожу", "Война", "Спокойная ночь", "Мама, мы все тяжело больны", "Бошетунмай"), 7),
-        A("Massive Attack", "Mezzanine", 1998, Genre.ELECTRONIC, "GB", listOf("Angel", "Risingson", "Teardrop", "Inertia Creeps", "Exchange", "Black Milk"), 6),
-        A("Fleetwood Mac", "Rumours", 1977, Genre.ROCK, "GB", listOf("Second Hand News", "Dreams", "Never Going Back Again", "Don't Stop", "Go Your Own Way", "The Chain"), 5),
-        A("Brian Eno", "Ambient 1: Music for Airports", 1978, Genre.AMBIENT, "GB", listOf("1/1", "2/1", "1/2", "2/2"), 4),
-        A("Kendrick Lamar", "To Pimp a Butterfly", 2015, Genre.HIPHOP, "US", listOf("Wesley's Theory", "King Kunta", "Alright", "u", "These Walls", "The Blacker the Berry"), 4),
-        A("Земфира", "Земфира", 1999, Genre.ROCK, "RU", listOf("Снег", "Ариведерчи", "СПИД", "Ракеты", "Почему", "Румба"), 5),
-        A("Glenn Gould", "Bach: The Goldberg Variations", 1981, Genre.CLASSICAL, "CA", listOf("Aria", "Variatio 1", "Variatio 2", "Variatio 3", "Variatio 4", "Aria da capo"), 3),
-        A("Bon Iver", "For Emma, Forever Ago", 2007, Genre.FOLK, "US", listOf("Flume", "Lump Sum", "Skinny Love", "The Wolves", "Blindsided", "Re: Stacks"), 4),
-        A("Metallica", "Master of Puppets", 1986, Genre.METAL, "US", listOf("Battery", "Master of Puppets", "The Thing That Should Not Be", "Welcome Home (Sanitarium)", "Orion"), 3),
-        A("Hans Zimmer", "Interstellar", 2014, Genre.SOUNDTRACK, "DE", listOf("Dreaming of the Crash", "Cornfield Chase", "Mountains", "No Time for Caution", "Stay"), 3),
-        A("Björk", "Homogenic", 1997, Genre.ELECTRONIC, "IS", listOf("Hunter", "Jóga", "Bachelorette", "All Is Full of Love", "Pluto"), 3),
-        A("Buena Vista Social Club", "Buena Vista Social Club", 1997, Genre.LATIN, "CU", listOf("Chan Chan", "De camino a la vereda", "El cuarto de Tula", "Dos gardenias"), 2),
+        A("Radiohead", "OK Computer", 1997, Genre.ALT, "GB", listOf("Airbag", "Paranoid Android", "Subterranean Homesick Alien", "Exit Music (For a Film)", "Let Down", "Karma Police", "No Surprises", "Lucky"), 9, "alternative rock,art rock,experimental"),
+        A("Miles Davis", "Kind of Blue", 1959, Genre.JAZZ, "US", listOf("So What", "Freddie Freeloader", "Blue in Green", "All Blues", "Flamenco Sketches"), 8, "modal jazz,cool jazz,jazz"),
+        A("Daft Punk", "Discovery", 2001, Genre.DANCE, "FR", listOf("One More Time", "Aerodynamic", "Digital Love", "Harder, Better, Faster, Stronger", "Something About Us", "Face to Face"), 6, "french house,house,electronic"),
+        A("Кино", "Группа крови", 1988, Genre.ROCK, "RU", listOf("Группа крови", "Закрой за мной дверь, я ухожу", "Война", "Спокойная ночь", "Мама, мы все тяжело больны", "Бошетунмай"), 7, "post-punk,new wave,rock"),
+        A("Massive Attack", "Mezzanine", 1998, Genre.ELECTRONIC, "GB", listOf("Angel", "Risingson", "Teardrop", "Inertia Creeps", "Exchange", "Black Milk"), 6, "trip hop,downtempo,electronic"),
+        A("Fleetwood Mac", "Rumours", 1977, Genre.ROCK, "GB", listOf("Second Hand News", "Dreams", "Never Going Back Again", "Don't Stop", "Go Your Own Way", "The Chain"), 5, "soft rock,pop rock,rock"),
+        A("Brian Eno", "Ambient 1: Music for Airports", 1978, Genre.AMBIENT, "GB", listOf("1/1", "2/1", "1/2", "2/2"), 4, "ambient,electronic,art rock"),
+        A("Kendrick Lamar", "To Pimp a Butterfly", 2015, Genre.HIPHOP, "US", listOf("Wesley's Theory", "King Kunta", "Alright", "u", "These Walls", "The Blacker the Berry"), 4, "conscious hip hop,jazz rap,hip hop"),
+        A("Земфира", "Земфира", 1999, Genre.ROCK, "RU", listOf("Снег", "Ариведерчи", "СПИД", "Ракеты", "Почему", "Румба"), 5, "alternative rock,pop rock,rock"),
+        A("Glenn Gould", "Bach: The Goldberg Variations", 1981, Genre.CLASSICAL, "CA", listOf("Aria", "Variatio 1", "Variatio 2", "Variatio 3", "Variatio 4", "Aria da capo"), 3, "classical,baroque"),
+        A("Bon Iver", "For Emma, Forever Ago", 2007, Genre.FOLK, "US", listOf("Flume", "Lump Sum", "Skinny Love", "The Wolves", "Blindsided", "Re: Stacks"), 4, "indie folk,chamber folk,folk"),
+        A("Metallica", "Master of Puppets", 1986, Genre.METAL, "US", listOf("Battery", "Master of Puppets", "The Thing That Should Not Be", "Welcome Home (Sanitarium)", "Orion"), 3, "thrash metal,heavy metal"),
+        A("Hans Zimmer", "Interstellar", 2014, Genre.SOUNDTRACK, "DE", listOf("Dreaming of the Crash", "Cornfield Chase", "Mountains", "No Time for Caution", "Stay"), 3, "film score,soundtrack"),
+        A("Björk", "Homogenic", 1997, Genre.ELECTRONIC, "IS", listOf("Hunter", "Jóga", "Bachelorette", "All Is Full of Love", "Pluto"), 3, "art pop,electronic,trip hop"),
+        A("Electric Callboy", "Tekkno", 2022, Genre.METAL, "DE", listOf("Pump It", "We Got the Moves", "Fuckboi", "Spaceman", "Hurrikan"), 3, "metalcore,electronicore,trancecore"),
+        A("Король и Шут", "Акустический альбом", 1999, Genre.PUNK, "RU", listOf("Лесник", "Кукла колдуна", "Прыгну со скалы", "Ели мясо мужики", "Дурак и молния"), 4, "punk rock,horror punk,folk punk"),
+        A("Buena Vista Social Club", "Buena Vista Social Club", 1997, Genre.LATIN, "CU", listOf("Chan Chan", "De camino a la vereda", "El cuarto de Tula", "Dos gardenias"), 2, "latin jazz,salsa,latin"),
     )
 
     suspend fun seedIfEmpty(ctx: Context, c: AppContainer) {
@@ -70,7 +72,8 @@ object DemoSeed {
             val key = Keys.album(a.artist, a.title)
             dao.upsert(Album(key, a.title, a.artist, year = a.year, genre = a.genre, genreName = a.genre.name, tracks = a.songs.size, checked = now, stars = if (a.weight > 6) 5 else if (a.weight > 3) 4 else 0,
                 own = if (a.genre == Genre.AMBIENT || a.genre == Genre.CLASSICAL) "work" else ""))
-            dao.upsert(Artist(Keys.artist(a.artist), a.artist, a.country, checked = now))
+            dao.upsert(Artist(Keys.artist(a.artist), a.artist, a.country, checked = now, styles = a.styles,
+                tagGenre = a.styles.split(',').firstNotNullOfOrNull { Genre.of(it)?.takeIf { g -> g != Genre.OTHER } }))
             a.songs.forEachIndexed { i, s -> dao.upsert(Track(Keys.track(a.artist, s), s, a.artist, album = key, albumName = a.title, number = i + 1, year = a.year, genre = a.genre, checked = now, loved = i == 1)) }
         }
         dao.upsert(Artist(Keys.artist("Kino"), "Kino", "RU", Genre.ROCK, checked = now))

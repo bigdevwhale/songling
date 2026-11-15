@@ -8,6 +8,27 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-11-15
+
+### Added
+- Styles: an artist's styles as MusicBrainz tags name them (metalcore, electronicore, trip hop…), under their name on the artist's page. In the statistics, each genre shows the styles it was made of.
+- An artist's genre from those tags, for songs and albums the catalogue doesn't know.
+
+### Changed
+- «-core» styles (metalcore, deathcore, electronicore) count as metal; hardcore stays punk.
+
+### Fixed
+- A band with «и» or «&» in its name (Король и Шут, Егор и Опизденевшие, Simon & Garfunkel) is one artist, not two. Listens already split come back together, with their songs, albums, goals and stars.
+- Russian music gets its genre, year and cover on a phone set to another language: the store is picked by the name's letters, and the other one is asked too.
+- What couldn't be looked up is asked again: in an hour when the service didn't answer, in two weeks when nothing was found. After the update, everything left without a genre or country is looked up once more.
+- Artists are found by their other names too (MusicBrainz aliases), so more of them get a country.
+
+<!-- tg
+Новое: у артистов появились стили – metalcore, trip hop, post-punk и другие. В статистике под каждым жанром видно, из каких стилей он сложился.
+Исправлено: «Король и Шут» и другие группы с «и» или «&» в названии больше не делятся на двух артистов.
+Жанры и страны находятся у гораздо большего числа песен и артистов, русская музыка – даже на телефоне на английском.
+-->
+
 ## [1.10.0] - 2026-11-14
 
 ### Added

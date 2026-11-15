@@ -42,10 +42,13 @@ class AppContainer(context: Context) {
 
     private var looking: Job? = null
 
+    /** Keys put right on start ([MusicDao.rekeyArtists]); lookups wait for it, so none writes a song under an old key. */
+    var keysFixed: Job? = null
+
     /** Looks up whatever is new in the catalogues, in the background. */
     fun kick() {
         if (BuildConfig.DEMO || looking?.isActive == true) return
-        looking = scope.launch(Dispatchers.IO) { runCatching { meta.drain() } }
+        looking = scope.launch(Dispatchers.IO) { keysFixed?.join(); runCatching { meta.drain() } }
     }
 
     private var scrobbling: Job? = null
@@ -134,6 +137,8 @@ class SonglingApp : Application() {
             container.scope.launch { runCatching { container.db.dao().trimOverlong() } }
             // The den shared by all pets before #26 becomes each pet's own room, once.
             container.scope.launch { runCatching { val ids = container.db.dao().petList().map { it.id }; container.settings.update { it.splitRooms(ids) } } }
+            // «Король и Шут» read as two artists by an older version: keys put right before anything is looked up.
+            container.keysFixed = container.scope.launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { container.db.dao().rekeyArtists() } }
             container.kick()
             container.followLastFm()
         }

@@ -40,11 +40,24 @@ class StudioTest {
         assertEquals(Genre.ROCK, studio(listOf(p), listOf(duo), listOf(Artist(p.artist, "A", genre = Genre.ROCK)), listOf(song)).genreOf(p))
         assertEquals(Genre.FOLK, studio(listOf(p), listOf(duo.copy(genre = Genre.JAZZ, pinned = true)), tracks = listOf(song.copy(genre = Genre.FOLK, pinned = true))).genreOf(p))
     }
+    /** Styles sit inside the genre their listens counted for, the most listened first. */
+    @Test fun stylesInsideGenres() {
+        val plays = listOf(play("One", t0, ms = 3 * MIN), play("Two", t0 + MIN, artist = "B", album = "", ms = 2 * MIN))
+        val st = studio(plays, artists = listOf(Artist(Keys.artist("A"), "A", genre = Genre.METAL, styles = "electronicore,metalcore"),
+            Artist(Keys.artist("B"), "B", genre = Genre.METAL, styles = "metalcore")))
+        val s = app.songling.domain.Stats(st, app.songling.domain.Filter(span = app.songling.domain.Span.ALL))
+        assertEquals(mapOf(Genre.METAL to listOf("metalcore", "electronicore")), s.stylesIn)
+    }
+
     /** A song by two artists counts for both (#20); names with «ft» or a slash inside stay whole. */
     @Test fun everyBilledArtistGetsTheListen() {
         assertEquals(listOf("Баста", "Скриптонит"), Keys.allArtists("Баста, Скриптонит"))
         assertEquals(listOf("Daft Punk", "Pharrell Williams"), Keys.allArtists("Daft Punk feat. Pharrell Williams"))
         assertEquals(listOf("AC/DC"), Keys.allArtists("AC/DC"))
+        assertEquals(listOf("Король и Шут"), Keys.allArtists("Король и Шут"))
+        assertEquals(listOf("Егор и Опизденевшие"), Keys.allArtists("Егор и Опизденевшие"))
+        assertEquals(listOf("Simon & Garfunkel"), Keys.allArtists("Simon & Garfunkel"))
+        assertEquals("Король и Шут", Keys.mainArtist("Король и Шут"))
         val p = Play(at = t0, ms = 3 * MIN, title = "Song", artistName = "Баста, Скриптонит")
         val st = studio(listOf(p))
         assertEquals(3 * MIN, st.byArtist[Keys.norm("Баста")]?.ms)

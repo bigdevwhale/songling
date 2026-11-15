@@ -176,7 +176,15 @@ fun ArtistSheet(st: Studio, key: String, nav: Nav) {
         Text(t("АРТИСТ", "ARTIST") + (a.country.takeIf { it.isNotBlank() }?.let { " · " + Words.flag(it) + " " + Words.country(it, ru).uppercase() } ?: ""), style = T.Eyebrow)
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             app.songling.ui.den.ArtistFace(st, key, 72.dp)
-            Text(a.name, style = T.Display, modifier = Modifier.weight(1f))
+            Column(Modifier.weight(1f)) {
+                Text(a.name, style = T.Display)
+                // Its genre, then the styles inside it as the tags name them: «Метал: metalcore · electronicore».
+                if (a.styles.isNotBlank()) {
+                    val top = tl?.albums?.maxByOrNull { st.byAlbum[it]?.ms ?: 0 }
+                    val genre = genreName(st, a.own, a.genre ?: st.albums[top ?: ""]?.genre ?: a.tagGenre, ru)
+                    Text(listOfNotNull(genre?.let { "$it:" }, a.styles.split(',').joinToString(" · ")).joinToString(" "), style = T.Small)
+                }
+            }
         }
         Stars(a.stars, size = 26.dp) { save(a.copy(stars = it)) }
         StatRow(Words.dur(tl?.ms ?: 0, ru) to t("послушано", "listened"), "${tl?.plays ?: 0}" to t("раз слушал", "listens"), "${tl?.tracks?.size ?: 0}" to t("разных песен", "songs"))

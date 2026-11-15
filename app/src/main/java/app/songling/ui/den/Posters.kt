@@ -164,7 +164,7 @@ fun PosterPick(st: Studio, frame: Int, onDone: () -> Unit) {
 fun ArtistFace(st: Studio, key: String, size: androidx.compose.ui.unit.Dp = 40.dp) {
     val ctx = LocalContext.current
     val file by produceState<String?>(null, key) { value = withContext(Dispatchers.IO) { runCatching { Posters.artistPicture(ctx, key, st.artistName(key)) }.getOrNull() } }
-    Cover(file, st.artistName(key), st.artists[key]?.genre, size, round = size / 2)
+    Cover(file, st.artistName(key), st.artists[key]?.let { it.genre ?: it.tagGenre }, size, round = size / 2)
 }
 
 /** The two frames, side by side, with what's in them and a way to change it (for the shop). */

@@ -68,6 +68,10 @@ data class Artist(
     @ColumnInfo(defaultValue = "") val own: String = "",
     /** A person who has passed away: the year (1 when it's known but not the year); -1 checked and not; 0 not asked yet. */
     @ColumnInfo(defaultValue = "0") val gone: Int = 0,
+    /** The genre the catalogue's tags (MusicBrainz) suggest: used only when the songs and albums say nothing. */
+    @ColumnInfo(defaultValue = "NULL") val tagGenre: Genre? = null,
+    /** Finer styles from the same tags («electronicore», «metalcore»), most-voted first, comma-separated. */
+    @ColumnInfo(defaultValue = "") val styles: String = "",
 )
 
 /** An album, EP or single. Listening fills it in; it can also be put on the shelf by hand. */
@@ -184,10 +188,14 @@ object Keys {
         return t.replace('ё', 'е').replace(junk, " ").trim()
     }
 
-    /** The first-billed artist: «A, B & C» and «A feat. B» are A. */
-    fun mainArtist(s: String): String = s.replace(feat, "").split(Regex("""\s*(,|;| & | x | и | with )\s*""")).first().trim().ifBlank { s.trim() }
+    /**
+     * The first-billed artist: «A, B» and «A feat. B» are A. «&» and «и» don't split a name: they're mostly part of it
+     * («Король и Шут», «Simon & Garfunkel»), and players list a song's artists with commas.
+     */
+    fun mainArtist(s: String): String = s.replace(feat, "").split(main).first().trim().ifBlank { s.trim() }
+    private val main = Regex("""\s*(,|;| x | with )\s*""")
 
-    private val joiners = Regex("""\s*(,|;| / | & | x | и | with |\b(?:feat\.?|ft\.?|featuring)(?=\s)|при уч\.?)\s*""", RegexOption.IGNORE_CASE)
+    private val joiners = Regex("""\s*(,|;| / | x | with |\b(?:feat\.?|ft\.?|featuring)(?=\s)|при уч\.?)\s*""", RegexOption.IGNORE_CASE)
     private val many = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
 
     /**

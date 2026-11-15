@@ -202,7 +202,12 @@ private fun StatsPage(st: Studio, nav: Nav) {
             val g = s.genres
             val total = g.sumOf { it.second }.coerceAtLeast(1)
             GenreRing(g)
-            g.forEachIndexed { i, (genre, ms) -> TopRow(i + 1, Words.genre(genre, ru), "${(ms * 100 / total)}%", Words.dur(ms, ru), ms / g.first().second.toFloat(), genre = genre) }
+            // Under each genre, the styles it was made of (the artists' tags): «рок — post-punk, soft rock».
+            val inside = s.stylesIn
+            g.forEachIndexed { i, (genre, ms) ->
+                val sub = listOfNotNull("${(ms * 100 / total)}%", inside[genre]?.take(3)?.joinToString(", ")).joinToString(" · ")
+                TopRow(i + 1, Words.genre(genre, ru), sub, Words.dur(ms, ru), ms / g.first().second.toFloat(), genre = genre)
+            }
         }
     }
     Section(t("Когда ты слушаешь", "When you listen"))
