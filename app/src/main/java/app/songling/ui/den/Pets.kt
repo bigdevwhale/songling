@@ -254,8 +254,14 @@ private fun EggDetail(st: Studio, h: app.songling.domain.Hint, nav: Nav, onClose
         if (h.open) {
             if (st.pet != null) Text(t("${st.pet!!.pet.title(true)} уйдёт в коробку и подождёт там – его можно позвать обратно.",
                 "${st.pet!!.pet.title(false)} goes into a box to wait; you can call them back any time."), style = T.Small)
-            Btn(t("Положить яйцо в логово", "Put the egg in the den"), { co.write { layEgg(sp) }; onClose(); nav.close() }, Modifier.fillMaxWidth(), kind = Kind.AMBER)
-            Text(t("Вылупится через три часа музыки.", "Hatches after three hours of music."), style = T.Small)
+            // The first of a kind is free; another of a kind already raised costs plectrums.
+            val price = if (st.pets.any { it.species == sp }) app.songling.domain.EGG_AGAIN else 0
+            Btn(t("Положить яйцо в логово", "Put the egg in the den") + if (price > 0) " · $price" else "", {
+                co.write { if (price > 0) settings.update { it.copy(spent = it.spent + price) }; layEgg(sp) }; onClose(); nav.close()
+            }, Modifier.fillMaxWidth(), kind = Kind.AMBER, enabled = st.plectrums >= price)
+            Text(if (price > 0) t("Такой питомец у тебя уже есть: второе яйцо – за $price медиаторов (у тебя ${st.plectrums}). Вылупится через три часа музыки.",
+                "You have one of these already: another egg costs $price plectrums (you have ${st.plectrums}). Hatches after three hours of music.")
+                else t("Первое яйцо каждого вида – даром. Вылупится через три часа музыки.", "The first egg of each kind is free. Hatches after three hours of music."), style = T.Small)
         }
     }
 }
@@ -333,8 +339,9 @@ fun ShopPage(st: Studio, nav: Nav) {
             Text(t("Постеры на стене", "Posters on the wall"), style = T.Strong)
             PosterFrames(st, pictures) { picking = it }
         }
-        app.songling.ui.components.Tabs(listOf(t("Вещи", "Things"), t("Обои", "Wallpaper")), page, { page = it; tryItem = null; tryWall = null })
-        if (page == 0) {
+        app.songling.ui.components.Tabs(listOf(t("Вещи", "Things"), t("Обои", "Wallpaper"), t("Пластинки", "Records")), page, { page = it; tryItem = null; tryWall = null })
+        if (page == 2) RecordsTab(st, nav)
+        else if (page == 0) {
             for (row in Item.entries.sortedBy { it.price }.chunked(3)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (it in row) {
                     val have = it.name in st.s.bought
@@ -376,8 +383,8 @@ fun ShopPage(st: Studio, nav: Nav) {
                 }
             }
         }
-        Text(t("Медиатор – за каждые 10 минут музыки, пять – за альбом целиком, ещё – за задания недели и цели. Покупки не отнимают рост у питомца.",
-            "One plectrum per 10 minutes of music, five per whole album, more for the week's tasks and goals. Buying never takes growth from the pet."), style = T.Small)
+        Text(t("Медиатор – за каждые 10 минут музыки, пять – за альбом целиком, ещё – за задания недели и цели. Покупки не отнимают рост у питомца. Когда комната обставлена, медиаторы идут на пластинки и новые яйца.",
+            "One plectrum per 10 minutes of music, five per whole album, more for the week's tasks and goals. Buying never takes growth from the pet. Once the room is furnished, plectrums go on records and new eggs."), style = T.Small)
     }
     picking?.let { f -> PosterPick(st, f) { picking = null } }
 }

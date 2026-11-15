@@ -97,6 +97,15 @@ fun AlbumSheet(st: Studio, key: String, nav: Nav) {
                 save(a.copy(wish = !a.wish, added = if (a.added == 0L) System.currentTimeMillis() else a.added))
             }, Modifier.weight(1f), kind = if (a.wish) BtnKind.SOFT else BtnKind.GHOST)
         }
+        // Its record, for the collection (bought with plectrums), once it's been heard.
+        if (key in st.s.records) Text(t("Пластинка – в твоей коллекции", "Its record is in your collection"), style = T.Small.copy(color = C.mint))
+        else if (tl != null) {
+            val price = st.recordPrice(key)
+            Btn(t("Купить пластинку · $price", "Buy the record · $price"), {
+                app.songling.ui.den.buyRecord(co, key, price)
+                nav.toast(if (ru) "«${a.title}» – в коллекции" else "«${a.title}» is in the collection")
+            }, Modifier.fillMaxWidth(), kind = BtnKind.GHOST, small = true, enabled = st.plectrums >= price)
+        }
         // Worked out once for the album, not on every recomposition: it walks every listen.
         val songs = remember(st, key) {
         val heardCount = st.plays.filter { it.album == key }.groupingBy { it.track }.eachCount()

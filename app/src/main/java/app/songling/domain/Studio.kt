@@ -464,19 +464,26 @@ class Studio(
 
     /** Achievements and how far each one got. */
     val feats: List<FeatState> by lazy { Feats.of(this) }
-    val featSteps: Int get() = feats.sumOf { it.level }
+    val featSteps: Int by lazy { feats.sumOf { it.level } }
 
-    val goalsDone: Int get() = goals.count { Goals.progress(this, it).done && it.period == app.songling.data.Period.ONCE }
+    val goalsDone: Int by lazy { goals.count { Goals.progress(this, it).done && it.period == app.songling.data.Period.ONCE } }
 
-    val earned: Int get() {
+    // A Studio is one moment's snapshot, so what's earned is worked out once: the shop asks on every tile.
+    val earned: Int by lazy {
         var live = 0L; var imported = 0L
         for (p in plays) if (p.source == Source.IMPORT) imported += p.ms else live += p.ms
         val questPlectrums = quests.filter { "$weekId:${it.q.name}" in s.claimed }.sumOf { it.q.reward } +
             s.claimed.count { !it.startsWith("$weekId:") } * 15
-        return (live / (10 * MIN)).toInt() + (imported / (100 * MIN)).toInt() + liveWhole * 5 + questPlectrums + goalsDone * 15 + pets.sumOf { it.bonus } + featSteps * Feats.REWARD
+        (live / (10 * MIN)).toInt() + (imported / (100 * MIN)).toInt() + liveWhole * 5 + questPlectrums + goalsDone * 15 + pets.sumOf { it.bonus } + featSteps * Feats.REWARD
     }
 
-    val plectrums: Int get() = max(0, earned - s.spent)
+    val plectrums: Int by lazy { max(0, earned - s.spent) }
+
+    /** What a record of [album] costs now: dearer with each one in the collection, half for an album heard whole. */
+    fun recordPrice(album: String): Int = Records.price(s.records.size, (byAlbum[album]?.whole ?: 0) > 0)
+
+    /** Albums heard and not in the record collection yet, the most listened first. */
+    val recordsToBuy: List<String> by lazy { byAlbum.values.filter { it.key !in s.records && it.key.isNotEmpty() }.sortedByDescending { it.ms }.map { it.key } }
 
     // ---------------------------------------------------------------- shelf helpers
 

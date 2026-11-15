@@ -181,10 +181,19 @@ object Keys {
     private val tail = Regex("""\s*[(\[](remaster(ed)?|deluxe|expanded|anniversary|bonus|explicit|edition|version)[^)\]]*[)\]]\s*$""", RegexOption.IGNORE_CASE)
     private val junk = Regex("""[^\p{L}\p{N}]+""")
 
-    fun norm(s: String): String {
+    private val marks = Regex("""\p{Mn}+""")
+    private val brackets = Regex("""[()\[\]]""")
+    // Worked out once per spelling: statistics, goals and the plectrum count ask for the same names over and over.
+    private val normed = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val artistKeys = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val billed = java.util.concurrent.ConcurrentHashMap<String, List<String>>()
+
+    fun norm(s: String): String = normed.getOrPut(s) { normOnce(s) }
+
+    private fun normOnce(s: String): String {
         var t = s.trim()
         repeat(2) { t = t.replace(tail, "") }
-        t = Normalizer.normalize(t.lowercase(), Normalizer.Form.NFKD).replace(Regex("\\p{Mn}+"), "")
+        t = Normalizer.normalize(t.lowercase(), Normalizer.Form.NFKD).replace(marks, "")
         return t.replace('ё', 'е').replace(junk, " ").trim()
     }
 
@@ -203,14 +212,17 @@ object Keys {
      * for both). Names, as written.
      */
     fun allArtists(s: String): List<String> = many.getOrPut(s) {
-        s.replace(Regex("""[()\[\]]"""), " ").split(joiners).map { it.trim() }.filter { it.isNotEmpty() }
+        s.replace(brackets, " ").split(joiners).map { it.trim() }.filter { it.isNotEmpty() }
             .distinctBy { norm(it) }.ifEmpty { listOf(s.trim()) }
     }
 
     /** The keys of everyone billed, the first-billed one first. */
-    fun artists(name: String): List<String> = listOf(artist(name)) + allArtists(name).map { norm(it) }.filter { it != artist(name) }.distinct()
+    fun artists(name: String): List<String> = billed.getOrPut(name) {
+        val first = artist(name)
+        listOf(first) + allArtists(name).map { norm(it) }.filter { it != first }.distinct()
+    }
 
-    fun artist(name: String) = norm(mainArtist(name))
+    fun artist(name: String): String = artistKeys.getOrPut(name) { norm(mainArtist(name)) }
     fun album(artist: String, album: String) = artist(artist) + "|" + norm(album)
     fun track(artist: String, title: String) = artist(artist) + "|" + norm(title.replace(feat, ""))
 }

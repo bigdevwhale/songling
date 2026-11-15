@@ -44,6 +44,21 @@ enum class Item(val price: Int) {
     }
 }
 
+/**
+ * Records of albums you've heard, kept in a collection that never fills up: each costs more than the one before, up
+ * to [MAX], and an album heard whole costs half. Where plectrums go once the den is furnished.
+ */
+object Records {
+    const val FIRST = 20
+    const val STEP = 5
+    const val MAX = 150
+
+    fun price(owned: Int, whole: Boolean): Int = (FIRST + STEP * owned).coerceAtMost(MAX).let { if (whole) (it + 1) / 2 else it }
+}
+
+/** Eggs: the first of each kind is free; another of a kind you already have costs this. */
+const val EGG_AGAIN = 200
+
 /** Wallpapers. The first two are free. */
 enum class Wall(val a: Long, val b: Long, val price: Int) {
     PLUM(0xFF2E2240, 0xFF261C36, 0), NIGHT(0xFF1C2440, 0xFF182036, 0),

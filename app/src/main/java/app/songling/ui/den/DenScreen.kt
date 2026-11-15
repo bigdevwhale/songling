@@ -87,13 +87,15 @@ fun DenScreen(st: Studio, playing: NowPlaying?, nav: Nav) {
     val happy = stroked > 0 && System.currentTimeMillis() - stroked < 2000 && nowMs <= stroked + 2000
     val isPlaying = playing?.playing == true
     // Colours and covers are read off the main thread.
-    val extras by produceState<Triple<List<Int>, List<Buf?>?, Int?>>(Triple(emptyList(), null, null), st.wholeRuns.size, playing?.cover, st.s.bought, st.s.posters, st.albums.values.count { it.cover != null }) {
+    // The turntable's label: what plays, or the newest record of the collection when nothing does.
+    val labelCover = if (isPlaying) playing?.cover else st.s.records.lastOrNull()?.let { st.albums[it]?.cover } ?: playing?.cover
+    val extras by produceState<Triple<List<Int>, List<Buf?>?, Int?>>(Triple(emptyList(), null, null), st.wholeRuns.size, labelCover, st.s.bought, st.s.posters, st.albums.values.count { it.cover != null }) {
         value = withContext(Dispatchers.IO) {
             val spines = st.wholeRuns.map { it.first }.distinct().takeLast(42).map { k ->
                 val a = st.albums[k]
                 Covers.colour(ctx, a?.cover) ?: a?.genre?.argb?.toInt() ?: (0xFF6A5A7A).toInt()
             }
-            Triple(spines, if (Item.POSTER.name in st.s.bought) runCatching { Posters.pictures(ctx, st) }.getOrNull() else null, Covers.colour(ctx, playing?.cover))
+            Triple(spines, if (Item.POSTER.name in st.s.bought) runCatching { Posters.pictures(ctx, st) }.getOrNull() else null, Covers.colour(ctx, labelCover))
         }
     }
     val posterFiles by produceState<List<String?>>(emptyList(), st.s.posters, st.s.bought, st.albums.values.count { it.cover != null }) {

@@ -8,6 +8,23 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-11-15
+
+### Added
+- A record collection, where plectrums go once the den is furnished: the shop's new «Records» tab shows the covers you own and the albums you've heard that could join them, the most listened first. The first record costs 20, each next one 5 more, up to 150; an album heard whole costs half. An album's page has «Buy the record» too. When no music plays, the den's turntable has your newest record on it. The collection is every pet's and goes into backups.
+
+### Changed
+- The first egg of each kind stays free; another egg of a kind you already have costs 200 plectrums.
+
+### Fixed
+- Switching tabs and the «Furnish the den» page no longer stutter: the plectrum count was worked out again for every tile on the screen, and artist names were read anew on every listen. Goals opened in up to three quarters of a second; now at once.
+
+<!-- tg
+Новое: коллекция пластинок – в магазине вкладка «Пластинки», можно купить пластинку любого альбома, который ты слушал. Каждая следующая чуть дороже, прослушанный целиком альбом – вдвое дешевле.
+Первое яйцо каждого вида по-прежнему даром, второе такое же – за 200 медиаторов.
+Исправлено: переходы между вкладками и магазин логова больше не тормозят.
+-->
+
 ## [1.11.0] - 2026-11-15
 
 ### Added
