@@ -224,7 +224,8 @@ fun ArtistSheet(st: Studio, key: String, nav: Nav) {
                     Cover(al?.cover, st.albumTitle(k), al?.genre, 44.dp)
                     Column(Modifier.weight(1f)) {
                         Text(st.albumTitle(k), style = T.Body, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        Text(listOfNotNull(al?.kind?.let { Words.kind(it, ru) }, al?.year?.toString()).joinToString(" · "), style = T.Small)
+                        // The album's own genre, so a wrong guess shows without opening each one (#31).
+                        Text(listOfNotNull(al?.kind?.let { Words.kind(it, ru) }, al?.year?.toString(), al?.let { genreName(st, it.own, it.genre, ru) }).joinToString(" · "), style = T.Small)
                     }
                     if (ms > 0) Text(Words.dur(ms, ru), style = T.Small)
                 }

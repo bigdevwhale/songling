@@ -8,6 +8,19 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-11-16
+
+### Added
+- An artist's page shows each album's genre beside its year, so a wrong guess shows without opening every album (#31).
+
+### Fixed
+- The shelf keeps the sort you picked: leaving it for another tab or closing the app no longer resets it to «most» (#30).
+
+<!-- tg
+Новое: на странице артиста у каждого альбома виден жанр – не нужно открывать каждый, чтобы проверить.
+Исправлено: полка запоминает выбранную сортировку и больше не сбрасывает её на «больше всего» при переходе на другую вкладку.
+-->
+
 ## [1.12.0] - 2026-11-15
 
 ### Added

@@ -119,7 +119,10 @@ fun ShelfScreen(st: Studio, nav: Nav) {
     val first = remember(st.s.shelfFirst) { shown.firstOrNull { it.name == st.s.shelfFirst } ?: ShelfTab.ALBUMS }
     var tab by rememberSaveable { mutableStateOf(first) }
     var q by rememberSaveable { mutableStateOf("") }
-    var sort by rememberSaveable { mutableStateOf(Sort.MINUTES) }
+    // The sort is kept in the settings, so leaving the shelf does not reset it to «most» (#30).
+    val co = androidx.compose.ui.platform.LocalContext.current.container
+    var sort by rememberSaveable { mutableStateOf(Sort.entries.firstOrNull { it.name == st.s.shelfSort } ?: Sort.MINUTES) }
+    fun sortBy(so: Sort) { sort = so; co.write { settings.update { it.copy(shelfSort = so.name) } } }
     var genres by remember { mutableStateOf(emptySet<Genre>()) }
     var owns by remember { mutableStateOf(emptySet<String>()) }
     var decades by remember { mutableStateOf(emptySet<Int>()) }
@@ -176,7 +179,7 @@ fun ShelfScreen(st: Studio, nav: Nav) {
         if (sheet == 1) app.songling.ui.Floating { Sheet(onDismiss = { sheet = 0 }) {
             Text(t("Сортировка", "Sort"), style = T.Title)
             for (so in Sort.entries) Row(Modifier.fillMaxWidth().clip(R8.Md).background(if (so == sort) C.amberSoft else androidx.compose.ui.graphics.Color.Transparent)
-                .clickable { sort = so; sheet = 0 }.padding(vertical = 13.dp, horizontal = 12.dp),
+                .clickable { sortBy(so); sheet = 0 }.padding(vertical = 13.dp, horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Box(Modifier.size(20.dp).clip(CircleShape).background(if (so == sort) C.amber else C.track), contentAlignment = Alignment.Center) {
                     if (so == sort) Box(Modifier.size(8.dp).clip(CircleShape).background(C.surface))
