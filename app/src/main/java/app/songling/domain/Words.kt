@@ -265,7 +265,8 @@ object Words {
 
     /** «3 ч 20 мин» / «3 h 20 min». */
     fun dur(ms: Long, ru: Boolean): String {
-        val m = ms / 60_000
+        // Anything listened to counts as at least a minute; «0 мин» reads as if nothing played.
+        val m = if (ms > 0) maxOf(ms / 60_000, 1) else 0
         val h = m / 60
         return when {
             h >= 100 -> t(ru, "$h ч", "$h h")
@@ -293,6 +294,7 @@ object Words {
 
     fun hours(ms: Long, ru: Boolean): String {
         val h = ms / 3_600_000.0
+        if (ms in 1 until 6 * 60_000) return dur(ms, ru) // not «0.0 h» for a few minutes
         return if (h >= 10) t(ru, "${h.toInt()} ч", "${h.toInt()} h") else t(ru, String.format(Locale.US, "%.1f ч", h), String.format(Locale.US, "%.1f h", h))
     }
 

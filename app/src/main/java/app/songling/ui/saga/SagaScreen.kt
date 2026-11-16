@@ -99,12 +99,15 @@ fun SagaScreen(st: Studio, nav: Nav) {
 @Composable
 private fun StatsPage(st: Studio, nav: Nav) {
     val ru = LocalRu.current
-    var f by remember { mutableStateOf(Filter(span = Span.entries.firstOrNull { it.name == st.s.statsPeriod } ?: Span.MONTH)) }
+    // Last year gets its own chip only when there was music in it; a new listener would see an empty year.
+    val lastYear = st.today.year - 1
+    val hasLastYear = remember(st) { st.byDay.keys.any { it.year == lastYear } }
+    val spans = listOfNotNull(Span.WEEK, Span.MONTH, Span.YEAR, Span.LAST_YEAR.takeIf { hasLastYear }, Span.ALL)
+    val short = listOfNotNull(t("Неделя", "Week"), t("Месяц", "Month"), t("Год", "Year"), "$lastYear".takeIf { hasLastYear }, t("Всё", "All"))
+    var f by remember { mutableStateOf(Filter(span = spans.firstOrNull { it.name == st.s.statsPeriod } ?: Span.MONTH)) }
     var more by remember { mutableStateOf(false) }
     var topTab by rememberSaveable { mutableIntStateOf(0) }
     val s = remember(st, f) { Stats(st, f) }
-    val spans = listOf(Span.WEEK, Span.MONTH, Span.YEAR, Span.LAST_YEAR, Span.ALL)
-    val short = listOf(t("Неделя", "Week"), t("Месяц", "Month"), t("Год", "Year"), "${st.today.year - 1}", t("Всё", "All"))
     val active = listOfNotNull(f.genre, f.own, f.app, f.source).size + if (f.headphones) 1 else 0
     // The span and the filters in one line; what's filtered shows under it only when something is.
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

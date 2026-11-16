@@ -6,6 +6,19 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [Unreleased]
+
+## [1.13.1] - 2026-11-16
+
+### Fixed
+- Statistics no longer offers last year as a period when there was no music in it, so a new listener doesn't get an empty «2025».
+- Less than a minute of listening shows as «1 min», not «0 min»; a few minutes in hours show in minutes instead of «0.0 h».
+
+<!-- tg
+Исправлено: в статистике больше нет пустого прошлого года, если в нём ничего не слушали.
+Меньше минуты музыки теперь показывается как «1 мин», а не «0 мин».
+-->
+
 ## [1.13.0] - 2026-11-16
 
 ### Added
@@ -16,8 +29,6 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 В Lingvale для них можно построить студию, и жильцы переедут туда сами вместе со своими днями.
 Данные остаются в Songling: деревня их только читает.
 -->
-
-## [Unreleased]
 
 ## [1.12.1] - 2026-11-16
 

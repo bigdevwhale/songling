@@ -1,1 +1,1 @@
-An artist's page shows each album's genre beside its year, so a wrongly guessed genre is easy to spot. The shelf keeps the sort you picked: switching tabs or closing the app no longer resets it to «most».
+Statistics no longer shows an empty last year when you didn't listen to anything in it. Less than a minute of music now shows as «1 min» instead of «0 min».
