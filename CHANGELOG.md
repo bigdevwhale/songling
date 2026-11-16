@@ -6,6 +6,17 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.13.0] - 2026-11-16
+
+### Added
+- **Lingvale, the village of the pets from all our apps:** Songling now has a small read-only bridge, so in Lingvale you can build the studio and its residents move in with their days. The bridge answers only Lingvale signed with our key; it changes nothing and nothing leaves the phone.
+
+<!-- tg
+Питомцы Songling теперь могут жить в Lingvale – общей деревне наших приложений.
+В Lingvale для них можно построить студию, и жильцы переедут туда сами вместе со своими днями.
+Данные остаются в Songling: деревня их только читает.
+-->
+
 ## [Unreleased]
 
 ## [1.12.1] - 2026-11-16
