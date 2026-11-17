@@ -33,6 +33,18 @@ object DemoSeed {
         A("Buena Vista Social Club", "Buena Vista Social Club", 1997, Genre.LATIN, "CU", listOf("Chan Chan", "De camino a la vereda", "El cuarto de Tula", "Dos gardenias"), 2, "latin jazz,salsa,latin"),
     )
 
+    /** As MusicBrainz tells it: type, gender, born or formed, died or broke up (-1 still here). */
+    private val LIFE = mapOf(
+        "Radiohead" to Life("Group", "", 1985, -1), "Miles Davis" to Life("Person", "Male", 1926, 1991), "Daft Punk" to Life("Group", "", 1993, 2021),
+        "Кино" to Life("Group", "", 1981, 1990), "Kino" to Life("Group", "", 1981, 1990), "Massive Attack" to Life("Group", "", 1988, -1),
+        "Fleetwood Mac" to Life("Group", "", 1967, -1), "Brian Eno" to Life("Person", "Male", 1948, -1), "Kendrick Lamar" to Life("Person", "Male", 1987, -1),
+        "Земфира" to Life("Person", "Female", 1976, -1), "Glenn Gould" to Life("Person", "Male", 1932, 1982), "Bon Iver" to Life("Group", "", 2006, -1),
+        "Metallica" to Life("Group", "", 1981, -1), "Hans Zimmer" to Life("Person", "Male", 1957, -1), "Björk" to Life("Person", "Female", 1965, -1),
+        "Electric Callboy" to Life("Group", "", 2010, -1), "Король и Шут" to Life("Group", "", 1988, 2014), "Buena Vista Social Club" to Life("Group", "", 1996, -1),
+    )
+    private class Life(val type: String, val gender: String, val born: Int, val ended: Int)
+    private fun Artist.lived(): Artist = LIFE[name]?.let { copy(type = it.type, gender = it.gender, born = it.born, ended = it.ended, gone = if (it.type == "Person" && it.ended > 0) it.ended else -1) } ?: this
+
     suspend fun seedIfEmpty(ctx: Context, c: AppContainer) {
         val dao = c.db.dao()
         if (dao.playCount() > 0) { covers(ctx, dao); return }
@@ -73,10 +85,10 @@ object DemoSeed {
             dao.upsert(Album(key, a.title, a.artist, year = a.year, genre = a.genre, genreName = a.genre.name, tracks = a.songs.size, checked = now, stars = if (a.weight > 6) 5 else if (a.weight > 3) 4 else 0,
                 own = if (a.genre == Genre.AMBIENT || a.genre == Genre.CLASSICAL) "work" else ""))
             dao.upsert(Artist(Keys.artist(a.artist), a.artist, a.country, checked = now, styles = a.styles,
-                tagGenre = a.styles.split(',').firstNotNullOfOrNull { Genre.of(it)?.takeIf { g -> g != Genre.OTHER } }))
+                tagGenre = a.styles.split(',').firstNotNullOfOrNull { Genre.of(it)?.takeIf { g -> g != Genre.OTHER } }).lived())
             a.songs.forEachIndexed { i, s -> dao.upsert(Track(Keys.track(a.artist, s), s, a.artist, album = key, albumName = a.title, number = i + 1, year = a.year, genre = a.genre, checked = now, loved = i == 1)) }
         }
-        dao.upsert(Artist(Keys.artist("Kino"), "Kino", "RU", Genre.ROCK, checked = now))
+        dao.upsert(Artist(Keys.artist("Kino"), "Kino", "RU", Genre.ROCK, checked = now).lived())
         // On the «to hear» list.
         dao.upsert(Album(Keys.album("Joni Mitchell", "Blue"), "Blue", "Joni Mitchell", year = 1971, genre = Genre.FOLK, tracks = 10, wish = true, added = now - 5 * DAY, checked = now))
         dao.upsert(Album(Keys.album("Talking Heads", "Remain in Light"), "Remain in Light", "Talking Heads", year = 1980, genre = Genre.ROCK, tracks = 8, wish = true, added = now - 9 * DAY, checked = now))

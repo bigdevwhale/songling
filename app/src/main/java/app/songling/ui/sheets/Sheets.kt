@@ -172,6 +172,28 @@ private fun More(title: String, note: String?, onClick: () -> Unit) {
 
 // ---------------------------------------------------------------- artist
 
+/**
+ * Alive or not, as MusicBrainz tells: «Жив · род. 1985», «Умерла · 1942–2016», «Распалась · 1988–2014». Null when
+ * the catalogue didn't find the artist or said nothing of it.
+ */
+internal fun lifeSpan(a: Artist, ru: Boolean): String? {
+    if (a.type.isEmpty() || a.ended == 0) return null
+    val her = a.gender == "Female"
+    val years = when {
+        a.born > 0 && a.ended > 1 -> "${a.born}–${a.ended}"
+        a.ended > 1 -> if (ru) "в ${a.ended}" else "in ${a.ended}"
+        a.born > 0 && a.ended < 0 -> if (a.type == "Person") (if (ru) "род. ${a.born}" else "born ${a.born}") else (if (ru) "с ${a.born}" else "since ${a.born}")
+        else -> null
+    }
+    val word = when {
+        a.type == "Person" && a.ended < 0 -> if (ru) (if (her) "Жива" else "Жив") else "Alive"
+        a.type == "Person" -> if (ru) (if (her) "Умерла" else "Умер") else "Died"
+        a.ended < 0 -> if (ru) "Вместе" else "Together"
+        else -> if (ru) "Распались" else "Broke up"
+    }
+    return listOfNotNull(word, years).joinToString(if (a.ended > 1 && a.born == 0) " " else " · ")
+}
+
 @Composable
 fun ArtistSheet(st: Studio, key: String, nav: Nav) {
     val ru = LocalRu.current
@@ -192,6 +214,13 @@ fun ArtistSheet(st: Studio, key: String, nav: Nav) {
                     val top = tl?.albums?.maxByOrNull { st.byAlbum[it]?.ms ?: 0 }
                     val genre = genreName(st, a.own, a.genre ?: st.albums[top ?: ""]?.genre ?: a.tagGenre, ru)
                     Text(listOfNotNull(genre?.let { "$it:" }, a.styles.split(',').joinToString(" · ")).joinToString(" "), style = T.Small)
+                }
+                // Not another line of the genre: a pill of its own, in the accent while they're here, grey once they're not.
+                lifeSpan(a, ru)?.let {
+                    val here = a.ended < 0
+                    Text(it, style = T.Small.copy(color = if (here) C.amber else C.muted),
+                        modifier = Modifier.padding(top = 6.dp).clip(androidx.compose.foundation.shape.CircleShape)
+                            .background(if (here) C.amberSoft else C.faint.copy(alpha = .16f)).padding(horizontal = 10.dp, vertical = 3.dp))
                 }
             }
         }

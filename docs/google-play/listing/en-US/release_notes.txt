@@ -1,1 +1,1 @@
-Statistics no longer shows an empty last year when you didn't listen to anything in it. Less than a minute of music now shows as «1 min» instead of «0 min».
+An artist's page now tells whether they are alive: «Alive · born 1985» or «Died · 1926–1991», and for bands «Together» or «Broke up» with the years. After the update artists are checked once more in the background, so the marks appear gradually.

@@ -72,6 +72,14 @@ data class Artist(
     @ColumnInfo(defaultValue = "NULL") val tagGenre: Genre? = null,
     /** Finer styles from the same tags («electronicore», «metalcore»), most-voted first, comma-separated. */
     @ColumnInfo(defaultValue = "") val styles: String = "",
+    /** What MusicBrainz says it is: «Person», «Group», «Orchestra», «Choir»…; empty when unknown. */
+    @ColumnInfo(defaultValue = "") val type: String = "",
+    /** A person's «Male» or «Female» (for «жив» or «жива»); empty when unknown or not a person. */
+    @ColumnInfo(defaultValue = "") val gender: String = "",
+    /** The year a person was born or a band formed; 0 when unknown. */
+    @ColumnInfo(defaultValue = "0") val born: Int = 0,
+    /** The year a person died or a band broke up (1 when it ended but the year isn't known); -1 still here; 0 unknown. */
+    @ColumnInfo(defaultValue = "0") val ended: Int = 0,
 )
 
 /** An album, EP or single. Listening fills it in; it can also be put on the shelf by hand. */

@@ -8,6 +8,17 @@ then close it like any HTML comment. The release notes carry it, and the chat bo
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-11-17
+
+### Added
+- An artist's page tells whether they are alive: «Alive · born 1985», «Died · 1926–1991», and for bands «Together · since 1988» or «Broke up · 1981–1990». It comes from MusicBrainz, so after the update every artist is looked up once more in the background.
+
+<!-- tg
+На странице артиста теперь видно, жив ли он: «Жив · род. 1985» или «Умер · 1926–1991».
+Для групп – «Вместе · с 1988» или «Распались · 1981–1990».
+После обновления артисты один раз перепроверятся в фоне, поэтому отметки появятся не сразу.
+-->
+
 ## [1.13.1] - 2026-11-16
 
 ### Fixed

@@ -151,7 +151,7 @@ interface MusicDao {
             val row = artist(old)
             // What you set by hand stays; what the catalogue said was about the wrong name, so it's asked again.
             for ((n, name) in news) if (artist(n) == null)
-                insertArtist((row ?: Artist(n, "")).copy(key = n, name = Keys.mainArtist(name), country = "", checked = 0, gone = 0, tagGenre = null, styles = ""))
+                insertArtist((row ?: Artist(n, "")).copy(key = n, name = Keys.mainArtist(name), country = "", checked = 0, gone = 0, tagGenre = null, styles = "", type = "", gender = "", born = 0, ended = 0))
             if (usesOfArtist(old) == 0) forgetArtistRow(old)
         }
     }
@@ -277,10 +277,10 @@ class Converters {
     @TypeConverter fun period(s: String): Period = Period.entries.firstOrNull { it.name == s } ?: Period.MONTH
 }
 
-@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 7, exportSchema = true,
+@Database(entities = [Play::class, Album::class, Artist::class, Track::class, Pet::class, Goal::class], version = 8, exportSchema = true,
     autoMigrations = [androidx.room.AutoMigration(from = 1, to = 2), androidx.room.AutoMigration(from = 2, to = 3), androidx.room.AutoMigration(from = 3, to = 4),
         androidx.room.AutoMigration(from = 4, to = 5), androidx.room.AutoMigration(from = 5, to = 6),
-        androidx.room.AutoMigration(from = 6, to = 7, spec = MusicDb.LookAgain::class)])
+        androidx.room.AutoMigration(from = 6, to = 7, spec = MusicDb.LookAgain::class), androidx.room.AutoMigration(from = 7, to = 8, spec = MusicDb.LifeSpan::class)])
 @TypeConverters(Converters::class)
 abstract class MusicDb : RoomDatabase() {
     abstract fun dao(): MusicDao
@@ -293,6 +293,13 @@ abstract class MusicDb : RoomDatabase() {
         override fun onPostMigrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
             db.execSQL("UPDATE tracks SET checked = 0 WHERE genre IS NULL AND pinned = 0")
             db.execSQL("UPDATE albums SET checked = 0 WHERE genre IS NULL AND pinned = 0")
+            db.execSQL("UPDATE artists SET checked = 0")
+        }
+    }
+
+    /** 8: an artist's life-span (alive or not, a band together or broken up) is kept now, so every artist is asked once more. */
+    class LifeSpan : androidx.room.migration.AutoMigrationSpec {
+        override fun onPostMigrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
             db.execSQL("UPDATE artists SET checked = 0")
         }
     }
