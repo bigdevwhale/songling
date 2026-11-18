@@ -5,6 +5,7 @@ import app.songling.domain.Form
 import app.songling.domain.Genre
 import app.songling.domain.Nature
 import app.songling.domain.Species
+import app.songling.ui.Backdrops
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
 import org.json.JSONObject
@@ -14,8 +15,10 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
 
-/** Everything in one zip: listens, shelf, pets, goals, settings and covers. */
+/** Everything in one zip: listens, shelf, pets, goals, settings, covers and the player's own backdrop picture. */
 object Backup {
+    private const val BACKDROP = "backdrop.jpg"
+
     suspend fun write(ctx: Context, dao: MusicDao, store: SettingsStore, out: OutputStream) {
         val o = JSONObject()
         o.put("version", 1)
@@ -47,6 +50,8 @@ object Backup {
         ZipOutputStream(out).use { z ->
             z.putNextEntry(ZipEntry("songling.json")); z.write(o.toString().toByteArray()); z.closeEntry()
             Covers.dir(ctx).listFiles()?.filter { it.name.endsWith(".jpg") }?.forEach { f -> z.putNextEntry(ZipEntry("covers/${f.name}")); f.inputStream().use { it.copyTo(z) }; z.closeEntry() }
+            // the player's own backdrop picture, which the settings only name
+            Backdrops.ownFile(ctx).takeIf { it.exists() }?.let { f -> z.putNextEntry(ZipEntry(BACKDROP)); f.inputStream().use { it.copyTo(z) }; z.closeEntry() }
         }
     }
 
@@ -55,12 +60,14 @@ object Backup {
     /** Replaces everything with the backup. Returns the number of listens restored. */
     suspend fun read(ctx: Context, dao: MusicDao, store: SettingsStore, input: InputStream): Int {
         var json: JSONObject? = null
+        var picture = false
         ZipInputStream(input).use { z ->
             while (true) {
                 val e = z.nextEntry ?: break
                 when {
                     e.name == "songling.json" -> json = JSONObject(z.readBytes().toString(Charsets.UTF_8))
-                    e.name.startsWith("covers/") -> Covers.file(ctx, e.name.substringAfter('/')).outputStream().use { z.copyTo(it) }
+                    e.name.startsWith("covers/") -> Covers.file(ctx, e.name.substringAfterLast('/')).outputStream().use { z.copyTo(it) }
+                    e.name == BACKDROP -> { Backdrops.ownFile(ctx).outputStream().use { z.copyTo(it) }; picture = true }
                 }
             }
         }
@@ -91,7 +98,8 @@ object Backup {
         val s = Settings.of(o.optString("settings"))
         // Pets get new ids: their rooms follow them (#26); a backup from before rooms gives every pet the shared den.
         store.update {
-            s.copy(pet = s.pet?.let { ids[it] }, rooms = s.rooms.mapNotNull { (k, r) -> k.toLongOrNull()?.let { ids[it] }?.let { it.toString() to r } }.toMap())
+            // a fresh stamp, so the screen draws the picture from the file and not the one it remembers
+            s.copy(backdropStamp = if (picture) System.currentTimeMillis() else s.backdropStamp, pet = s.pet?.let { ids[it] }, rooms = s.rooms.mapNotNull { (k, r) -> k.toLongOrNull()?.let { ids[it] }?.let { it.toString() to r } }.toMap())
                 .splitRooms(ids.values.toList())
         }
         return arr("plays").size

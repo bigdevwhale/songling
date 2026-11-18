@@ -6,7 +6,18 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
-## [Unreleased]
+## [1.15.0] - 2026-11-18
+
+### Added
+- **Lingvale can move Songling to a new phone:** the village saves the backups of all the -ling apps into one file and loads them back on another phone. It is the same backup the settings make, and Songling loads it only when you confirm it in Lingvale.
+
+### Fixed
+- **The backup keeps your own backdrop:** a picture you chose for the studio's background was left out of the backup, so it was gone after a restore. Now it travels in the file. Older backups still load.
+
+<!-- tg
+Lingvale теперь умеет переносить Songling на новый телефон: одна копия на все приложения семейства.
+В копию попадает и ваша собственная картинка для фона – раньше она терялась.
+-->
 
 ## [1.14.0] - 2026-11-17
 
