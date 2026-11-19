@@ -23,6 +23,52 @@ guitar 47 10 20 47
 gold_record 147 57 20 20
 metronome 67 48 12 16
 bongos 0 116 28 15
+synth 150 83 46 37
+boombox 152 80 41 40
+toy_piano 18 81 32 39
+harp 22 80 24 40
+amps 54 88 16 31
+amps 130 88 16 31 flip
+floor_lamps 54 78 16 41
+floor_lamps 130 78 16 41 flip
+pouf 0 111 28 20
+drum 3 108 21 23
+rug_stripes 44 112 112 20
+rug_vinyl 44 112 112 20
+rug_fluffy 44 112 112 20
+bunting 4 0 58 13
+bunting 71 0 58 13
+bunting 138 0 58 13
+lanterns 7 0 52 15
+lanterns 74 0 52 15
+lanterns 141 0 52 15
+paper_lamp 162 0 17 27
+mobile 163 0 16 27
+dreamcatcher 181 20 13 26
+neon_heart 158 18 30 26
+neon_moon 158 14 30 34
+neon_bolt 162 14 22 34
+moon_stickers 147 44 41 14 flip
+cactus 175 76 15 44
+sunflowers 171 76 23 44
+lemon_tree 168 77 30 43
+butterflies 144 44 47 14 flip
+violin 47 10 20 44
+banjo 47 10 20 45
+ukulele 48 10 18 50
+tambourine 180 20 15 26
+sun_clock 46 64 14 14
+donut_clock 46 64 14 14
+platinum_record 147 58 20 19
+ticket 147 59 20 16
+walkman 11 44 16 18
+music_box 11 44 15 18
+hourglass 31 39 13 23
+mushroom_lamp 31 47 13 15
+lantern 81 48 14 16
+snow_globe 80 48 15 16
+maracas 67 51 12 13
+bell 68 46 10 18
 turntable.label 170 86 4 3
 speakers.cone 7 25 4
 shelf.x 13 42

@@ -49,46 +49,69 @@ object DenArt {
 
     fun draw(b: Buf, d: DenLook, tick: Int) {
         b.clear()
-        val i = d.items
+        // What stands in each place: the place's own thing, or another one bought for it.
+        val at = Item.placed(d.items)
+        fun has(i: Item) = at[i] == i
+        // Another thing in [place]: its picture, lit or flickering like what it stands in for.
+        fun other(place: Item, draw: () -> Unit) {
+            val v = at[place] ?: return
+            if (v == place) draw() else variant(b, d, v, tick)
+        }
         // Without the shelf, what stands on it goes to the window sill instead of hanging in the air.
-        Drawn.noShelf.set(Item.SHELF !in i)
+        Drawn.noShelf.set(Item.SHELF !in at)
         if (!Drawn.put(b, "wall_" + d.wall.name.lowercase())) room(b, d)
         window(b, d, tick)
         // The drawn things (tools/den.py) where there are pictures of them; the ones drawn in code otherwise.
-        if (Item.STARS in i) { val dark = d.hour >= 20 || d.hour < 6; if (!Drawn.each(b, "stars") { k -> if (!dark) .45f else if ((tick / 7 + k) % 5 == 0) .6f else 1f }) stars(b, d, tick) }
-        if (Item.POSTER in i) { if (Drawn.has("poster") && Drawn.has("band")) framed(b, d) else { poster(b, d.posters.getOrNull(0)); band(b, d.posters.getOrNull(1)) } }
-        if (Item.GARLAND in i) { if (Drawn.put(b, "garland")) Drawn.twinkle(b, "garland", tick) else garland(b, tick) }
-        if (Item.CLOCK in i) { val c = Drawn.spot("clock.centre"); if (c != null && Drawn.put(b, "clock")) hands(b, d, c) else clock(b, d) }
-        if (Item.NEON in i) neonDrawn(b, tick)
-        if (Item.HEADPHONES in i) { if (!Drawn.put(b, "headphones")) headphones(b) }
+        other(Item.STARS) { val dark = d.hour >= 20 || d.hour < 6; if (!Drawn.each(b, "stars") { k -> if (!dark) .45f else if ((tick / 7 + k) % 5 == 0) .6f else 1f }) stars(b, d, tick) }
+        if (has(Item.POSTER)) { if (Drawn.has("poster") && Drawn.has("band")) framed(b, d) else { poster(b, d.posters.getOrNull(0)); band(b, d.posters.getOrNull(1)) } }
+        other(Item.GARLAND) { if (Drawn.put(b, "garland")) Drawn.twinkle(b, "garland", tick) else garland(b, tick) }
+        other(Item.CLOCK) { val c = Drawn.spot("clock.centre"); if (c != null && Drawn.put(b, "clock")) hands(b, d, c) else clock(b, d) }
+        other(Item.NEON) { neonDrawn(b, tick) }
+        other(Item.HEADPHONES) { if (!Drawn.put(b, "headphones")) headphones(b) }
         // The music things (#26): pictures only, nothing drawn in code instead.
-        if (Item.GUITAR in i) Drawn.put(b, "guitar")
-        if (Item.GOLD_RECORD in i) { if (Drawn.put(b, "gold_record")) Drawn.glow(b, "gold_record", rgb(0xFFD860), .03f) }
-        if (Item.RUG in i) { if (!Drawn.put(b, "rug")) rug(b) }
-        if (Item.SHELF in i) { if (Drawn.put(b, "shelf")) spines(b, d.spines) else shelf(b, d.spines) }
-        if (Item.CASSETTES in i) { if (!Drawn.put(b, "cassettes")) cassettes(b) }
-        if (Item.LAVA in i) { if (Drawn.put(b, "lava")) wax(b, tick) else lava(b, tick) }
-        if (Item.SPEAKERS in i) { if (Drawn.put(b, "speakers")) cones(b, d.playing, tick) else speakers(b, d.playing, tick) }
-        if (Item.TURNTABLE in i) { if (Drawn.put(b, "turntable")) record(b, d, tick) else turntable(b, d, tick) }
-        if (Item.PLANT in i) { if (!Drawn.sway(b, "plant", if ((tick / 12) % 2 == 0) 0 else 1)) plant(b, tick) }
-        if (Item.GRAMOPHONE in i) { if (!Drawn.put(b, "gramophone")) gramophone(b) }
-        if (Item.METRONOME in i) Drawn.put(b, "metronome")
-        if (Item.BONGOS in i) Drawn.put(b, "bongos")
-        if (Item.CANDLES in i) { if (Drawn.put(b, "candles")) Drawn.glow(b, "candles", rgb(0xFFC060), if ((tick / 3) % 3 == 0) .05f else .035f) else candles(b, tick) }
+        other(Item.GUITAR) { Drawn.put(b, "guitar") }
+        other(Item.GOLD_RECORD) { if (Drawn.put(b, "gold_record")) Drawn.glow(b, "gold_record", rgb(0xFFD860), .03f) }
+        other(Item.RUG) { if (!Drawn.put(b, "rug")) rug(b) }
+        if (has(Item.SHELF)) { if (Drawn.put(b, "shelf")) spines(b, d.spines) else shelf(b, d.spines) }
+        other(Item.CASSETTES) { if (!Drawn.put(b, "cassettes")) cassettes(b) }
+        other(Item.LAVA) { if (Drawn.put(b, "lava")) wax(b, tick) else lava(b, tick) }
+        other(Item.SPEAKERS) { if (Drawn.put(b, "speakers")) cones(b, d.playing, tick) else speakers(b, d.playing, tick) }
+        other(Item.TURNTABLE) { if (Drawn.put(b, "turntable")) record(b, d, tick) else turntable(b, d, tick) }
+        other(Item.PLANT) { if (!Drawn.sway(b, "plant", if ((tick / 12) % 2 == 0) 0 else 1)) plant(b, tick) }
+        other(Item.GRAMOPHONE) { if (!Drawn.put(b, "gramophone")) gramophone(b) }
+        other(Item.METRONOME) { Drawn.put(b, "metronome") }
+        other(Item.BONGOS) { Drawn.put(b, "bongos") }
+        other(Item.CANDLES) { if (Drawn.put(b, "candles")) Drawn.glow(b, "candles", rgb(0xFFC060), if ((tick / 3) % 3 == 0) .05f else .035f) else candles(b, tick) }
         // The pet, feet on the rug.
         d.pet?.let { look ->
             shadow(b, W / 2, H - 9, if (look.species.floats) 14 else 20)
             // The pet itself is drawn over the den by the screen, so it can move smoothly; renders draw it here.
             if (d.drawPet) { PetArt.frame(look, tick, pet); b.blit(pet, PET_X, PET_Y) }
         }
-        if (Item.DISCO in i) { if (Drawn.put(b, "disco")) { Drawn.sparkle(b, "disco", tick); spots(b, d.playing, tick) } else disco(b, d.playing, tick) }
+        other(Item.DISCO) { if (Drawn.put(b, "disco")) { Drawn.sparkle(b, "disco", tick); spots(b, d.playing, tick) } else disco(b, d.playing, tick) }
         // Evening light: the room darkens a little at night unless lamps are on.
         val dark = phase(d) == Phase.NIGHT
-        if (dark) for (k in b.d.indices) b.d[k] = mix(b.d[k], rgb(0x0C0818), if (Item.LAVA in i || Item.GARLAND in i || Item.CANDLES in i) 0.12f else 0.25f)
+        if (dark) for (k in b.d.indices) b.d[k] = mix(b.d[k], rgb(0x0C0818), if (at.values.any { it.lit }) 0.12f else 0.25f)
     }
 
+    /** Another thing in a place: its picture where the place's own thing would stand, with what it does. */
+    private fun variant(b: Buf, d: DenLook, v: Item, tick: Int) {
+        val name = v.sprite
+        when (v.slot) {
+            // Glowing on the wall: brighter at night, now and then a flicker, like the neon note.
+            Item.NEON -> { val on = (tick / 3) % 47 != 0; if (on) Drawn.glow(b, name, NEON_GLOW[v] ?: rgb(0xFF5AC8), .06f); Drawn.each(b, name) { if (on) 1f else .35f } }
+            Item.STARS -> { val dark = d.hour >= 20 || d.hour < 6; Drawn.each(b, name) { if (v.lit && !dark) .55f else 1f } }
+            Item.PLANT -> Drawn.sway(b, name, if ((tick / 12) % 2 == 0) 0 else 1)
+            Item.CLOCK -> if (Drawn.put(b, name)) Drawn.places(name).firstOrNull()?.let { p -> hands(b, d, intArrayOf(p[0] + p[2] / 2, p[1] + p[3] / 2, p[2] / 2)) }
+            Item.GOLD_RECORD -> if (Drawn.put(b, name) && v == Item.PLATINUM_RECORD) Drawn.glow(b, name, rgb(0xE8F0FF), .03f)
+            else -> if (Drawn.put(b, name) && v.lit) Drawn.glow(b, name, rgb(0xFFC060), if ((tick / 3) % 3 == 0) .05f else .035f)
+        }
+    }
+
+    private val NEON_GLOW = mapOf(Item.NEON_HEART to rgb(0xFF4A5A), Item.NEON_MOON to rgb(0xFFE88A), Item.NEON_BOLT to rgb(0x5AE8FF))
+
     /** Where each thing stands in the den: x, y, w, h. */
-    private fun spot(i: Item): IntArray = when (i) {
+    private fun spot(i: Item): IntArray = when (i.slot) {
         Item.RUG -> intArrayOf(44, 112, 112, 20)
         Item.PLANT -> intArrayOf(166, 80, 32, 40)
         Item.GARLAND -> intArrayOf(40, 0, 56, 14)
@@ -109,6 +132,7 @@ object DenArt {
         Item.BONGOS -> intArrayOf(0, 112, 30, 20)
         Item.GUITAR -> intArrayOf(45, 8, 24, 52)
         Item.GOLD_RECORD -> intArrayOf(145, 55, 24, 24)
+        else -> intArrayOf(0, 0, W, H)
     }
 
     private val thumbs = HashMap<String, Buf>()
@@ -551,9 +575,12 @@ object DenArt {
         /** What stands on the shelf, and how far it moves to stand on the sill to the right of the candles. */
         private val ON_SHELF = mapOf("lava" to intArrayOf(86, 2), "cassettes" to intArrayOf(90, 2))
 
+        /** The place each other thing stands in, by picture: what moves with the shelf moves for them too. */
+        private val PLACE_OF = Item.entries.associate { it.sprite to it.slot.sprite }
+
         /** Where [name] stands: x, y, w, h, flipped (1 or 0), once for each place. */
         fun places(name: String): List<IntArray> {
-            val move = if (noShelf.get() == true) ON_SHELF[name] else null
+            val move = if (noShelf.get() == true) ON_SHELF[name] ?: ON_SHELF[PLACE_OF[name]] else null
             return table.filter { it.first == name }.map { (_, v) ->
                 val p = if (v.size >= 5) v.copyOf() else v + 0
                 if (move != null) { p[0] += move[0]; p[1] += move[1] }
@@ -627,7 +654,7 @@ object DenArt {
 
         /** The box a thing takes in the den, for its shop picture. */
         fun box(i: Item): IntArray? {
-            val names = if (i == Item.POSTER) listOf("poster", "band") else listOf(i.name.lowercase())
+            val names = if (i == Item.POSTER) listOf("poster", "band") else listOf(i.sprite)
             if (names.any { !has(it) }) return null
             val ps = names.mapNotNull { places(it).firstOrNull() }.ifEmpty { return null }
             val x0 = (ps.minOf { it[0] } - 2).coerceAtLeast(0); val y0 = (ps.minOf { it[1] } - 2).coerceAtLeast(0)

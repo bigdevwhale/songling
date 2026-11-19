@@ -77,6 +77,19 @@ class FeatsTest {
         }
     }
 
+    @Test fun theRavensEggFillsWithEverySongNotOnceAnHour() {
+        // Five songs of Miles Davis: twenty minutes, far from an hour, and yet the egg is on its way.
+        val ps = (0 until 5).map { play("So What $it", t0 + it * 5 * MIN, artist = "Miles Davis") }
+        val miles = app.songling.data.Artist(ps.first().artist, "Miles Davis", gone = 1991)
+        val st = Studio(ps, emptyList(), listOf(miles), emptyList(), emptyList(), emptyList(), Settings(), ps.last().at + 3_600_000L, ZoneOffset.UTC)
+        val raven = st.hints.first { it.species == app.songling.domain.Species.RAVEN }
+        assertEquals(20, raven.have)
+        assertEquals(180, raven.need)
+        assertEquals(3, raven.asked)
+        assertFalse(raven.open)
+        assertEquals(0, st.goneHours)
+    }
+
     @Test fun midnightCountsOncePerYear() {
         // 31 Dec 2025, 23:30 UTC and 1 Jan 2026, 00:10 UTC: the same New Year's night.
         val eve = java.time.LocalDateTime.of(2025, 12, 31, 23, 30).toInstant(ZoneOffset.UTC).toEpochMilli()

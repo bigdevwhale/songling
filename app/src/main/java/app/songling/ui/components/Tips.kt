@@ -36,8 +36,8 @@ private fun text(tip: Tip, ru: Boolean): Pair<String, List<String>> = if (ru) wh
         "Цели бывают на неделю, месяц, год или разовые – разовая приносит 15 медиаторов.")
     Tip.BESTIARY -> "Это бестиарий" to listOf("Твои питомцы и яйца, которые ещё предстоит найти.",
         "У каждого свой вкус: любимая музыка кормит в полтора раза и приносит вдвое больше медиаторов.", "Нажми на питомца, чтобы узнать о нём всё и позвать в логово.")
-    Tip.SHOP -> "Здесь обустраивают логово" to listOf("Нажми на вещь – она появится в комнате на примерку. Понравится – купи за медиаторы.",
-        "Купленное убирается и достаётся нажатием.")
+    Tip.SHOP -> "Здесь обустраивают логово" to listOf("У каждого места в комнате есть из чего выбрать: нажми на место, и под комнатой появятся варианты.",
+        "Нажатый вариант встаёт в комнату на примерку. Понравится – купи за медиаторы.", "Купленное не пропадает: его можно поставить обратно.")
     Tip.SETTINGS -> "Настройки" to listOf("Здесь меняется вид: пластинки или кассеты, светлая или тёмная тема, фон.",
         "И ещё: свои жанры, перенос истории из Spotify и Last.fm, резервные копии.")
 } else when (tip) {
@@ -50,7 +50,8 @@ private fun text(tip: Tip, ru: Boolean): Pair<String, List<String>> = if (ru) wh
         "Goals run weekly, monthly, yearly or once – a one-off goal pays 15 plectrums.")
     Tip.BESTIARY -> "This is the bestiary" to listOf("Your pets, and the eggs still to find.",
         "Each has its taste: favourite music feeds it one and a half times and pays double plectrums.", "Tap a pet to learn all about it and call it to the den.")
-    Tip.SHOP -> "Furnish the den here" to listOf("Tap a thing to try it in the room. Like it? Buy it with plectrums.", "Tap what you own to put it away or bring it back.")
+    Tip.SHOP -> "Furnish the den here" to listOf("Each place in the room has things to choose from: tap a place and they show up under the room.",
+        "Tap one to try it in the room. Like it? Buy it with plectrums.", "What you buy stays yours: you can always put it back.")
     Tip.SETTINGS -> "Settings" to listOf("Change the look here: records or tapes, light or dark, the background.",
         "Also: your own genres, history from Spotify and Last.fm, backups.")
 }

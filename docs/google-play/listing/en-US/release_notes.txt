@@ -1,1 +1,2 @@
-An artist's page now tells whether they are alive: «Alive · born 1985» or «Died · 1926–1991», and for bands «Together» or «Broke up» with the years. After the update artists are checked once more in the background, so the marks appear gradually.
+40 new things for the den: rugs, plants, a synth, a violin, a banjo, neon signs, lanterns, a harp and more. Most places in the room now have things to choose from – tap a place in the shop. Every pet has a room of its own.
+Eggs that ask for hours of music, like the raven, now fill with every song, not only after a full hour.

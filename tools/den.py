@@ -34,7 +34,32 @@ SHEETS = {
     "items_wall": ["clock", "neon", "headphones", "disco"],
     "items_deco": ["rug", "garland", "stars", "frames"],
     "items_music": ["guitar", "gold_record", "metronome", "bongos"],
+    # Other things for the same places (Item's slot): each stands where the thing it stands in for does.
+    "vars_floor": ["synth", "boombox", "toy_piano", "harp"],
+    "vars_pairs": ["amps", "floor_lamps", "pouf", "drum"],
+    "vars_rugs": ["rug_stripes", "rug_vinyl", "rug_fluffy", "bunting"],
+    "vars_ceiling": ["lanterns", "paper_lamp", "mobile", "dreamcatcher"],
+    "vars_neon": ["neon_heart", "neon_moon", "neon_bolt", "moon_stickers"],
+    "vars_plants": ["cactus", "sunflowers", "lemon_tree", "butterflies"],
+    "vars_strings": ["violin", "banjo", "ukulele", "tambourine"],
+    "vars_wall": ["sun_clock", "donut_clock", "platinum_record", "ticket"],
+    "vars_shelf": ["walkman", "music_box", "hourglass", "mushroom_lamp"],
+    "vars_sill": ["lantern", "snow_globe", "maracas", "bell"],
 }
+PLACE_OF = {
+    "synth": "turntable", "boombox": "turntable", "toy_piano": "gramophone", "harp": "gramophone",
+    "amps": "speakers", "floor_lamps": "speakers", "pouf": "bongos", "drum": "bongos",
+    "rug_stripes": "rug", "rug_vinyl": "rug", "rug_fluffy": "rug", "bunting": "garland",
+    "lanterns": "garland", "paper_lamp": "disco", "mobile": "disco", "dreamcatcher": "headphones",
+    "neon_heart": "neon", "neon_moon": "neon", "neon_bolt": "neon", "moon_stickers": "stars",
+    "cactus": "plant", "sunflowers": "plant", "lemon_tree": "plant", "butterflies": "stars",
+    "violin": "guitar", "banjo": "guitar", "ukulele": "guitar", "tambourine": "headphones",
+    "sun_clock": "clock", "donut_clock": "clock", "platinum_record": "gold_record", "ticket": "gold_record",
+    "walkman": "cassettes", "music_box": "cassettes", "hourglass": "lava", "mushroom_lamp": "lava",
+    "lantern": "candles", "snow_globe": "candles", "maracas": "metronome", "bell": "metronome",
+}
+# Glowing things: no dark outline round their light.
+GLOW = ("neon", "stars", "neon_heart", "neon_moon", "neon_bolt", "moon_stickers")
 
 # Where each thing goes, in den pixels: the box it's fitted into, and how it sits in that box
 # (bottom: stands on the box's floor; top: hangs from its top; centre; stretch: fills it, for the flat rug).
@@ -132,7 +157,14 @@ def main():
         wall(w)
     table, extra, sprites, shown = [], [], {}, {}
     for sheet, names in SHEETS.items():
-        for name, part in zip(names, parts(sheet)):
+        if not os.path.exists(os.path.join(SRC, f"{sheet}.png")):
+            print("no sheet yet:", sheet)
+            continue
+        got = parts(sheet)
+        if len(got) != len(names):
+            print(f"{sheet}: {len(got)} figures for {len(names)} things, skipped")
+            continue
+        for name, part in zip(names, got):
             if name == "frames":
                 solid = part[..., 3] >= 128
                 for (fname, (tx, ty, tw, th)), (s, e) in zip(FRAMES, figures(solid, 2)):
@@ -153,14 +185,14 @@ def main():
                     shown[fname] = spr
                     table.append((fname, sx, sy, sw, sh, ""))
                 continue
-            for place in PLACES[name]:
+            for place in PLACES[PLACE_OF.get(name, name)]:
                 box, how = place[0], place[1]
                 flip = len(place) > 2
                 sw, sh, sx, sy = fit(part, box, how)
                 if name not in sprites:
                     # Measured on the den's pixels; shown finer.
-                    sprites[name] = shrink(part, sw, sh, line=name not in ("neon", "stars"))
-                    shown[name] = fine(part, sw, sh, line=name not in ("neon", "stars"))
+                    sprites[name] = shrink(part, sw, sh, line=name not in GLOW)
+                    shown[name] = fine(part, sw, sh, line=name not in GLOW)
                     if name == "stars":
                         # Shrunk, their soft glow turns olive: they're glow stickers, so make them glow.
                         s = shown[name]
@@ -206,6 +238,8 @@ def main():
     # A look at the den with everything in it, on the plum wall.
     room = Image.open(os.path.join(OUT, "wall_plum.png")).convert("RGBA")
     for name, sx, sy, sw, sh, flag in table:
+        if name in PLACE_OF:
+            continue
         im = Image.fromarray(shown[name], "RGBA")
         if flag == "flip":
             im = im.transpose(Image.FLIP_LEFT_RIGHT)

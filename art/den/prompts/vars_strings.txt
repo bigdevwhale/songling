@@ -1,0 +1,11 @@
+Use your image generation tool to create ONE image, then save it as PNG with transparency to the path given at the end (create folders if needed). The attached pictures are style references: the first is the room the objects will stand in, the second is a pet from this game. Match the style exactly: chunky pixel art, crisp thick dark outline, soft cel shading with 3-4 tones per colour, rich saturated cosy colours, warm lamp-lit evening mood.
+
+Sprite sheet of FOUR separate objects for a tiny pet's cosy music room in a 2D side-view game. All four in a single horizontal row, left to right in the order listed, evenly spaced, with clear empty space between them: they must not touch or overlap. Each object seen from the front with a slight top-down angle, like furniture in a side-view room. Each object is drawn complete and alone.
+Transparent background. No floor, no wall, no ground shadow, no text, no labels, no frames around the objects (except where the object itself is a frame), no grid, nothing else in the picture.
+
+1. A warm brown violin with its bow hanging upright, scroll up, on a small dark wall hook. Much taller than wide.
+2. A banjo hanging upright, neck up, round cream head with a wooden rim, on a small dark wall hook. Much taller than wide.
+3. A small turquoise ukulele hanging upright, neck up, on a small dark wall hook. Much taller than wide.
+4. A tambourine with little brass jingles and colourful ribbons hanging on a small brass wall hook. About square.
+
+Save the image to: art/den/sheets/vars_strings.png

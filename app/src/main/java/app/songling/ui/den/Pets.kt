@@ -2,6 +2,8 @@ package app.songling.ui.den
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -241,9 +243,9 @@ private fun EggDetail(st: Studio, h: app.songling.domain.Hint, nav: Nav, onClose
         Text(if (h.open) t("Яйцо: ", "Egg: ") + Words.species(sp, ru) else t("Неизвестное яйцо", "An unknown egg"), style = T.Title)
         if (!h.open) {
             InfoBlock(t("Как найти", "How to find it")) {
-                Text(Words.find(sp, h.need, ru), style = T.Body)
+                Text(Words.find(sp, h.asked, ru), style = T.Body)
                 Bar(h.have / h.need.toFloat(), Modifier.fillMaxWidth(), C.lilac)
-                Text("${h.have.coerceAtMost(h.need)} / ${h.need}", style = T.Small)
+                Text(if (h.minutes) "${Words.dur(h.have.coerceAtMost(h.need) * MIN, ru)} / ${Words.dur(h.need * MIN, ru)}" else "${h.have.coerceAtMost(h.need)} / ${h.need}", style = T.Small)
             }
         }
         InfoBlock(t("Кто внутри будет любить", "What it will love")) {
@@ -289,6 +291,8 @@ fun ShopPage(st: Studio, nav: Nav) {
     val co = LocalContext.current.container
     var page by remember { mutableStateOf(0) }
     var tryItem by remember { mutableStateOf<Item?>(null) }
+    // The place opened to choose what stands in it.
+    var place by remember { mutableStateOf<Item?>(null) }
     var tryWall by remember { mutableStateOf<Wall?>(null) }
     val owned = Item.entries.filter { it.name in st.s.bought && it.name !in st.s.hidden }.toSet()
     val wall = Wall.entries.firstOrNull { it.name == st.s.wall } ?: Wall.PLUM
@@ -311,7 +315,10 @@ fun ShopPage(st: Studio, nav: Nav) {
         pet = st.look(false),
         outside = if (st.s.realWeather) app.songling.data.Outside.of(st.s.outside) else null, now = st.now,
     )
-    Page(t("Обустроить логово", "Furnish the den"), nav::close) {
+    // Choosing what stands in a place happens under the room, so the room is seen while choosing.
+    val scroll = rememberScrollState()
+    androidx.compose.runtime.LaunchedEffect(place) { if (place != null) scroll.animateScrollTo(0) }
+    Page(t("Обустроить логово", "Furnish the den"), nav::close, scroll) {
         app.songling.ui.components.FirstVisit(app.songling.ui.components.Tip.SHOP, st.s)
         Box(Modifier.fillMaxWidth().paper(24.dp, 4.dp).clip(RoundedCornerShape(24.dp)).background(C.surface).padding(6.dp).clip(RoundedCornerShape(18.dp))) {
             app.songling.ui.components.DenView(den)
@@ -322,50 +329,70 @@ fun ShopPage(st: Studio, nav: Nav) {
         val ti = tryItem; val tw = tryWall
         when {
             ti != null -> TryBar(ti.name(ru), ti.note(ru), ti.name in st.s.bought, ti.price, st.plectrums, onBuy = {
-                co.write { settings.update { s -> s.copy(spent = s.spent + ti.price, bought = s.bought + ti.name, hidden = s.hidden - ti.name) } }
+                // What stood in its place is put away, not sold: it can come back.
+                co.write { settings.update { s -> s.copy(spent = s.spent + ti.price, bought = s.bought + ti.name, hidden = s.hidden - ti.name + Item.others(ti, s.bought)) } }
                 nav.toast(if (ru) "«${ti.name(true)}» – теперь в логове" else "«${ti.name(false)}» is in the den now"); tryItem = null
             }, onCancel = { tryItem = null })
             tw != null -> TryBar(t("Обои «", "Wallpaper «") + tw.name(ru) + "»", "", tw.price == 0 || "wall:${tw.name}" in st.s.bought, tw.price, st.plectrums, onBuy = {
                 co.write { settings.update { s -> if (tw.price == 0 || "wall:${tw.name}" in s.bought) s.copy(wall = tw.name) else s.copy(wall = tw.name, spent = s.spent + tw.price, bought = s.bought + "wall:${tw.name}") } }
                 tryWall = null
             }, onCancel = { tryWall = null }, haveLabel = t("Поклеить", "Put up"))
+            place != null -> {}
             else -> {
                 // Each pet has a room of its own (#26): say whose this one is.
                 st.pet?.let { p -> Text(t("Это комната питомца ${p.pet.title(true)} – у каждого питомца своя.", "This is ${p.pet.title(false)}'s room – each pet has its own."), style = T.Strong) }
                 Text(t("Нажми на вещь – она появится в комнате. Понравится – купи.", "Tap a thing to try it in the room. Like it? Buy it."), style = T.Muted)
             }
         }
+        place?.let { p ->
+            val placed = Item.placed(owned)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(t("Что поставить на место «", "What goes where the «") + p.name(ru) + t("»", "» stands"), style = T.Strong, modifier = Modifier.weight(1f))
+                Btn(t("Готово", "Done"), { place = null; tryItem = null }, kind = Kind.GHOST, small = true)
+            }
+            Choices(st, p, placed[p], tryItem, wall, onTry = { v -> tryItem = if (tryItem == v) null else v }, onPlace = { v ->
+                tryItem = null
+                co.write { settings.update { s -> s.copy(hidden = if (v == null) s.hidden + Item.variants(p).map { it.name } else s.hidden - v.name + Item.others(v, s.bought)) } }
+            })
+        }
         if (Item.POSTER.name in st.s.bought && Item.POSTER.name !in st.s.hidden) {
             Text(t("Постеры на стене", "Posters on the wall"), style = T.Strong)
             PosterFrames(st, pictures) { picking = it }
         }
-        app.songling.ui.components.Tabs(listOf(t("Вещи", "Things"), t("Обои", "Wallpaper"), t("Пластинки", "Records")), page, { page = it; tryItem = null; tryWall = null })
+        app.songling.ui.components.Tabs(listOf(t("Вещи", "Things"), t("Обои", "Wallpaper"), t("Пластинки", "Records")), page, { page = it; tryItem = null; tryWall = null; place = null })
         if (page == 2) RecordsTab(st, nav)
         else if (page == 0) {
-            for (row in Item.entries.sortedBy { it.price }.chunked(3)) Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                for (it in row) {
-                    val have = it.name in st.s.bought
-                    val shown = have && it.name !in st.s.hidden
-                    val on = tryItem == it
-                    Column(Modifier.weight(1f).paper(18.dp, 3.dp).clip(RoundedCornerShape(18.dp)).background(C.surface)
-                        .then(if (on) Modifier.border(2.dp, C.amber, RoundedCornerShape(18.dp)) else Modifier)
-                        .clickable {
-                            if (have) co.write { settings.update { s -> s.copy(hidden = if (shown) s.hidden + it.name else s.hidden - it.name) } }
-                            else tryItem = if (on) null else it
-                        }.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        val thumb = remember(it, wall) { app.songling.ui.art.DenArt.thumb(it, wall) }
-                        Box(Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(12.dp)).background(C.surface2), contentAlignment = Alignment.Center) {
-                            val k = minOf(56f / thumb.w, 56f / thumb.h)
-                            BufImage(thumb, scale = k.dp)
+            // One tile a place; a place with things to choose from opens a row of them under the room.
+            val placed = Item.placed(owned)
+            for (row in Item.slots.sortedBy { it.price }.chunked(3)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    for (it in row) {
+                        val choice = Item.variants(it).size > 1
+                        val inPlace = placed[it]
+                        val have = Item.variants(it).any { v -> v.name in st.s.bought }
+                        val on = if (choice) place == it else tryItem == it
+                        val shows = inPlace ?: tryItem?.takeIf { v -> v.slot == it } ?: it
+                        Column(Modifier.weight(1f).paper(18.dp, 3.dp).clip(RoundedCornerShape(18.dp)).background(C.surface)
+                            .then(if (on) Modifier.border(2.dp, C.amber, RoundedCornerShape(18.dp)) else Modifier)
+                            .clickable {
+                                when {
+                                    choice -> { place = if (on) null else it; tryItem = null }
+                                    have -> co.write { settings.update { s -> s.copy(hidden = if (inPlace != null) s.hidden + it.name else s.hidden - it.name) } }
+                                    else -> tryItem = if (on) null else it
+                                }
+                            }.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Thumb(shows, wall, 64.dp)
+                            Text(shows.name(ru), style = T.Small.copy(color = C.ink), maxLines = 2, minLines = 2, textAlign = TextAlign.Center)
+                            val from = Item.variants(it).filter { v -> v.name !in st.s.bought }.minOfOrNull { v -> v.price }
+                            Text(when { inPlace != null -> t("в комнате", "in the room"); have -> t("убрано", "put away"); choice -> t("от $from", "from $from"); else -> "${it.price}" },
+                                style = T.Small.copy(color = when { inPlace != null -> C.mint; have -> C.faint; st.plectrums < (from ?: it.price) -> C.faint; else -> C.amber }))
                         }
-                        Text(it.name(ru), style = T.Small.copy(color = C.ink), maxLines = 2, minLines = 2, textAlign = TextAlign.Center)
-                        Text(when { shown -> t("в комнате", "in the room"); have -> t("убрано", "put away"); else -> "${it.price}" },
-                            style = T.Small.copy(color = when { shown -> C.mint; have -> C.faint; st.plectrums < it.price -> C.faint; else -> C.amber }))
                     }
+                    repeat(3 - row.size) { Box(Modifier.weight(1f)) }
                 }
-                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
             }
-            Text(t("Купленное убирается и достаётся нажатием.", "Tap what you own to put it away or bring it back."), style = T.Small)
+            Text(t("У многих мест есть из чего выбрать: нажми на место и выбери, что там будет стоять. Купленное не пропадает, его можно вернуть.",
+                "Many places have things to choose from: tap a place and pick what stands there. What you have bought stays yours to bring back."), style = T.Small)
         } else {
             for (row in Wall.entries.chunked(4)) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (w in row) {
@@ -387,6 +414,46 @@ fun ShopPage(st: Studio, nav: Nav) {
             "One plectrum per 10 minutes of music, five per whole album, more for the week's tasks and goals. Buying never takes growth from the pet. Once the room is furnished, plectrums go on records and new eggs."), style = T.Small)
     }
     picking?.let { f -> PosterPick(st, f) { picking = null } }
+}
+
+/** A thing as it looks in the den, on a tile [height] high. */
+@Composable
+private fun Thumb(i: Item, wall: Wall, height: androidx.compose.ui.unit.Dp) {
+    val thumb = remember(i, wall) { app.songling.ui.art.DenArt.thumb(i, wall) }
+    Box(Modifier.fillMaxWidth().height(height).clip(RoundedCornerShape(12.dp)).background(C.surface2), contentAlignment = Alignment.Center) {
+        val room = height.value - 8f
+        val k = minOf(room / thumb.w, room / thumb.h)
+        BufImage(thumb, scale = k.dp)
+    }
+}
+
+/**
+ * What can stand in [place]: what is bought is put there with a tap, the rest is tried in the room first; «Пусто»
+ * puts away whatever stands there.
+ */
+@Composable
+private fun Choices(st: Studio, place: Item, now: Item?, trying: Item?, wall: Wall, onTry: (Item) -> Unit, onPlace: (Item?) -> Unit) {
+    val ru = LocalRu.current
+    Row(Modifier.fillMaxWidth().horizontalScroll(remember(place) { androidx.compose.foundation.ScrollState(0) }).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        for (v in Item.variants(place)) {
+            val have = v.name in st.s.bought
+            val on = v == now || v == trying
+            Column(Modifier.width(108.dp).clip(RoundedCornerShape(16.dp)).background(C.surface)
+                .border(if (on) 2.dp else 1.dp, if (on) C.amber else C.line, RoundedCornerShape(16.dp))
+                .clickable { if (have) onPlace(v) else onTry(v) }.padding(6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Thumb(v, wall, 52.dp)
+                Text(v.name(ru), style = T.Small.copy(color = C.ink), maxLines = 2, minLines = 2, textAlign = TextAlign.Center)
+                Text(when { v == now -> t("стоит", "here"); have -> t("поставить", "place"); else -> "${v.price}" },
+                    style = T.Small.copy(color = when { v == now -> C.mint; have -> C.ink; st.plectrums < v.price -> C.faint; else -> C.amber }))
+            }
+        }
+        if (now != null) Column(Modifier.width(108.dp).height(118.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, C.line, RoundedCornerShape(16.dp))
+            .clickable { onPlace(null) }.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(t("Пусто", "Empty"), style = T.Small.copy(color = C.ink))
+            Text(t("убрать", "put away"), style = T.Small.copy(color = C.faint))
+        }
+    }
 }
 
 @Composable

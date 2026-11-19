@@ -6,6 +6,20 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.16.0] - 2026-11-19
+
+### Added
+- **Forty new things for the den:** most places in the room now have two or three to choose from – a striped, record or fluffy rug, a cactus, sunflowers or a lemon tree, a synthesizer or a boombox, a violin, a banjo or a ukulele, neon hearts, moons and bolts, paper lanterns, a toy piano, a harp and more. A place shows one thing at a time, so every pet's room can be furnished its own way.
+- In the shop, tap a place to see what can stand there: try a thing in the room, buy it, or put back one you already have. What you put away stays yours.
+
+### Fixed
+- **Eggs that ask for hours of music fill with every song:** the raven's egg and the other «N hours of …» eggs counted only whole hours, so they stood at «0 / 3» until a full hour of such music was heard. Now they count minutes and show «1 h 20 min / 3 h».
+
+<!-- tg
+В логове 40 новых вещей: у большинства мест теперь есть из чего выбрать – ковры, растения, синтезатор, скрипка, неон, фонарики и другое. У каждого питомца комната своя.
+Яйца, которым нужны часы музыки (например, ворон), теперь растут с каждой песней, а не только после полного часа.
+-->
+
 ## [1.15.0] - 2026-11-18
 
 ### Added

@@ -64,8 +64,10 @@ class PetState(val pet: Pet, val fed: Int, val stage: Stage, val byGenre: Map<Ge
 }
 
 /** How near an egg is to being found. */
-data class Hint(val species: Species, val have: Int, val need: Int) {
+data class Hint(val species: Species, val have: Int, val need: Int, val minutes: Boolean = false) {
     val open get() = have >= need
+    /** What the egg asks for in its own words: hours for one counted in [minutes]. */
+    val asked get() = if (minutes) need / 60 else need
 }
 
 /**
@@ -270,8 +272,9 @@ class Studio(
     val longSessions: Int get() = sessions.count { it.ms >= 45 * MIN }
     val maxRepeats: Int get() = byTrack.values.maxOfOrNull { it.plays } ?: 0
 
-    /** Hours of music by artists who have passed away (#15). */
-    val goneHours: Int by lazy { (plays.filter { (artists[it.artist]?.gone ?: 0) > 0 }.sumOf { it.ms } / 3_600_000L).toInt() }
+    /** Minutes and hours of music by artists who have passed away (#15). */
+    val goneMinutes: Int by lazy { (plays.filter { (artists[it.artist]?.gone ?: 0) > 0 }.sumOf { it.ms } / MIN).toInt() }
+    val goneHours: Int get() = goneMinutes / 60
 
     val oldAlbums: Int get() = byAlbum.values.count { t ->
         val y = albums[t.key]?.year ?: return@count false
@@ -299,9 +302,11 @@ class Studio(
 
     /** The artist listened to longest of all, and the hours of them. */
     val topArtist: String? by lazy { byArtist.maxByOrNull { it.value.ms }?.key }
-    val topArtistHours: Int get() = ((byArtist[topArtist]?.ms ?: 0L) / 3_600_000L).toInt()
+    val topArtistMinutes: Int get() = ((byArtist[topArtist]?.ms ?: 0L) / MIN).toInt()
+    val topArtistHours: Int get() = topArtistMinutes / 60
 
-    fun genreHours(vararg g: Genre): Int = (g.sumOf { byGenre[it] ?: 0L } / 3_600_000L).toInt()
+    fun genreMinutes(vararg g: Genre): Int = (g.sumOf { byGenre[it] ?: 0L } / MIN).toInt()
+    fun genreHours(vararg g: Genre): Int = genreMinutes(*g) / 60
 
     // ---------------------------------------------------------------- eggs
 
@@ -311,12 +316,12 @@ class Studio(
             // The demo shows the whole bestiary open.
             if (app.songling.BuildConfig.DEMO) Hint(sp, 1, 1) else when (sp) {
                 Species.LYREBIRD, Species.MUSICBOX, Species.LONGEAR -> Hint(sp, 1, 1)
-                Species.BASILISK -> Hint(sp, genreHours(Genre.ROCK, Genre.METAL, Genre.PUNK, Genre.ALT), 10)
-                Species.CONDUCTOR -> Hint(sp, genreHours(Genre.CLASSICAL, Genre.SOUNDTRACK), 5)
-                Species.PURR -> Hint(sp, genreHours(Genre.JAZZ, Genre.BLUES, Genre.RNB), 5)
-                Species.AXOLOTL -> Hint(sp, genreHours(Genre.ELECTRONIC, Genre.DANCE), 10)
-                Species.RACCOON -> Hint(sp, genreHours(Genre.HIPHOP), 10)
-                Species.WHALE -> Hint(sp, genreHours(Genre.AMBIENT), 5)
+                Species.BASILISK -> inHours(sp, genreMinutes(Genre.ROCK, Genre.METAL, Genre.PUNK, Genre.ALT), 10)
+                Species.CONDUCTOR -> inHours(sp, genreMinutes(Genre.CLASSICAL, Genre.SOUNDTRACK), 5)
+                Species.PURR -> inHours(sp, genreMinutes(Genre.JAZZ, Genre.BLUES, Genre.RNB), 5)
+                Species.AXOLOTL -> inHours(sp, genreMinutes(Genre.ELECTRONIC, Genre.DANCE), 10)
+                Species.RACCOON -> inHours(sp, genreMinutes(Genre.HIPHOP), 10)
+                Species.WHALE -> inHours(sp, genreMinutes(Genre.AMBIENT), 5)
                 Species.WANDERER -> Hint(sp, countries.size, 5)
                 Species.CRICKET -> Hint(sp, nights, 5)
                 Species.LARK -> Hint(sp, mornings, 5)
@@ -326,16 +331,19 @@ class Studio(
                 Species.ECHO -> Hint(sp, comebacks, 1)
                 Species.FIREFLY -> Hint(sp, concerts, 1)
                 Species.POTPOURRI -> Hint(sp, mostGenresInADay, 4)
-                Species.RAVEN -> Hint(sp, goneHours, 3)
-                Species.HUMMINGBIRD -> Hint(sp, genreHours(Genre.POP), 10)
+                Species.RAVEN -> inHours(sp, goneMinutes, 3)
+                Species.HUMMINGBIRD -> inHours(sp, genreMinutes(Genre.POP), 10)
                 Species.MAGPIE -> Hint(sp, collabTracks, 20)
                 Species.BULLFINCH -> Hint(sp, winterDays, 10)
                 Species.BAT -> Hint(sp, offPhone, 5)
                 Species.DRAGON -> Hint(sp, longSongs, 10)
-                Species.HOUND -> Hint(sp, topArtistHours, 20)
+                Species.HOUND -> inHours(sp, topArtistMinutes, 20)
             }
         }
     }
+
+    /** An egg asking for [hours] of something, counted in minutes so it fills with every song, not once an hour. */
+    private fun inHours(sp: Species, minutes: Int, hours: Int) = Hint(sp, minutes, hours * 60, minutes = true)
 
     fun open(sp: Species) = hints.firstOrNull { it.species == sp }?.open == true
 

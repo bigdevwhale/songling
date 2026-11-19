@@ -312,7 +312,7 @@ fun Sheet(onDismiss: () -> Unit, footer: (@Composable () -> Unit)? = null, conte
 
 /** A full-screen page over the tabs with a back arrow; it comes in from the side. */
 @Composable
-fun Page(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun Page(title: String, onBack: () -> Unit, scroll: androidx.compose.foundation.ScrollState = rememberScrollState(), content: @Composable ColumnScope.() -> Unit) {
     BackHandler(onBack = onBack)
     val enter = remember { Animatable(if (Art.still) 1f else 0f) }
     LaunchedEffect(Unit) { enter.animateTo(1f, tween(220, easing = FastOutSlowInEasing)) }
@@ -325,7 +325,7 @@ fun Page(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() 
                 Spacer(Modifier.width(2.dp))
                 Text(title, style = T.Title, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp).navigationBarsPadding(),
+            Column(Modifier.fillMaxSize().verticalScroll(scroll).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp).navigationBarsPadding(),
                 verticalArrangement = Arrangement.spacedBy(14.dp), content = content)
         }
     }
