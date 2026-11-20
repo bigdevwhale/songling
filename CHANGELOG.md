@@ -6,6 +6,16 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.17.1] - 2026-11-20
+
+### Fixed
+- **Three pets never counted their favourite music.** The patchwork potpourri now loves every song of a day with four genres or more, the snail every song of a sitting of 45 minutes and more, and the echo the first day of music after three silent days and more. What they ate since they came out is counted again, so the favourite minutes catch up at once.
+
+<!-- tg
+Попурри, Улитка и Эхо наконец считают любимую музыку: Попурри – дни с четырьмя жанрами и больше, Улитка – сессии от 45 минут, Эхо – первый день после тишины.
+Любимое пересчитывается за всё время, так что минуты догонят сразу.
+-->
+
 ## [1.17.0] - 2026-11-20
 
 ### Added

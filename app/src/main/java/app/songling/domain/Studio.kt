@@ -282,10 +282,24 @@ class Studio(
     }
 
     /** The most genres heard in one day. */
-    val mostGenresInADay: Int by lazy {
+    val mostGenresInADay: Int get() = genresByDay.values.maxOfOrNull { it } ?: 0
+
+    /** How many genres each day had. */
+    private val genresByDay: Map<LocalDate, Int> by lazy {
         val m = HashMap<LocalDate, HashSet<Genre>>()
         for (p in plays) if (p.ms >= MIN) genresOf(p).let { if (it.isNotEmpty()) m.getOrPut(day(p.at)) { HashSet() } += it }
-        m.values.maxOfOrNull { it.size } ?: 0
+        m.mapValues { it.value.size }
+    }
+
+    /** When music came back after three days and more of silence (the echo's favourite is the day after). */
+    private val returns: java.util.TreeSet<Long> by lazy {
+        java.util.TreeSet(plays.zipWithNext().filter { (a, b) -> b.at - (a.at + a.ms) >= 3 * DAY }.map { it.second.at })
+    }
+
+    /** The sitting a moment falls in. */
+    private fun sessionAt(t: Long): Session? {
+        val i = sessions.binarySearch { it.from.compareTo(t) }.let { if (it >= 0) it else -it - 2 }
+        return sessions.getOrNull(i)?.takeIf { t in it.from..it.to }
     }
 
     /** Different songs by two artists or more. */
@@ -457,12 +471,12 @@ class Studio(
         Species.LONGEAR -> p.headphones
         Species.CRICKET -> hour(p.at).let { it >= 22 || it < 4 }
         Species.LARK -> hour(p.at) in 5..9
-        Species.SNAIL -> false
+        Species.SNAIL -> (sessionAt(p.at)?.ms ?: 0) >= 45 * MIN
         Species.PARROT -> (byTrack[p.track]?.plays ?: 0) >= 5
         Species.TORTOISE -> (yearOf(p) ?: 9999) <= day(p.at).year - 30
-        Species.ECHO -> false
+        Species.ECHO -> returns.floor(p.at)?.let { p.at - it < DAY } == true
         Species.FIREFLY -> p.source == Source.CONCERT
-        Species.POTPOURRI -> false
+        Species.POTPOURRI -> (genresByDay[day(p.at)] ?: 0) >= 4
         Species.RAVEN -> (artists[p.artist]?.gone ?: 0) > 0
         Species.MAGPIE -> Feats.isCollab(p.artistName, p.title)
         Species.BULLFINCH -> day(p.at).monthValue.let { it == 12 || it <= 2 } || Feats.isFestive(p.title, p.albumName)
