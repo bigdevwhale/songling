@@ -158,7 +158,19 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
 
         var tab by rememberSaveable { mutableStateOf(tab0) }
         var overlay by remember { mutableStateOf(overlay0) }
-        val nav = remember { Nav({ overlay = it }, { tab = it; overlay = null }) }
+        // #42: an album or a song opened from an artist's sheet goes back to that artist when closed.
+        val back = remember { mutableListOf<Overlay>() }
+        val nav = remember {
+            Nav({ next ->
+                val cur = overlay
+                overlay = when {
+                    next == null -> back.removeLastOrNull()
+                    cur is Overlay.ArtistOf && (next is Overlay.AlbumOf || next is Overlay.TrackOf) -> { back += cur; next }
+                    next is Overlay.ArtistOf || cur == null -> { back.clear(); next }
+                    else -> next
+                }
+            }, { tab = it; back.clear(); overlay = null })
+        }
         // What Last.fm says plays on another device (a computer, a speaker), asked every 20 seconds while the app is open
         // and nothing plays here: the den shows it and the pet dances to it.
         var elsewhere by remember { mutableStateOf<NowPlaying?>(null) }
@@ -194,7 +206,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
             val p = studio.pet ?: return@LaunchedEffect
             if (p.stage >= Stage.ADULT && p.pet.form == null && p.leaning != null) c.write { db.dao().update(p.pet.copy(form = p.leaning)) }
             val before = lastStage
-            if (before != null && before.first == p.pet.id && before.second == Stage.EGG && p.stage == Stage.BABY && clock == null) overlay = Overlay.Hatched(p.pet.id)
+            if (before != null && before.first == p.pet.id && before.second == Stage.EGG && p.stage == Stage.BABY && clock == null) { back.clear(); overlay = Overlay.Hatched(p.pet.id) }
             else if (before != null && before.first == p.pet.id && before.second < p.stage && clock == null)
                 nav.toast(if (ru) "${p.pet.title(true)} вырос: теперь ${Words.stage(p.stage, true)}!" else "${p.pet.title(false)} grew: now ${Words.stage(p.stage, false)}!")
             lastStage = p.pet.id to p.stage
@@ -223,7 +235,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
             Box(Modifier.fillMaxSize()) {
                 BackdropLayer()
                 Column(Modifier.fillMaxSize()) {
-                    Header(studio, onPicks = { overlay = Overlay.Shop }, onSettings = { overlay = Overlay.Settings })
+                    Header(studio, onPicks = { back.clear(); overlay = Overlay.Shop }, onSettings = { back.clear(); overlay = Overlay.Settings })
                     // The dock sits above the system navigation bar, so the screens end above it too:
                     // with three-button navigation their last lines would otherwise hide under the dock.
                     Box(Modifier.weight(1f).navigationBarsPadding()) {
@@ -240,7 +252,7 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
                 }
                 Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
                     Box(Modifier.matchParentSize().padding(top = 20.dp).background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(C.bg.copy(alpha = 0f), C.bg.copy(alpha = .92f), C.bg))))
-                    Dock(tab, playing?.playing == true, { tab = it }, { overlay = Overlay.Add(wish = false) })
+                    Dock(tab, playing?.playing == true, { tab = it; back.clear() }, { back.clear(); overlay = Overlay.Add(wish = false) })
                 }
                 when (val o = overlay) {
                     is Overlay.AlbumOf -> app.songling.ui.sheets.AlbumSheet(studio, o.key, nav)

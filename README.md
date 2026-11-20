@@ -33,9 +33,9 @@ Songling sees what plays in Spotify, YouTube Music, Apple Music or any other pla
 
 A record, the radio or a concert can be logged by hand – a whole album or a single song.
 
-## 25 pets
+## 35 pets
 
-There are three eggs to start with. The rest are found by the way you listen: hours of rock or jazz, music at night or in the morning, artists from many countries, long sittings, a song on repeat, a live concert.
+There are three eggs to start with. The rest are found by the way you listen: hours of rock or jazz, music at night or in the morning, artists from many countries, long sittings, a song on repeat, a live concert, a full moon, a fortnight without a silent day.
 
 - An egg hatches after three hours of music, then the pet grows: baby, youngster, grown, ancient.
 - Each has its favourite music. It feeds the pet one and a half times as much and pays double plectrums.

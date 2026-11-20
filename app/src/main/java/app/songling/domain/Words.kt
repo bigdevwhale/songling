@@ -37,6 +37,16 @@ object Words {
         Species.BAT -> t(ru, "Летучая мышь", "Bat")
         Species.DRAGON -> t(ru, "Дракончик", "Little dragon")
         Species.HOUND -> t(ru, "Пёс", "Hound")
+        Species.FOX -> t(ru, "Лиса-критик", "Critic fox")
+        Species.PENGUIN -> t(ru, "Пингвин", "Penguin")
+        Species.MOTH -> t(ru, "Лунный мотылёк", "Moon moth")
+        Species.PHOENIX -> t(ru, "Феникс", "Phoenix")
+        Species.UNICORN -> t(ru, "Единорог", "Unicorn")
+        Species.SQUIRREL -> t(ru, "Белка", "Squirrel")
+        Species.BEE -> t(ru, "Пчела", "Bee")
+        Species.SLOTH -> t(ru, "Ленивец", "Sloth")
+        Species.CHAMELEON -> t(ru, "Хамелеон", "Chameleon")
+        Species.OCTOPUS -> t(ru, "Осьминог-диджей", "DJ octopus")
     }
 
     /** What the pet loves to eat most. */
@@ -66,6 +76,16 @@ object Words {
         Species.BAT -> t(ru, "пластинки и радио", "records and the radio")
         Species.DRAGON -> t(ru, "песни длиннее восьми минут", "songs over eight minutes long")
         Species.HOUND -> t(ru, "твоего самого любимого артиста", "your most played artist")
+        Species.FOX -> t(ru, "всё, что получило от тебя четыре звезды и больше", "what you gave four stars or more")
+        Species.PENGUIN -> t(ru, "то, что было в списке «послушать»", "what was on the «to hear» list")
+        Species.MOTH -> t(ru, "музыку по вечерам, когда луна почти полная", "evening music under an almost full moon")
+        Species.PHOENIX -> t(ru, "артистов, вернувшихся после полугода тишины", "artists you come back to after half a year")
+        Species.UNICORN -> t(ru, "песни, которые ты слышишь впервые", "songs you hear for the first time")
+        Species.SQUIRREL -> t(ru, "песни короче двух минут", "songs under two minutes")
+        Species.BEE -> t(ru, "музыку на третий день подряд и дальше", "music on the third day running and on")
+        Species.SLOTH -> t(ru, "альбомы, к которым ты возвращаешься день за днём", "albums you come back to day after day")
+        Species.CHAMELEON -> t(ru, "музыку не из твоего любимого десятилетия", "music outside your favourite decade")
+        Species.OCTOPUS -> t(ru, "пёстрые сессии, где сменяются пять артистов и больше", "mixed sittings with five artists or more")
     }
 
     /** How the egg is found. */
@@ -93,6 +113,16 @@ object Words {
         Species.BAT -> t(ru, "$need песен с пластинки или по радио", "$need songs off a record or the radio")
         Species.DRAGON -> t(ru, "$need песен длиннее восьми минут до конца", "$need songs over eight minutes, to the end")
         Species.HOUND -> t(ru, "$need часов одного артиста", "$need hours of one artist")
+        Species.FOX -> t(ru, "Поставить звёзды $need альбомам, песням или артистам", "Give stars to $need albums, songs or artists")
+        Species.PENGUIN -> t(ru, "Послушать $need вещей из списка «послушать»", "Hear $need things from the «to hear» list")
+        Species.MOTH -> t(ru, "Слушать музыку вечером в $need полнолуния", "Play music on the evenings of $need full moons")
+        Species.PHOENIX -> t(ru, "Вернуться к $need артистам после полугода без них", "Come back to $need artists after half a year without them")
+        Species.UNICORN -> t(ru, "Вырастить $need питомцев до взрослых", "Raise $need pets to grown")
+        Species.SQUIRREL -> t(ru, "$need песен короче двух минут до конца", "$need songs under two minutes, to the end")
+        Species.BEE -> t(ru, "$need дней подряд с музыкой", "$need days of music in a row")
+        Species.SLOTH -> t(ru, "Один альбом в $need разных дней", "One album on $need different days")
+        Species.CHAMELEON -> t(ru, "Альбомы $need разных десятилетий", "Albums from $need different decades")
+        Species.OCTOPUS -> t(ru, "$need сессии, где играли восемь артистов и больше", "$need sittings with eight artists or more")
     }
 
     fun stage(s: Stage, ru: Boolean) = when (s) {
@@ -153,6 +183,16 @@ object Words {
         Species.BULLFINCH -> t(ru, "Вязаная шапка, бубенчик, у древнего – шарф и снежинки на крыльях.", "A knitted hat, a little bell; a scarf and snowflakes on its wings when ancient.")
         Species.BAT -> t(ru, "Уши-антенны, крылья как шкала приёмника, у древней – светится радиолампа.", "Antenna ears, wings like a radio dial; a glowing valve when ancient.")
         Species.DRAGON -> t(ru, "Гребень-клавиши, хвост-свиток с нотами, у древнего – крылья из органных труб.", "A crest of keys, a tail like a scroll of notes; organ-pipe wings when ancient.")
+        Species.FOX -> t(ru, "Очки и блокнот, берет и пять звёзд на хвосте, у древней – золотой граммофон.", "Glasses and a notepad, a beret and five stars on its tail; a golden gramophone when ancient.")
+        Species.PENGUIN -> t(ru, "Красная бабочка, карточка с галочкой, у древнего – очки и седые брови.", "A red bow tie, a card with a tick; spectacles and white brows when ancient.")
+        Species.MOTH -> t(ru, "Фазы луны на крыльях, потом ночное небо, у древнего – луна над головой.", "Moon phases on its wings, then a night sky; a moon over its head when ancient.")
+        Species.PHOENIX -> t(ru, "Огненный хохолок, хвост из кассетной ленты, у древнего – диск-солнце.", "A flame crest, a tail of cassette tape; a record sun behind it when ancient.")
+        Species.UNICORN -> t(ru, "Витой рог, радужная грива, у древнего – золотой рог и крылья-арфы.", "A spiral horn, a rainbow mane; a golden horn and harp wings when ancient.")
+        Species.SQUIRREL -> t(ru, "Жёлудь-барабан, секундомер, у древней – золотой жёлудь.", "An acorn drum, a stopwatch; a golden acorn when ancient.")
+        Species.BEE -> t(ru, "Календарь с галочками, соты с нотами, у древней – корона.", "A ticked calendar, honeycomb with notes; a crown when ancient.")
+        Species.SLOTH -> t(ru, "Обнимает пластинку, потом наушники, у древнего – вязаная кофта.", "Hugs a record, then headphones; a knitted cardigan when ancient.")
+        Species.CHAMELEON -> t(ru, "Цветные полоски на хвосте, очки на макушке, у древнего – кулон-кассета.", "Coloured bands on its tail, sunglasses on its head; a cassette pendant when ancient.")
+        Species.OCTOPUS -> t(ru, "Инструменты в щупальцах, наушники, у древнего – две вертушки.", "Instruments in its arms, headphones; two turntables when ancient.")
         Species.HOUND -> t(ru, "Ошейник с пластинкой, уши-наушники, у древнего – медаль и седая морда.", "A collar with a record tag, headphone ears; a medal and a grey muzzle when ancient.")
     }
 
@@ -188,6 +228,32 @@ object Words {
         Genre.CHANSON -> t(ru, "шансон и эстрада", "chanson")
         Genre.KIDS -> t(ru, "детская", "kids")
         Genre.OTHER -> t(ru, "другое", "other")
+    }
+
+    /** A genre in the genitive, for «после …». */
+    fun genreAfter(g: Genre) = when (g) {
+        Genre.ROCK -> "рока"
+        Genre.METAL -> "метала"
+        Genre.PUNK -> "панка"
+        Genre.ALT -> "альтернативы"
+        Genre.POP -> "попа"
+        Genre.HIPHOP -> "хип-хопа"
+        Genre.RNB -> "R&B и соула"
+        Genre.JAZZ -> "джаза"
+        Genre.BLUES -> "блюза"
+        Genre.ELECTRONIC -> "электроники"
+        Genre.DANCE -> "танцевальной музыки"
+        Genre.AMBIENT -> "эмбиента"
+        Genre.CLASSICAL -> "классики"
+        Genre.SOUNDTRACK -> "саундтреков"
+        Genre.FOLK -> "фолка"
+        Genre.COUNTRY -> "кантри"
+        Genre.WORLD -> "музыки мира"
+        Genre.LATIN -> "латино"
+        Genre.REGGAE -> "регги"
+        Genre.CHANSON -> "шансона и эстрады"
+        Genre.KIDS -> "детской музыки"
+        Genre.OTHER -> "чего-то другого"
     }
 
     fun kind(k: Kind, ru: Boolean) = when (k) {
@@ -334,6 +400,16 @@ object Words {
         Species.BAT -> t(ru, "Эфир", "Static")
         Species.DRAGON -> t(ru, "Опус", "Opus")
         Species.HOUND -> t(ru, "Хатико", "Buddy")
+        Species.FOX -> t(ru, "Рецензия", "Review")
+        Species.PENGUIN -> t(ru, "Галочка", "Tick")
+        Species.MOTH -> t(ru, "Полнолунка", "Lune")
+        Species.PHOENIX -> t(ru, "Камбэк", "Encore")
+        Species.UNICORN -> t(ru, "Камертон", "Tuning")
+        Species.SQUIRREL -> t(ru, "Шустрик", "Zippy")
+        Species.BEE -> t(ru, "Жужа", "Buzz")
+        Species.SLOTH -> t(ru, "Реприза", "Reprise")
+        Species.CHAMELEON -> t(ru, "Ретро", "Retro")
+        Species.OCTOPUS -> t(ru, "Микс", "Mixer")
     }
 
     /** A line for the den, about what's going on. */
@@ -353,7 +429,12 @@ object Words {
             add(t(ru, "$name любит ${loves(p.species, true)}.", "$name loves ${loves(p.species, false)}."))
             if (st.streak >= 3) add(t(ru, "${st.streak} дней подряд с музыкой. $name доволен.", "${st.streak} days of music in a row. $name is pleased."))
             st.quests.firstOrNull { !it.p.done }?.let { add(t(ru, "На этой неделе: ${quest(it.q, true).lowercase()}.", "This week: ${quest(it.q, false).lowercase()}.")) }
-            st.recentGenre?.let { g -> add(t(ru, "После ${genre(g, true)} у $name всё ещё качается хвост.", "After some ${genre(g, false)}, $name's tail is still swinging.")) }
+            // #43, #50, #51: the name stays in the nominative; a built-in genre is declined, one's own goes after «стиля».
+            val own = st.plays.lastOrNull()?.takeIf { st.recentGenre != null }?.let { st.ownOf(it) }
+            when {
+                own != null -> add(t(ru, "После стиля «${own.name}» $name всё ещё качает хвостом.", "After some ${own.name}, $name's tail is still swinging."))
+                else -> st.recentGenre?.takeIf { it != Genre.OTHER }?.let { g -> add(t(ru, "После ${genreAfter(g)} $name всё ещё качает хвостом.", "After some ${genre(g, false)}, $name's tail is still swinging.")) }
+            }
             add(t(ru, "$name слушает вместе с тобой.", "$name is listening with you."))
         }
         return lines[rnd.nextInt(lines.size)]

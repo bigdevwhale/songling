@@ -57,6 +57,61 @@ Emerald green scales, cream belly, gold organ pipes, ivory and black keys, parch
 Baby: a tiny round floppy-eared puppy with a small red collar. Young: a puppy with a red collar whose tag is a tiny vinyl record. Adult: a dog whose big floppy ears look like over-ear headphones, a red collar with a vinyl record tag, a happy wagging tail. Ancient: an old dog with a grey muzzle, the headphone ears, the record tag, and a golden medal with a music note on a blue ribbon.
 Warm caramel and cream fur, a red collar, a black vinyl tag with a gold label, a gold medal.""",
         "The egg of a loyal little dog: warm caramel shell with cream patches, a small red collar band round it and a tiny vinyl record tag."),
+    "fox": (
+        """A clever little fox who is a music critic – it listens closely and gives stars to albums. Witty and charming.
+Baby: a tiny round orange fox kit with a fluffy white-tipped tail and a single small gold star stuck to its ear. Young: a small fox with round reading glasses and a tiny notepad tucked under its arm. Adult: a fox in a little beret with a row of five golden stars along its fluffy tail, round glasses, a pencil behind its ear. Ancient: a distinguished old fox with a silver-tipped muzzle, a velvet scarf, a beret, and a tiny golden award trophy shaped like a gramophone standing on the ground beside it (not held). Exactly two front paws and two hind paws, like the other stages – no extra limbs.
+Bright orange and cream fur, black paws, gold stars, a burgundy beret.""",
+        "The egg of a little critic fox: warm orange shell with a cream tip and five small golden stars in a row round the middle."),
+    "penguin": (
+        """A cheerful little penguin who keeps a list of music to hear and loves ticking things off it. Neat and determined.
+Baby: a tiny round grey fluffy penguin chick. Young: a small black-and-white penguin with a little red bow tie. Adult: the same penguin, bigger, with the red bow tie and a small square note card with one green tick held in one flipper. Ancient: an old penguin with white bushy eyebrows, small round spectacles, the red bow tie and the note card.
+Black and white feathers, a yellow-orange beak and feet, a red bow tie, a cream note card.
+Keep it simple and clean, like a classic cosy pet sheet: the same calm standing pose in all four stages, a small palette, one new accessory per stage and nothing else – no scrolls, bags, records, music symbols or clutter.""",
+        "The egg of a little penguin: glossy black-and-white shell like a tuxedo with a tiny red bow tie and a small paper checklist with a green tick."),
+    "moth": (
+        """A soft gentle moth who only comes out under the full moon to dance to music. Dreamy and cosy, not creepy.
+Baby: a tiny round fuzzy cream moth with two small feathery antennae and a little crescent moon mark on its forehead. Young: a small fluffy moth with pale wings marked with moon phases (crescent, half, full). Adult: a fluffy moth with big pale lavender wings patterned like a night sky with stars and a full moon on each wing, a fuzzy collar, feathery antennae. Ancient: a luminous moth whose wings glow softly silver, a little full moon floating above its head like a halo, stardust and tiny music notes falling from its wings.
+Cream and pale lavender fuzz, silver-blue moonlight, soft gold stars, navy night-sky patterns.""",
+        "The egg of a little moon moth: pale lavender shell with a soft silver glow, a big full moon on its front and tiny stars around it."),
+    "phoenix": (
+        """A small bright phoenix who brings forgotten music back to life – it rises from old songs. Warm and joyful, not scary.
+Baby: a tiny round red-orange fluffball chick with a single little flame-shaped crest feather, sitting on a bit of grey ash and an old cassette tape. Young: a small phoenix with a flickering flame crest and tail feathers curling like ribbons of cassette tape. Adult: a radiant phoenix with wings of red, orange and gold feathers like flames, a long fiery tail with tiny music notes in the sparks. Ancient: a majestic phoenix with golden flame wings spread wide, a small crown, and a vinyl-record disc behind its head.
+The flames are drawn as solid pixel-art feathers with a crisp dark outline. Plain transparent background: no glow, haze, smoke or loose sparks around the figures.
+Crimson, orange and gold feathers, yellow flames, warm sparks, a touch of grey ash.""",
+        "The egg of a little phoenix: glowing red-orange shell with golden flame patterns and a few warm sparks, slightly cracked with light coming out."),
+    "unicorn": (
+        """A rare magical little unicorn who appears only for someone who has raised many pets. Sweet and dreamy.
+Baby: a tiny round white foal with a short pastel rainbow mane and a little bud of a horn. Young: a small unicorn with a short pearly spiral horn and a rainbow mane. Adult: a graceful unicorn with a long flowing rainbow mane and tail, a classic pointed spiral horn (a single cone, not forked), little music-note marks on its flank. Ancient: a radiant unicorn with a long pointed golden spiral horn (a single cone, not forked), a mane of shimmering aurora colours, a small golden harp-shaped wing on its side.
+Plain transparent background: no glow, haze, sparkles or floating notes around the figures.
+White coat with a pearly sheen, pastel rainbow mane, gold horn and hooves.""",
+        "The egg of a little unicorn: pearly white shell with a pastel rainbow swirl and a tiny golden spiral horn on top."),
+    "squirrel": (
+        """A quick lively red squirrel (a squirrel, not a chipmunk: no stripes on its face or back) who loves short, snappy songs under two minutes. Energetic and bouncy. Whenever it holds drumsticks, each paw grips one stick by its end, like a real drummer.
+Baby: a tiny round red squirrel kit with a huge fluffy tail, holding a little acorn. Young: a small squirrel hugging an acorn-shaped little drum in both front paws (no drumsticks at this stage), a stopwatch pendant. Adult: a squirrel in mid-hop with a big fluffy tail with a lightning-bolt stripe, small drumsticks in its paws, a stopwatch on its chest. Ancient: an old squirrel with grey ear tufts, a racing scarf flying behind, drumsticks, and a golden acorn medal.
+Warm red-brown fur, cream belly, a yellow lightning stripe, a silver stopwatch, a golden acorn.""",
+        "The egg of a little squirrel: red-brown shell with a cream belly patch, a yellow lightning stripe and a tiny acorn on top."),
+    "bee": (
+        """A hardworking little bee who loves listening to music every single day without a break. Busy and happy.
+Baby: a tiny round fuzzy yellow-and-black bee with small translucent wings. Young: a small bee holding a tiny calendar page where every day is ticked, a honey drop on its antenna. Adult: a round fuzzy bee with honeycomb-patterned wings, each hexagon cell holding a tiny music note, a little honey pot. Ancient: a queenly bee with a small golden crown, honeycomb wings glowing gold, a little wooden honey dipper held like a conductor's baton. A normal round bee body with a small stinger – no tail, no trail of cells behind it.
+Plain transparent background with no glow, haze or vignette around the figures.
+Bright yellow and soft black fur, golden honey, amber honeycomb, translucent wings.""",
+        "The egg of a little bee: golden honeycomb-patterned shell with soft yellow and black stripes and a drop of honey."),
+    "sloth": (
+        """A slow, content sloth who loves coming back to the same album again and again over many days. Calm and cuddly.
+Baby: a tiny round brown sloth baby hugging a small vinyl record like a teddy. Young: a small sloth hanging from a branch with one arm, a record hugged in the other, a sleepy smile. Adult: a sloth hanging from a branch with small headphones on, a well-worn vinyl record with a heart sticker in its claws. Ancient: an old sloth with a grey face, a cosy knitted cardigan, a little potted fern, and a stack of the same record worn shiny.
+Soft warm brown and cream fur, dark eye patches, a green leafy branch, a black record with a pink heart label.""",
+        "The egg of a little sloth: soft brown shell with cream patches, a small green leaf and a tiny vinyl record with a pink heart."),
+    "chameleon": (
+        """A playful chameleon whose colours change with the music of different decades. Curious and colourful.
+Baby: a tiny round mint-green chameleon with a curly tail and big eyes. Young: the same chameleon, a little bigger, with one soft orange band on its curled tail. Adult: a mint-green chameleon whose curled tail has three soft bands (orange, rose, teal), small round sunglasses pushed up on its head. Ancient: an old chameleon with a pale wrinkled brow, the three tail bands, the sunglasses, and a tiny golden cassette pendant.
+Mostly mint green with a cream belly; soft muted orange, rose and teal only on the tail.
+Keep it simple and clean, like a classic cosy pet sheet: the same calm pose in all four stages, a small palette, one new detail per stage and nothing else – no neon, no patterns all over the body, no jukebox, no music symbols, no clutter.""",
+        "The egg of a little chameleon: shell with bands of different retro colours – mint, orange, neon pink, teal – and a tiny cassette pattern."),
+    "octopus": (
+        """A friendly little octopus DJ who loves mixes where every song is by a different artist. Fun and party-loving.
+Baby: a tiny round pink octopus with little curly tentacles and big eyes. Young: a small octopus holding a different tiny instrument in several tentacles: a maraca, a drumstick, a tiny guitar. Adult: an octopus wearing big DJ headphones, its eight tentacles each holding something musical (a record, a microphone, a cassette, a drumstick, a trumpet, a maraca, a tambourine, a tiny keyboard). Ancient: an old octopus with a captain's hat, tentacles spinning records on two turntables, little glowing suckers like disco lights.
+Coral pink and violet skin, teal suckers, gold and silver instruments.""",
+        "The egg of a little octopus: coral pink shell with violet spots, a teal band like a row of suckers round the middle and tiny music notes. Nothing sticks out beyond the egg shape."),
 }
 
 

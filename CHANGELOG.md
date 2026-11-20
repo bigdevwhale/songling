@@ -6,6 +6,32 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.17.0] - 2026-11-20
+
+### Added
+- **Ten new pets, 35 in all.** Each is found its own way:
+  - the critic fox: give stars to 15 albums, songs or artists;
+  - the penguin: hear 5 things from the «to hear» list;
+  - the moon moth: play music on the evenings of 3 full moons;
+  - the phoenix: come back to 5 artists after half a year without them;
+  - the unicorn: raise 5 pets to grown;
+  - the squirrel: 30 songs under two minutes, to the end;
+  - the bee: 14 days of music in a row;
+  - the sloth: one album on 7 different days;
+  - the chameleon: albums from 6 different decades;
+  - the DJ octopus: 3 sittings with eight artists or more.
+
+  Each has its favourite music too: what you gave four stars, the moonlit evenings, songs heard for the first time, albums you keep coming back to. The moth, the phoenix and the unicorn are rare ones for Lingvale.
+
+### Fixed
+- **Genres in the pet's words are declined in Russian** (#43, #50, #51): «После рока Лирик всё ещё качает хвостом» instead of «После рок у Лирик…». The pet's name always stands as it is, and a genre of your own comes as «после стиля «…»».
+- **An album opened from an artist's page goes back to the artist** when closed (#42), not to the list of all artists, so several albums can be put right one after another.
+
+<!-- tg
+10 новых питомцев: лиса-критик, пингвин, лунный мотылёк, феникс, единорог, белка, пчела, ленивец, хамелеон и осьминог-диджей. Каждый находится по-своему – от звёзд альбомам до музыки в полнолуние.
+Жанры во фразах питомца теперь склоняются, а альбом, открытый со страницы артиста, при закрытии возвращает к артисту.
+-->
+
 ## [1.16.0] - 2026-11-19
 
 ### Added

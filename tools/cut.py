@@ -23,7 +23,8 @@ DEBUG = os.path.join(ROOT, "app", "build", "art", "sheets.png")
 
 SPECIES = ["lyrebird", "musicbox", "longear", "basilisk", "conductor", "purr", "axolotl", "raccoon", "wanderer",
            "cricket", "lark", "snail", "parrot", "tortoise", "whale", "echo", "firefly", "potpourri", "raven",
-           "hummingbird", "magpie", "bullfinch", "bat", "dragon", "hound"]
+           "hummingbird", "magpie", "bullfinch", "bat", "dragon", "hound",
+           "fox", "penguin", "moth", "phoenix", "unicorn", "squirrel", "bee", "sloth", "chameleon", "octopus"]
 STAGES = ["baby", "young", "adult", "ancient"]
 # The app's pets are 80x80 art pixels; their pictures are FINE times finer (the app's Buf.FINE), and so are
 # the eye boxes in faces.txt.
@@ -42,6 +43,12 @@ EYES = {
     "hummingbird_young": [(70, 87, 87, 104), (95, 87, 102, 96)],
     "hummingbird_adult": [(77, 64, 93, 83), (104, 63, 113, 76)],
     "hummingbird_ancient": [(85, 46, 106, 66), (117, 44, 127, 58)],
+    # The sloth's eyes sit in dark patches (the young one's are shut, so it has none).
+    "sloth_baby": [(70, 106, 79, 113), (90, 101, 101, 108)],
+    "sloth_adult": [(59, 61, 71, 70), (83, 54, 95, 63)],
+    "sloth_ancient": [(68, 37, 81, 49), (99, 28, 113, 40)],
+    # The grown phoenix's eyes shine yellow, not white.
+    "phoenix_ancient": [(76, 57, 85, 67), (96, 56, 103, 63)],
 }
 
 

@@ -308,6 +308,80 @@ class Studio(
     fun genreMinutes(vararg g: Genre): Int = (g.sumOf { byGenre[it] ?: 0L } / MIN).toInt()
     fun genreHours(vararg g: Genre): Int = genreMinutes(*g) / 60
 
+    // ---------------------------------------------------------------- the ten pets of 1.17
+
+    /** Things given stars: albums, songs and artists (the critic fox). */
+    val rated: Int get() = albums.values.count { it.stars > 0 } + tracks.values.count { it.stars > 0 } + artists.values.count { it.stars > 0 }
+
+    /** The best stars a listen has: its song's, its album's or its artist's. */
+    fun starsOf(p: Play): Int = maxOf(tracks[p.track]?.stars ?: 0, albums[p.album]?.stars ?: 0, artists[p.artist]?.stars ?: 0)
+
+    /** Whether a listen is of something put on the «to hear» list before it was heard (as Goals' wishesHeard). */
+    fun wasWish(p: Play): Boolean =
+        (albums[p.album]?.added?.let { it > 0 && p.at >= it } ?: false) || (tracks[p.track]?.added?.let { it > 0 && p.at >= it } ?: false)
+
+    /** Different things from the «to hear» list heard (the penguin). */
+    val wishesHeard: Int by lazy { plays.filter { wasWish(it) }.map { if ((albums[it.album]?.added ?: 0L) > 0) it.album else it.track }.toSet().size }
+
+    /** The moon's age in days at a moment: 0 new, about 14.8 full. */
+    fun moonAge(t: Long): Double = (((t - NEW_MOON) / DAY.toDouble()) % SYNODIC + SYNODIC) % SYNODIC
+
+    private fun evening(t: Long) = hour(t).let { it >= 20 || it < 4 }
+
+    /** Full moons with music in the evening or at night (the moth), each moon once. */
+    val fullMoons: Int by lazy {
+        plays.filter { it.ms >= MIN && evening(it.at) && moonAge(it.at) in 13.8..15.8 }
+            .map { Math.floorDiv(it.at - NEW_MOON, (SYNODIC * DAY).toLong()) }.toSet().size
+    }
+
+    /** Each artist's returns after half a year and more without them (the phoenix): artist to the moments. */
+    val risings: Map<String, List<Long>> by lazy {
+        val last = HashMap<String, Long>(); val m = HashMap<String, MutableList<Long>>()
+        for (p in plays) { last[p.artist]?.let { if (p.at - it >= 180 * DAY) m.getOrPut(p.artist) { mutableListOf() } += p.at }; last[p.artist] = p.at }
+        m
+    }
+
+    /** Pets grown up, the unicorn itself left out. */
+    val grownPets: Int get() = pets.count { it.stage >= Stage.ADULT && it.species != Species.UNICORN }
+
+    /** Different songs under two minutes heard to the end (the squirrel). */
+    val shortSongs: Int by lazy { plays.filter { it.whole && it.length in 1 until SHORT_SONG }.map { it.track }.toSet().size }
+
+    /** The days each album was heard on (the sloth). */
+    private val albumDays: Map<String, Int> by lazy {
+        val m = HashMap<String, HashSet<LocalDate>>()
+        for (p in plays) if (p.album.isNotEmpty() && p.ms >= MIN) m.getOrPut(p.album) { HashSet() } += day(p.at)
+        m.mapValues { it.value.size }
+    }
+    val mostAlbumDays: Int get() = albumDays.values.maxOrNull() ?: 0
+
+    /** The decade heard most (the chameleon likes the others). */
+    private val topDecade: Int? by lazy {
+        val m = HashMap<Int, Long>()
+        for (p in plays) yearOf(p)?.let { y -> m[y / 10 * 10] = (m[y / 10 * 10] ?: 0L) + p.ms }
+        m.maxByOrNull { it.value }?.key
+    }
+
+    /** Sittings (as [sessions]) and how many artists each had (the octopus). */
+    private val mixes: List<Pair<LongRange, Int>> by lazy {
+        buildList {
+            var from = 0L; var to = 0L; val who = HashSet<String>()
+            for (p in plays) {
+                if (who.isNotEmpty() && p.at - to > 6 * MIN) { add(from..to to who.size); who.clear() }
+                if (who.isEmpty()) from = p.at
+                to = max(to, p.at + max(p.ms, 1)); who += p.artist
+            }
+            if (who.isNotEmpty()) add(from..to to who.size)
+        }
+    }
+    val bigMixes: Int get() = mixes.count { it.second >= 8 }
+
+    /** How many artists the sitting a moment falls in had. */
+    private fun artistsAround(t: Long): Int {
+        val i = mixes.binarySearch { it.first.first.compareTo(t) }.let { if (it >= 0) it else -it - 2 }
+        return mixes.getOrNull(i)?.takeIf { t in it.first }?.second ?: 0
+    }
+
     // ---------------------------------------------------------------- eggs
 
     /** How near each egg is to being found; the three starters are always there. */
@@ -338,6 +412,16 @@ class Studio(
                 Species.BAT -> Hint(sp, offPhone, 5)
                 Species.DRAGON -> Hint(sp, longSongs, 10)
                 Species.HOUND -> inHours(sp, topArtistMinutes, 20)
+                Species.FOX -> Hint(sp, rated, 15)
+                Species.PENGUIN -> Hint(sp, wishesHeard, 5)
+                Species.MOTH -> Hint(sp, fullMoons, 3)
+                Species.PHOENIX -> Hint(sp, risings.size, 5)
+                Species.UNICORN -> Hint(sp, grownPets, 5)
+                Species.SQUIRREL -> Hint(sp, shortSongs, 30)
+                Species.BEE -> Hint(sp, bestStreak, 14)
+                Species.SLOTH -> Hint(sp, mostAlbumDays, 7)
+                Species.CHAMELEON -> Hint(sp, decades.size, 6)
+                Species.OCTOPUS -> Hint(sp, bigMixes, 3)
             }
         }
     }
@@ -385,6 +469,16 @@ class Studio(
         Species.BAT -> p.source == Source.VINYL || p.source == Source.RADIO
         Species.DRAGON -> p.length >= LONG_SONG
         Species.HOUND -> p.artist == topArtist
+        Species.FOX -> starsOf(p) >= 4
+        Species.PENGUIN -> wasWish(p)
+        Species.MOTH -> evening(p.at) && moonAge(p.at) in 11.5..18.0
+        Species.PHOENIX -> risings[p.artist]?.any { p.at >= it && p.at - it < DAY } == true
+        Species.UNICORN -> byTrack[p.track]?.first == p.at
+        Species.SQUIRREL -> p.length in 1 until SHORT_SONG
+        Species.BEE -> day(p.at).let { it.minusDays(1) in musicDays && it.minusDays(2) in musicDays }
+        Species.SLOTH -> (albumDays[p.album] ?: 0) >= 3
+        Species.CHAMELEON -> yearOf(p)?.let { it / 10 * 10 != topDecade } == true
+        Species.OCTOPUS -> artistsAround(p.at) >= 5
         else -> false
     }
 
@@ -507,6 +601,11 @@ class Studio(
     companion object {
         /** A long song, for the little dragon. */
         const val LONG_SONG = 8 * MIN
+        /** A short song, for the squirrel. */
+        const val SHORT_SONG = 2 * MIN
+        /** A new moon (6 January 2000, 18:14 UTC) and the moon's month in days, for the moth. */
+        const val NEW_MOON = 947_182_440_000L
+        const val SYNODIC = 29.530588853
     }
 
     fun wishes(): Int = albums.values.count { it.wish } + tracks.values.count { it.wish } + artists.values.count { it.wish }
