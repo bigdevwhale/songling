@@ -6,6 +6,17 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.18.0] - 2026-11-22
+
+### Added
+- **The hermit crab (#56):** a new pet, «Encore», who keeps the music of bands that broke up – groups whose life-span has ended in MusicBrainz, like Kino or Daft Punk. Its egg wants 5 hours of such music; it grows from a stickered shell to an old amp and, when ancient, a little tour van with fairy lights. The raven still listens only for artists who have died.
+- **More colours for genres of one's own (#36):** 24 instead of 12 – soft pastels and deep shades – and «Any hue» for any colour at all. A colour another genre of yours already has is marked with a dot.
+
+<!-- tg
+Новый питомец – Рак-отшельник: кормится песнями распавшихся групп, вроде «Кино» или Daft Punk
+Своим жанрам теперь можно дать любой цвет: 24 готовых и ползунок для своего оттенка
+-->
+
 ## [1.17.1] - 2026-11-20
 
 ### Fixed

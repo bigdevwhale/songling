@@ -165,7 +165,7 @@ class VillageProvider : ContentProvider() {
         private val SPINES = listOf(0xFFE2584A, 0xFFF0A63A, 0xFF4CB4D8, 0xFF6CC46A, 0xFFB06AD8, 0xFFF2D84C, 0xFFE86AA8, 0xFF6A7AE0, 0xFF3EA06A).map { it.toInt() }.let { it + it + it }
 
         /** The ones found by something that seldom happens: a concert, a long silence, the radio, an eight-minute song. */
-        private val RARE = setOf(Species.FIREFLY, Species.ECHO, Species.RAVEN, Species.BAT, Species.DRAGON, Species.MOTH, Species.PHOENIX, Species.UNICORN)
+        private val RARE = setOf(Species.FIREFLY, Species.ECHO, Species.RAVEN, Species.BAT, Species.DRAGON, Species.MOTH, Species.PHOENIX, Species.UNICORN, Species.HERMIT)
 
         private val colours = HashMap<Species, Long>()
 

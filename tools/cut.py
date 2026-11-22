@@ -24,7 +24,7 @@ DEBUG = os.path.join(ROOT, "app", "build", "art", "sheets.png")
 SPECIES = ["lyrebird", "musicbox", "longear", "basilisk", "conductor", "purr", "axolotl", "raccoon", "wanderer",
            "cricket", "lark", "snail", "parrot", "tortoise", "whale", "echo", "firefly", "potpourri", "raven",
            "hummingbird", "magpie", "bullfinch", "bat", "dragon", "hound",
-           "fox", "penguin", "moth", "phoenix", "unicorn", "squirrel", "bee", "sloth", "chameleon", "octopus"]
+           "fox", "penguin", "moth", "phoenix", "unicorn", "squirrel", "bee", "sloth", "chameleon", "octopus", "hermit"]
 STAGES = ["baby", "young", "adult", "ancient"]
 # The app's pets are 80x80 art pixels; their pictures are FINE times finer (the app's Buf.FINE), and so are
 # the eye boxes in faces.txt.

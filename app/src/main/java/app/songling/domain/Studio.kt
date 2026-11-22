@@ -276,6 +276,11 @@ class Studio(
     val goneMinutes: Int by lazy { (plays.filter { (artists[it.artist]?.gone ?: 0) > 0 }.sumOf { it.ms } / MIN).toInt() }
     val goneHours: Int get() = goneMinutes / 60
 
+    /** A band that broke up (#56): a group whose life-span has ended in MusicBrainz – Кино, Daft Punk. */
+    private fun disbanded(key: String?) = artists[key]?.let { it.type == "Group" && it.ended > 0 } == true
+    /** Minutes of music by bands that broke up: the hermit crab keeps their shell. */
+    val disbandedMinutes: Int by lazy { (plays.filter { disbanded(it.artist) }.sumOf { it.ms } / MIN).toInt() }
+
     val oldAlbums: Int get() = byAlbum.values.count { t ->
         val y = albums[t.key]?.year ?: return@count false
         t.ms >= 20 * MIN && day(t.first).year - y >= 30
@@ -436,6 +441,7 @@ class Studio(
                 Species.SLOTH -> Hint(sp, mostAlbumDays, 7)
                 Species.CHAMELEON -> Hint(sp, decades.size, 6)
                 Species.OCTOPUS -> Hint(sp, bigMixes, 3)
+                Species.HERMIT -> inHours(sp, disbandedMinutes, 5)
             }
         }
     }
@@ -493,6 +499,7 @@ class Studio(
         Species.SLOTH -> (albumDays[p.album] ?: 0) >= 3
         Species.CHAMELEON -> yearOf(p)?.let { it / 10 * 10 != topDecade } == true
         Species.OCTOPUS -> artistsAround(p.at) >= 5
+        Species.HERMIT -> disbanded(p.artist)
         else -> false
     }
 

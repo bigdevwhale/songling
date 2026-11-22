@@ -47,6 +47,7 @@ object Words {
         Species.SLOTH -> t(ru, "Ленивец", "Sloth")
         Species.CHAMELEON -> t(ru, "Хамелеон", "Chameleon")
         Species.OCTOPUS -> t(ru, "Осьминог-диджей", "DJ octopus")
+        Species.HERMIT -> t(ru, "Рак-отшельник", "Hermit crab")
     }
 
     /** What the pet loves to eat most. */
@@ -86,6 +87,7 @@ object Words {
         Species.SLOTH -> t(ru, "альбомы, к которым ты возвращаешься день за днём", "albums you come back to day after day")
         Species.CHAMELEON -> t(ru, "музыку не из твоего любимого десятилетия", "music outside your favourite decade")
         Species.OCTOPUS -> t(ru, "пёстрые сессии, где сменяются пять артистов и больше", "mixed sittings with five artists or more")
+        Species.HERMIT -> t(ru, "песни групп, которых больше нет", "songs by bands that broke up")
     }
 
     /** How the egg is found. */
@@ -123,6 +125,7 @@ object Words {
         Species.SLOTH -> t(ru, "Один альбом в $need разных дней", "One album on $need different days")
         Species.CHAMELEON -> t(ru, "Альбомы $need разных десятилетий", "Albums from $need different decades")
         Species.OCTOPUS -> t(ru, "$need сессии, где играли восемь артистов и больше", "$need sittings with eight artists or more")
+        Species.HERMIT -> t(ru, "$need ч музыки распавшихся групп", "$need h of music by bands that broke up")
     }
 
     fun stage(s: Stage, ru: Boolean) = when (s) {
@@ -193,6 +196,7 @@ object Words {
         Species.SLOTH -> t(ru, "Обнимает пластинку, потом наушники, у древнего – вязаная кофта.", "Hugs a record, then headphones; a knitted cardigan when ancient.")
         Species.CHAMELEON -> t(ru, "Цветные полоски на хвосте, очки на макушке, у древнего – кулон-кассета.", "Coloured bands on its tail, sunglasses on its head; a cassette pendant when ancient.")
         Species.OCTOPUS -> t(ru, "Инструменты в щупальцах, наушники, у древнего – две вертушки.", "Instruments in its arms, headphones; two turntables when ancient.")
+        Species.HERMIT -> t(ru, "Раковина в наклейках, потом старый динамик, у древнего – домик-фургончик с гирляндой.", "A shell with stickers, then an old speaker; a little tour van with lights when ancient.")
         Species.HOUND -> t(ru, "Ошейник с пластинкой, уши-наушники, у древнего – медаль и седая морда.", "A collar with a record tag, headphone ears; a medal and a grey muzzle when ancient.")
     }
 
@@ -410,6 +414,7 @@ object Words {
         Species.SLOTH -> t(ru, "Реприза", "Reprise")
         Species.CHAMELEON -> t(ru, "Ретро", "Retro")
         Species.OCTOPUS -> t(ru, "Микс", "Mixer")
+        Species.HERMIT -> t(ru, "Гастроль", "Encore")
     }
 
     /** A line for the den, about what's going on. */

@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,7 +39,10 @@ import app.songling.ui.theme.C
 import app.songling.ui.theme.T
 
 /** Colours a genre of one's own can take. */
-private val SWATCHES = listOf(0xFFD0483A, 0xFFE86A3A, 0xFFF0A63A, 0xFFE2C24A, 0xFF8AB44A, 0xFF4CA86A, 0xFF3EA0A0, 0xFF4C8AD8, 0xFF6A6AE0, 0xFF9A5AD0, 0xFFD05AA0, 0xFF8A6A5A)
+/** Colours for genres of one's own: 24 – the bright twelve, soft pastels and deep shades (#36) – and any hue by the slider. */
+private val SWATCHES = listOf(0xFFD0483A, 0xFFE86A3A, 0xFFF0A63A, 0xFFE2C24A, 0xFF8AB44A, 0xFF4CA86A, 0xFF3EA0A0, 0xFF4C8AD8, 0xFF6A6AE0, 0xFF9A5AD0, 0xFFD05AA0, 0xFF8A6A5A,
+    0xFFF2A0A0, 0xFFF6C08A, 0xFFF0DE8A, 0xFFB6DC8E, 0xFF8ED8C0, 0xFF9CC8F0, 0xFFC0B0F2, 0xFFF0B0DC,
+    0xFF8A2E2E, 0xFF2E5E3A, 0xFF24486E, 0xFF3A3A44)
 
 /**
  * Picks a genre: one's own first (with «+ своё» to make a new one), then the built-in ones. Picking
@@ -115,11 +119,18 @@ fun OwnGenreSheet(st: Studio, old: OwnGenre?, onSaved: (OwnGenre) -> Unit, onClo
         Text(if (old == null) t("Свой жанр", "A genre of your own") else t("Жанр", "Genre"), style = T.Title)
         FormField(name, { name = it.take(28) }, t("Название: «пост-рок для работы», «бабушкины пластинки»…", "Name: «post-rock for work», «grandma's records»…"))
         Section(t("Цвет", "Colour"))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (c in SWATCHES.take(6)) Swatch(c, c == color) { color = c }
+        // colours other genres of one's own already have get a small dot, so each can have its own (#36)
+        val taken = st.s.own.filter { it.id != old?.id }.map { it.color }.toSet()
+        for (row in SWATCHES.chunked(6)) Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (c in row) Swatch(c, c == color, c in taken) { color = c }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (c in SWATCHES.drop(6)) Swatch(c, c == color) { color = c }
+        // any hue at all
+        var hue by remember { mutableStateOf(FloatArray(3).also { android.graphics.Color.colorToHSV(color.toInt(), it) }[0]) }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(t("Свой оттенок", "Any hue"), style = T.Small)
+            androidx.compose.material3.Slider(hue, { hue = it; color = android.graphics.Color.HSVToColor(floatArrayOf(it, .62f, .82f)).toLong() and 0xFFFFFFFFL }, Modifier.weight(1f), valueRange = 0f..359f,
+                colors = androidx.compose.material3.SliderDefaults.colors(thumbColor = Color(color), activeTrackColor = Color(color)))
+            Box(Modifier.size(28.dp).clip(CircleShape).background(Color(color)))
         }
         Section(t("На что похож", "Closest to"), t("для питомцев и форм", "for pets and forms"))
         Flow { for (g in Genre.entries) Chip(Words.genre(g, ru), g == base, { base = g }, color = C.genre(g)) }
@@ -138,8 +149,10 @@ fun OwnGenreSheet(st: Studio, old: OwnGenre?, onSaved: (OwnGenre) -> Unit, onClo
 }
 
 @Composable
-private fun Swatch(c: Long, on: Boolean, onClick: () -> Unit) {
-    Box(Modifier.size(36.dp).clip(CircleShape).background(Color(c)).then(if (on) Modifier.border(3.dp, C.ink, CircleShape) else Modifier).clickable(onClick = onClick))
+private fun Swatch(c: Long, on: Boolean, taken: Boolean = false, onClick: () -> Unit) {
+    Box(Modifier.size(36.dp).clip(CircleShape).background(Color(c)).then(if (on) Modifier.border(3.dp, C.ink, CircleShape) else Modifier).clickable(onClick = onClick), contentAlignment = Alignment.Center) {
+        if (taken && !on) Box(Modifier.size(8.dp).clip(CircleShape).background(Color.White.copy(alpha = .85f)))
+    }
 }
 
 /** What a thing's genre is called: one's own if set, else the built-in one. */

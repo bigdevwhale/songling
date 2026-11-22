@@ -112,6 +112,11 @@ Keep it simple and clean, like a classic cosy pet sheet: the same calm pose in a
 Baby: a tiny round pink octopus with little curly tentacles and big eyes. Young: a small octopus holding a different tiny instrument in several tentacles: a maraca, a drumstick, a tiny guitar. Adult: an octopus wearing big DJ headphones, its eight tentacles each holding something musical (a record, a microphone, a cassette, a drumstick, a trumpet, a maraca, a tambourine, a tiny keyboard). Ancient: an old octopus with a captain's hat, tentacles spinning records on two turntables, little glowing suckers like disco lights.
 Coral pink and violet skin, teal suckers, gold and silver instruments.""",
         "The egg of a little octopus: coral pink shell with violet spots, a teal band like a row of suckers round the middle and tiny music notes. Nothing sticks out beyond the egg shape."),
+    "hermit": (
+        """A kind little hermit crab who keeps the music of bands that broke up – it lives in an old shell that once belonged to a whole band. Cosy and loyal, a little nostalgic but warm, not sad.
+Baby: a tiny round orange hermit crab peeking out of a small snail-like shell that has a tiny guitar pick stuck on it like a sticker. Young: a bigger crab in a shell decorated with a few faded band stickers (simple shapes, no letters) and a tiny drumstick tucked in. Adult: a crab whose shell is an old small guitar amplifier speaker with a cloth grille and a tour-pass ribbon hanging from it, holding a tiny microphone in one claw. Ancient: an old wise crab with silver-tipped claws and round spectacles, its shell a cosy little gig van-shaped home covered in faded stickers, a warm string of lights wrapped around it, a few golden music notes floating above.
+Warm orange and coral shell of the crab, cream and teal accents, faded sticker colours, warm gold lights. No letters or words anywhere.""",
+        "The egg of a little hermit crab: a sandy-cream shell with a spiral like a seashell, a few faded round band-sticker spots in teal and coral, and a tiny guitar pick. No letters."),
 }
 
 
