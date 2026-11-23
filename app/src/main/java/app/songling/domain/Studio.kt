@@ -164,7 +164,8 @@ class Studio(
     init {
         for (p in plays) {
             // Every artist on the track gets the listen, not only the first-billed one (#20).
-            byArtist.getOrPut(p.artist) { Tally(p.artist).also { it.name = artists[p.artist]?.name ?: app.songling.data.Keys.mainArtist(p.artistName) } }.add(p)
+            // A listen with no artist isn't an artist: the hound's 20 hours and the stats' top list both skip it.
+            if (p.artist.isNotEmpty()) byArtist.getOrPut(p.artist) { Tally(p.artist).also { it.name = artists[p.artist]?.name ?: app.songling.data.Keys.mainArtist(p.artistName) } }.add(p)
             for (n in app.songling.data.Keys.allArtists(p.artistName)) {
                 val k = app.songling.data.Keys.norm(n)
                 if (k.isEmpty() || k == p.artist) continue

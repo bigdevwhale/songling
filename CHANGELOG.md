@@ -6,6 +6,15 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.18.1] - 2026-11-23
+
+### Fixed
+- **The hound's egg counted a nameless artist.** Listens that came with no artist at all – videos, audiobooks, players that don't say – were summed as one artist with no name, and the egg's «20 hours of one artist» took it for your favourite. Now they're left out, as in the statistics, and the egg shows your real top artist. The «Loyal» feat, the top-artist poster in the den and the artist count in the saga are counted the same way.
+
+<!-- tg
+Яйцо гончей считало «безымянного артиста» – песни и видео, у которых плеер не указал исполнителя. Теперь 20 часов считаются по твоему настоящему любимому артисту, как в статистике.
+-->
+
 ## [1.18.0] - 2026-11-22
 
 ### Added
