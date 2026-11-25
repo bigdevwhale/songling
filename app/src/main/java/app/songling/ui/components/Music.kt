@@ -233,7 +233,9 @@ fun Bars(values: List<Long>, labels: List<String>, modifier: Modifier = Modifier
 
 /** One line of a top list: rank, cover or dot, name, sub and a bar for its share. */
 @Composable
-fun TopRow(rank: Int, name: String, sub: String, value: String, share: Float, modifier: Modifier = Modifier, cover: String? = null, genre: Genre? = null, showCover: Boolean = false, onClick: (() -> Unit)? = null) {
+fun TopRow(rank: Int, name: String, sub: String, value: String, share: Float, modifier: Modifier = Modifier, cover: String? = null, genre: Genre? = null, showCover: Boolean = false, onClick: (() -> Unit)? = null,
+    /** The bar's colour when it isn't the built-in genre's: a genre of one's own. */
+    color: androidx.compose.ui.graphics.Color? = null) {
     Row(modifier.fillMaxWidth().clip(R8.Sm).then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier).padding(vertical = 7.dp, horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         Text("$rank", style = T.Small.copy(color = if (rank <= 3) C.amber else C.faint), modifier = Modifier.size(width = 20.dp, height = 18.dp), textAlign = TextAlign.End)
@@ -242,7 +244,7 @@ fun TopRow(rank: Int, name: String, sub: String, value: String, share: Float, mo
             Text(name, style = T.Strong, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (sub.isNotEmpty()) Text(sub, style = T.Small, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Box(Modifier.fillMaxWidth().padding(top = 5.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(C.track)) {
-                Box(Modifier.fillMaxWidth(share.coerceIn(0.02f, 1f)).height(5.dp).clip(RoundedCornerShape(3.dp)).background(genre?.let { C.genre(it) } ?: C.amber))
+                Box(Modifier.fillMaxWidth(share.coerceIn(0.02f, 1f)).height(5.dp).clip(RoundedCornerShape(3.dp)).background(color ?: genre?.let { C.genre(it) } ?: C.amber))
             }
         }
         Text(value, style = T.Small.copy(color = C.muted))

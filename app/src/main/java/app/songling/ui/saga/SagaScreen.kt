@@ -188,7 +188,12 @@ private fun StatsPage(st: Studio, nav: Nav) {
             rows.take(if (all) 50 else 5).forEachIndexed { i, r ->
                 val al = when (topTab) { 1 -> st.albums[r.key]; 2 -> st.albums[st.tracks[r.key]?.album ?: ""]; else -> null }
                 TopRow(i + 1, r.name, listOf(r.sub, Words.plays(r.plays, ru)).filter { it.isNotEmpty() }.joinToString(" · "), Words.dur(r.ms, ru), r.ms / top.toFloat(),
-                    cover = al?.cover, genre = al?.genre, showCover = topTab != 0, onClick = {
+                    cover = al?.cover, genre = al?.genre, showCover = topTab != 0,
+                    color = run {
+                        // A genre of one's own colours the bar: the song's, else its album's.
+                        val songOwn = if (topTab == 2) st.tracks[r.key]?.own?.ifEmpty { null } else null
+                        st.owns[songOwn ?: al?.own.orEmpty()]?.let { androidx.compose.ui.graphics.Color(it.color) }
+                    }, onClick = {
                         nav.go(when (topTab) { 0 -> Overlay.ArtistOf(r.key); 1 -> Overlay.AlbumOf(r.key); else -> Overlay.TrackOf(r.key) })
                     })
             }
@@ -199,7 +204,7 @@ private fun StatsPage(st: Studio, nav: Nav) {
             if (mine.isNotEmpty()) {
                 val topMine = mine.first().second.coerceAtLeast(1)
                 Text(t("Свои", "Your own"), style = T.Eyebrow)
-                mine.forEachIndexed { i, (o, ms) -> TopRow(i + 1, o.name, Words.genre(Genre.entries.firstOrNull { it.name == o.base } ?: Genre.OTHER, ru), Words.dur(ms, ru), ms / topMine.toFloat()) }
+                mine.forEachIndexed { i, (o, ms) -> TopRow(i + 1, o.name, Words.genre(o.genre, ru), Words.dur(ms, ru), ms / topMine.toFloat(), color = androidx.compose.ui.graphics.Color(o.color)) }
                 Text(t("Все жанры", "All genres"), style = T.Eyebrow)
             }
             val g = s.genres

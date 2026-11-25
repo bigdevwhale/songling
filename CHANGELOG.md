@@ -6,6 +6,25 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.18.2] - 2026-11-25
+
+### Added
+- **Listening with the screen off (#16).** A card in the settings, under «music can be heard», says when the system may put Songling to sleep, with two buttons: «Battery» opens where the battery is saved on the app (on Xiaomi, the app's own activity control), «Autostart» opens the phone's autostart list (Xiaomi, Huawei, Honor, Oppo, Realme, OnePlus, Vivo). It goes away once the battery isn't limited, and stays in «Apps».
+
+### Fixed
+- **An album on repeat counted as heard whole once (#57).** Played round and round without a break, it was one sitting and one whole album. Now each time round counts; one song on repeat doesn't make another.
+- **Long ambient tracks weren't counted at all (#62).** «No long tracks» (from 40 minutes) took a three-hour ambient piece for a podcast. A track whose song, album or artist was given a genre by hand is music, however long.
+- **One's own «Эмбиент» didn't feed the Hum (#62).** A genre of one's own left «closest to other» now goes by its name, and the name suggests the closest genre while it's typed.
+- **A thing in the den couldn't be put away (#60).** «Empty» was at the far end of the row of choices; now it comes first, and the thing standing there, tapped again, is put away.
+- **Own genres had no colour in the statistics.** Their bars, and those of albums and songs in them, take the genre's colour.
+
+<!-- tg
+Альбом на повторе теперь засчитывается целиком за каждый круг, а не один раз.
+Длинные эмбиент-треки с жанром, поставленным вручную, больше не отсекаются как подкасты, а свой жанр «Эмбиент» кормит Гула.
+В логове вещь можно убрать: «Пусто» теперь первое, или нажми на то, что стоит, ещё раз.
+В настройках появилась подсказка про батарею и автозапуск – чтобы музыка считалась с выключенным экраном.
+-->
+
 ## [1.18.1] - 2026-11-23
 
 ### Fixed

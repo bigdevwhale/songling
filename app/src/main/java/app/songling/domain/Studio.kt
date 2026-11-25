@@ -106,7 +106,7 @@ class Studio(
      * artist's); the catalogue's guess only after it, and its «other» last of all.
      */
     fun genreOf(p: Play): Genre? {
-        ownOf(p)?.let { o -> Genre.entries.firstOrNull { it.name == o.base }?.let { return it } }
+        ownOf(p)?.let { return it.genre }
         val t = tracks[p.track]
         val a = albums[p.album.ifEmpty { t?.album.orEmpty() }]
         if (t?.pinned == true && t.genre != null) return t.genre
@@ -132,8 +132,7 @@ class Studio(
     /** Every genre a listen belongs to, the main one first; it counts in full for each of them (#23). */
     fun genresOf(p: Play): List<Genre> = genresSeen.getOrPut(Triple(p.track, p.album, p.artist)) {
         val more = moreOf(p).mapNotNull { k ->
-            val name = if (k.startsWith("own:")) owns[k.removePrefix("own:")]?.base else k
-            Genre.entries.firstOrNull { it.name == name }
+            if (k.startsWith("own:")) owns[k.removePrefix("own:")]?.genre else Genre.entries.firstOrNull { it.name == k }
         }
         (listOfNotNull(genreOf(p)) + more).distinct()
     }
@@ -197,32 +196,52 @@ class Studio(
      * as long as no more than 40 minutes pass between two of its songs. Each as (album key, when).
      */
     val wholeRuns: List<Pair<String, Long>> = buildList {
-        class Run(val start: Long) { var last = 0L; var ms = 0L; var marked = false; val seen = HashSet<String>() }
+        /** [again]: the next time round in the same sitting, after one already counted. */
+        class Run(var start: Long, val again: Boolean = false) { var last = 0L; var ms = 0L; var n = 0; var marked = false; val seen = HashSet<String>() }
         val open = HashMap<String, Run>()
-        fun close(key: String, r: Run) {
-            // A record or a whole album logged by hand.
-            if (r.marked) { add(key to r.start); return }
+        fun need(key: String): Int {
             val a = albums[key]
-            val need = when {
+            return when {
                 a == null || a.tracks <= 0 -> 7
                 a.tracks == 1 -> Int.MAX_VALUE
                 // A short release counts only with every song on it.
                 a.tracks <= 3 -> a.tracks
                 else -> max(3, (a.tracks * 0.8f).toInt())
             }
+        }
+        /**
+         * Enough songs for one time round. Once more in the same sitting takes as many listens as the album has songs,
+         * so the tail of the last time round doesn't make the next one count early.
+         */
+        fun enough(key: String, r: Run): Boolean {
+            val need = need(key)
+            return r.seen.size >= need && (!r.again || r.n >= max(need, albums[key]?.tracks ?: 0))
+        }
+        fun close(key: String, r: Run) {
+            // A record or a whole album logged by hand.
+            if (r.marked) { add(key to r.start); return }
+            if (r.again) { if (enough(key, r)) add(key to r.start); return }
+            val a = albums[key]
             // Songs the catalogue spells differently still count by time, but never one song alone.
             val longEnough = a != null && a.length > 0 && r.ms >= a.length * 0.8 && a.tracks >= 3 && r.seen.size >= 2
-            if (r.seen.size >= need || longEnough) add(key to r.start)
+            if (enough(key, r) || longEnough) add(key to r.start)
         }
         for (p in plays) {
             if (p.album.isEmpty()) continue
             val was = open[p.album]
             val r = if (was == null || p.at - was.last > 40 * MIN) { was?.let { close(p.album, it) }; Run(p.at).also { open[p.album] = it } } else was
-            r.seen += p.track; r.ms += p.ms
+            if (r.n == 0) r.start = p.at
+            r.seen += p.track; r.ms += p.ms; r.n++
             if (p.whole && p.source != Source.PLAYER && p.source != Source.IMPORT && p.source != Source.LASTFM) r.marked = true
             // The album just heard in a player, marked whole by hand without adding any time.
             if (p.ref?.startsWith("whole:") == true) r.marked = true
             r.last = max(r.last, p.at + p.ms)
+            // An album on repeat is heard whole once per time round (#57): the sitting closes as soon as it has enough
+            // songs, and the next song of it starts a new one.
+            if (!r.marked && enough(p.album, r)) {
+                add(p.album to r.start)
+                open[p.album] = Run(r.last, again = true).also { it.last = r.last }
+            }
         }
         for ((k, r) in open) close(k, r)
         sortBy { it.second }

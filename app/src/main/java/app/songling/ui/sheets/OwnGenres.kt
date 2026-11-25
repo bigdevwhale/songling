@@ -114,10 +114,12 @@ fun OwnGenreSheet(st: Studio, old: OwnGenre?, onSaved: (OwnGenre) -> Unit, onClo
     val co = LocalContext.current.container
     var name by remember { mutableStateOf(old?.name.orEmpty()) }
     var color by remember { mutableStateOf(old?.color ?: SWATCHES[(st.s.own.size * 5) % SWATCHES.size]) }
-    var base by remember { mutableStateOf(old?.base?.let { b -> Genre.entries.firstOrNull { it.name == b } } ?: Genre.OTHER) }
+    var base by remember { mutableStateOf(old?.genre ?: Genre.OTHER) }
+    // Until a genre is picked by hand, the name suggests one: «Эмбиент» is closest to ambient (#62).
+    var picked by remember { mutableStateOf(old != null && old.base != Genre.OTHER.name) }
     Sheet(onDismiss = onClose) {
         Text(if (old == null) t("Свой жанр", "A genre of your own") else t("Жанр", "Genre"), style = T.Title)
-        FormField(name, { name = it.take(28) }, t("Название: «пост-рок для работы», «бабушкины пластинки»…", "Name: «post-rock for work», «grandma's records»…"))
+        FormField(name, { name = it.take(28); if (!picked) base = Genre.of(name) ?: Genre.OTHER }, t("Название: «пост-рок для работы», «бабушкины пластинки»…", "Name: «post-rock for work», «grandma's records»…"))
         Section(t("Цвет", "Colour"))
         // colours other genres of one's own already have get a small dot, so each can have its own (#36)
         val taken = st.s.own.filter { it.id != old?.id }.map { it.color }.toSet()
@@ -133,7 +135,7 @@ fun OwnGenreSheet(st: Studio, old: OwnGenre?, onSaved: (OwnGenre) -> Unit, onClo
             Box(Modifier.size(28.dp).clip(CircleShape).background(Color(color)))
         }
         Section(t("На что похож", "Closest to"), t("для питомцев и форм", "for pets and forms"))
-        Flow { for (g in Genre.entries) Chip(Words.genre(g, ru), g == base, { base = g }, color = C.genre(g)) }
+        Flow { for (g in Genre.entries) Chip(Words.genre(g, ru), g == base, { base = g; picked = true }, color = C.genre(g)) }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (old != null) Btn(t("Удалить", "Delete"), {
                 co.write { settings.update { s -> s.copy(own = s.own.filter { it.id != old.id }) } }

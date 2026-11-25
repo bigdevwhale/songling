@@ -56,7 +56,25 @@ class Tracker(private val ctx: Context) {
         val pkg: String, val title: String, val artist: String, val album: String, val length: Long,
         val started: Long, var playedMs: Long = 0, var since: Long = 0, var id: Long = 0, var lastPos: Long = 0,
         var art: Bitmap? = null, var cover: String? = null, var writing: Boolean = false, var covering: Boolean = false,
+        /** Its genre was told by hand: music, however long (null: not known to be so yet). */
+        var told: Boolean? = null,
     )
+
+    /**
+     * Whether the song, its album or its artist was given a genre by hand. A three-hour ambient track tagged so is
+     * music, not a podcast, and «no long tracks» lets it through (#62).
+     */
+    private suspend fun told(k: Cur): Boolean = k.told ?: run {
+        val d = ctx.container.db.dao()
+        val t = d.track(Keys.track(k.artist, k.title))
+        val a = if (k.album.isEmpty()) null else d.album(Keys.album(k.artist, k.album))
+        val ar = d.artist(Keys.artist(k.artist))
+        val yes = (t != null && (t.pinned || t.own.isNotEmpty() || t.more.isNotEmpty())) ||
+            (a != null && (a.pinned || a.own.isNotEmpty() || a.more.isNotEmpty())) ||
+            (ar != null && (ar.genre != null || ar.own.isNotEmpty()))
+        // Only a yes is kept: a genre told while the song plays lets it in from the next tick.
+        yes.also { if (it) k.told = true }
+    }
 
     private var cur: Cur? = null
     /** The settings as last seen, so players left out are ignored right away. */
@@ -270,7 +288,8 @@ class Tracker(private val ctx: Context) {
             val s = c.settings.now()
             // «Only songs heard to the end»: nothing is written until the last ten seconds.
             val early = s.onlyWhole && k.length > 0 && ms < k.length - 10_000L
-            if (!s.hears(k.pkg) || (s.skipLong && k.length > s.longMinutes * MIN) || ms < s.minSeconds * 1000L || (k.id == 0L && early)) { k.writing = false; return@launch }
+            val tooLong = s.skipLong && k.length > s.longMinutes * MIN && !told(k)
+            if (!s.hears(k.pkg) || tooLong || ms < s.minSeconds * 1000L || (k.id == 0L && early)) { k.writing = false; return@launch }
             val whole = k.length > 0 && ms >= k.length * 0.8
             if (k.id == 0L) {
                 val p0 = Play(at = k.started, ms = ms, title = k.title, artistName = k.artist, albumName = k.album, length = k.length,

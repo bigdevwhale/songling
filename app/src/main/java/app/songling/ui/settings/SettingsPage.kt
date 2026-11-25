@@ -185,6 +185,7 @@ fun SettingsPage(st: Studio, nav: Nav) {
                         }
                         if (!on) Chevron()
                     }
+                    if (on && !app.songling.BuildConfig.DEMO) BackgroundCard()
                     Group(null) {
                         Line(titles.getValue("count"), t("с ${s.minSeconds} секунд", "after ${s.minSeconds} seconds") + if (s.onlyWhole) t(", только дослушанные", ", heard to the end") else "", onClick = { section = "count" }) { Chevron() }
                         Line(titles.getValue("apps"), appsSummary, onClick = { section = "apps" }) { Chevron() }
@@ -221,9 +222,12 @@ fun SettingsPage(st: Studio, nav: Nav) {
                         }
                     }
                 }
-                "apps" -> Group(null) {
-                    androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
-                    AppsChoice(s, apps, ::set)
+                "apps" -> {
+                    Group(null) {
+                        androidx.compose.foundation.layout.Spacer(Modifier.height(8.dp))
+                        AppsChoice(s, apps, ::set)
+                    }
+                    BackgroundCard(always = true)
                 }
                 "look" -> {
                     Group(t("Музыка", "Music")) {
@@ -267,7 +271,7 @@ fun SettingsPage(st: Studio, nav: Nav) {
                     Text(t("Свои названия для музыки: «для пробежки», «пост-рок для работы». Ими можно помечать альбомы, песни и артистов.",
                         "Your own names for music: «running», «post-rock for work». Albums, songs and artists can be marked with them."), style = T.Muted)
                     Group(null) {
-                        for (o in s.own) Line(o.name, t("похож на ", "close to ") + Words.genre(app.songling.domain.Genre.entries.firstOrNull { it.name == o.base } ?: app.songling.domain.Genre.OTHER, ru),
+                        for (o in s.own) Line(o.name, t("похож на ", "close to ") + Words.genre(o.genre, ru),
                             onClick = { editingGenre = o }) { Box(Modifier.size(18.dp).clip(CircleShape).background(Color(o.color))) }
                         Line(t("+ Новый жанр", "+ New genre"), null, onClick = { newGenre = true }, divider = false)
                     }

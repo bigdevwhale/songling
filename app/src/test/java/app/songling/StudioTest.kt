@@ -27,6 +27,27 @@ class StudioTest {
         assertEquals(listOf(duo.key to t0), st.wholeRuns)
     }
 
+    /** An album on repeat counts once per time round (#57), and a partial last round doesn't count. */
+    @Test fun albumOnRepeatCountsEveryTimeRound() {
+        val ten = Album(Keys.album("A", "Ten"), "Ten", "A", tracks = 10, length = 40 * MIN)
+        // Three and a half times round without a break, 4 minutes a song.
+        val plays = (0 until 35).map { i -> play("S${i % 10}", t0 + i * 4 * MIN, album = "Ten") }
+        assertEquals(3, studio(plays, listOf(ten)).wholeRuns.size)
+        // Shuffled: one song over and over doesn't make another time round.
+        val shuffled = (0 until 10).map { i -> play("S$i", t0 + i * 4 * MIN, album = "Ten") } +
+            (10 until 30).map { i -> play("S0", t0 + i * 4 * MIN, album = "Ten") }
+        assertEquals(1, studio(shuffled, listOf(ten)).wholeRuns.size)
+    }
+
+    /** One's own «Эмбиент» left «closest to other» still counts as ambient for the whale (#62). */
+    @Test fun ownGenreLeftAtOtherGoesByItsName() {
+        val p = play("Drone", t0)
+        val own = listOf(app.songling.data.OwnGenre("g1", "Эмбиент", 0xFF5AA8A0, "OTHER"), app.songling.data.OwnGenre("g2", "Для работы", 0xFF4C8AD8, "OTHER"))
+        fun st(id: String) = Studio(listOf(p), emptyList(), emptyList(), listOf(Track(p.track, "Drone", "A", own = id)), emptyList(), emptyList(), Settings(own = own), t0 + 3_600_000L)
+        assertEquals(Genre.AMBIENT, st("g1").genreOf(p))
+        assertEquals(Genre.OTHER, st("g2").genreOf(p))
+    }
+
     @Test fun oneSongIsNotTheWholeAlbum() {
         val big = Album(Keys.album("A", "Big"), "Big", "A", tracks = 10, length = 40 * MIN)
         val st = studio(listOf(play("One", t0, album = "Big", ms = 35 * MIN)), listOf(big))

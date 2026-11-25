@@ -17,6 +17,15 @@ private val Context.dataStore by preferencesDataStore("settings")
 data class OwnGenre(val id: String, val name: String, val color: Long, val base: String) {
     fun json(): JSONObject = JSONObject().put("id", id).put("name", name).put("color", color).put("base", base)
 
+    /**
+     * The built-in genre it's closest to. Left at «other», its name tells: one's own «Эмбиент» feeds the whale even
+     * when nobody picked «ambient» for it (#62).
+     */
+    val genre: app.songling.domain.Genre get() {
+        val b = app.songling.domain.Genre.entries.firstOrNull { it.name == base } ?: app.songling.domain.Genre.OTHER
+        return if (b != app.songling.domain.Genre.OTHER) b else app.songling.domain.Genre.of(name) ?: b
+    }
+
     companion object {
         fun of(o: JSONObject) = OwnGenre(o.getString("id"), o.getString("name"), o.optLong("color", 0xFF8A7A6A), o.optString("base", "OTHER"))
     }

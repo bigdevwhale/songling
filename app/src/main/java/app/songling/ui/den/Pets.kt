@@ -435,23 +435,25 @@ private fun Thumb(i: Item, wall: Wall, height: androidx.compose.ui.unit.Dp) {
 private fun Choices(st: Studio, place: Item, now: Item?, trying: Item?, wall: Wall, onTry: (Item) -> Unit, onPlace: (Item?) -> Unit) {
     val ru = LocalRu.current
     Row(Modifier.fillMaxWidth().horizontalScroll(remember(place) { androidx.compose.foundation.ScrollState(0) }).padding(vertical = 2.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        // «Empty» comes first, where it's seen without scrolling past every choice (#60).
+        if (now != null) Column(Modifier.width(108.dp).height(118.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, C.line, RoundedCornerShape(16.dp))
+            .clickable { onPlace(null) }.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+            Text(t("Пусто", "Empty"), style = T.Small.copy(color = C.ink))
+            Text(t("убрать", "put away"), style = T.Small.copy(color = C.faint))
+        }
         for (v in Item.variants(place)) {
             val have = v.name in st.s.bought
             val on = v == now || v == trying
             Column(Modifier.width(108.dp).clip(RoundedCornerShape(16.dp)).background(C.surface)
                 .border(if (on) 2.dp else 1.dp, if (on) C.amber else C.line, RoundedCornerShape(16.dp))
-                .clickable { if (have) onPlace(v) else onTry(v) }.padding(6.dp),
+                // The thing standing there, tapped again, is put away.
+                .clickable { if (v == now) onPlace(null) else if (have) onPlace(v) else onTry(v) }.padding(6.dp),
                 horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Thumb(v, wall, 52.dp)
                 Text(v.name(ru), style = T.Small.copy(color = C.ink), maxLines = 2, minLines = 2, textAlign = TextAlign.Center)
-                Text(when { v == now -> t("стоит", "here"); have -> t("поставить", "place"); else -> "${v.price}" },
+                Text(when { v == now -> t("стоит · убрать", "here · put away"); have -> t("поставить", "place"); else -> "${v.price}" },
                     style = T.Small.copy(color = when { v == now -> C.mint; have -> C.ink; st.plectrums < v.price -> C.faint; else -> C.amber }))
             }
-        }
-        if (now != null) Column(Modifier.width(108.dp).height(118.dp).clip(RoundedCornerShape(16.dp)).border(1.dp, C.line, RoundedCornerShape(16.dp))
-            .clickable { onPlace(null) }.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            Text(t("Пусто", "Empty"), style = T.Small.copy(color = C.ink))
-            Text(t("убрать", "put away"), style = T.Small.copy(color = C.faint))
         }
     }
 }
