@@ -2,6 +2,7 @@ package app.songling
 
 import android.app.Application
 import android.content.Context
+import androidx.room.withTransaction
 import app.songling.data.DemoSeed
 import app.songling.data.LastFm
 import app.songling.data.Meta
@@ -10,6 +11,7 @@ import app.songling.data.Outside
 import app.songling.data.OutsideSource
 import app.songling.data.Pet
 import app.songling.data.SettingsStore
+import app.songling.domain.Genre
 import app.songling.domain.Nature
 import app.songling.domain.Species
 import app.songling.domain.Studio
@@ -97,6 +99,26 @@ class AppContainer(context: Context) {
         }
     }
 
+    /**
+     * Reads the catalogue's genre names over the library again once they're read better ([GENRES_READ]): albums the
+     * store called «Музыка мира» or «Фольклор» were «other» (#64). Artists whose tags named no known genre are asked again.
+     */
+    suspend fun readGenres() {
+        if (settings.now().genresRead >= GENRES_READ) return
+        val d = db.dao()
+        // In one go: a thousand albums one by one took a while, and the screens were worked out again for each.
+        db.withTransaction {
+            for (a in d.albumList()) {
+                if (a.pinned || a.genreName.isBlank() || (a.genre != null && a.genre != Genre.OTHER)) continue
+                val g = Genre.of(a.genreName) ?: continue
+                if (g != a.genre) d.upsert(a.copy(genre = g))
+            }
+        }
+        d.lookAgainUntagged()
+        settings.update { it.copy(genresRead = GENRES_READ) }
+        kick()
+    }
+
     suspend fun studio(): Studio {
         val d = db.dao()
         return Studio(d.playList(), d.albums().first(), d.artists().first(), d.tracks().first(), d.petList(), d.goals().first(), settings.now(), System.currentTimeMillis())
@@ -124,6 +146,9 @@ class AppContainer(context: Context) {
     }
 }
 
+/** Raised when [Genre.of] learns names that change what the library's albums are (#64: Russian store names, folk tags). */
+const val GENRES_READ = 1
+
 class SonglingApp : Application() {
     lateinit var container: AppContainer
         private set
@@ -139,6 +164,7 @@ class SonglingApp : Application() {
             container.scope.launch { runCatching { val ids = container.db.dao().petList().map { it.id }; container.settings.update { it.splitRooms(ids) } } }
             // «Король и Шут» read as two artists by an older version: keys put right before anything is looked up.
             container.keysFixed = container.scope.launch(kotlinx.coroutines.Dispatchers.IO) { runCatching { container.db.dao().rekeyArtists() } }
+            container.scope.launch(kotlinx.coroutines.Dispatchers.IO) { container.keysFixed?.join(); runCatching { container.readGenres() } }
             container.kick()
             container.followLastFm()
         }

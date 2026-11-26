@@ -62,7 +62,9 @@ import app.songling.ui.theme.C
 import app.songling.ui.theme.T
 import app.songling.ui.theme.paper
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.withContext
@@ -139,20 +141,55 @@ fun SonglingRoot(s: Settings, clock: Long? = null, tab0: Tab = Tab.DEN, overlay0
     CompositionLocalProvider(LocalRu provides ru) {
         if (!s.onboarded) { Onboarding(); return@CompositionLocalProvider }
         val dao = c.db.dao()
-        val plays: List<Play>? by dao.plays().collectAsStateWithLifecycle(initialValue = null)
-        val albums: List<Album>? by dao.albums().collectAsStateWithLifecycle(initialValue = null)
-        val artists: List<Artist>? by dao.artists().collectAsStateWithLifecycle(initialValue = null)
-        val tracks: List<Track>? by dao.tracks().collectAsStateWithLifecycle(initialValue = null)
-        val pets: List<Pet>? by dao.pets().collectAsStateWithLifecycle(initialValue = null)
-        val goals: List<Goal>? by dao.goals().collectAsStateWithLifecycle(initialValue = null)
         val live by c.tracker.now.collectAsStateWithLifecycle()
-        var now by remember { mutableStateOf(clock ?: System.currentTimeMillis()) }
-        LaunchedEffect(Unit) { if (clock == null) while (true) { delay(30_000); now = System.currentTimeMillis() } }
         var st by remember { mutableStateOf<Studio?>(null) }
-        LaunchedEffect(plays, albums, artists, tracks, pets, goals, s, now) {
-            val p = plays; val a = albums; val ar = artists; val tr = tracks; val pe = pets; val g = goals
-            if (p != null && a != null && ar != null && tr != null && pe != null && g != null)
-                st = withContext(Dispatchers.Default) { Studio(p, a, ar, tr, pe, g, s, now) }
+        val settingsNow = androidx.compose.runtime.rememberUpdatedState(s)
+        // One Studio at a time, from the tables that changed. A long Spotify history is 100 000+ listens and 20 000 songs:
+        // the player writes every 15 seconds and the catalogue lookups every second and a half, and building a Studio
+        // for each change (several at once, as a cancelled one ran on to the end) kept the phone busy (#64).
+        LaunchedEffect(Unit) {
+            val tables = arrayOf("plays", "albums", "artists", "tracks", "pets", "goals")
+            val dirty = java.util.Collections.synchronizedSet(HashSet(tables.toList()))
+            val changed = kotlinx.coroutines.channels.Channel<Unit>(kotlinx.coroutines.channels.Channel.CONFLATED)
+            launch { c.db.invalidationTracker.createFlow(*tables, emitInitialState = false).collect { dirty += it; changed.trySend(Unit) } }
+            launch { androidx.compose.runtime.snapshotFlow { settingsNow.value }.collect { dirty += "settings"; changed.trySend(Unit) } }
+            // What the catalogue lookups fill in (a genre, a year, a country) can wait half a minute; a listen, a pet, a goal can't.
+            val catalogue = setOf("albums", "artists", "tracks")
+            var built = 0L; var took = 0L
+            // The clock: the den's light and the day's totals; every five minutes is enough, and a new day at once.
+            if (clock == null) launch {
+                while (true) {
+                    delay(30_000)
+                    val t = System.currentTimeMillis()
+                    if (t - built > 5 * 60_000L || st?.let { it.day(t) != it.today } == true) changed.trySend(Unit)
+                }
+            }
+            var plays = emptyList<Play>(); var albums = emptyList<Album>(); var artists = emptyList<Artist>()
+            var tracks = emptyList<Track>(); var pets = emptyList<Pet>(); var goals = emptyList<Goal>()
+            while (true) {
+                changed.receive()
+                if (st != null && took > 1_000) kotlinx.coroutines.withTimeoutOrNull(built + 30_000 - System.currentTimeMillis()) {
+                    while (synchronized(dirty) { dirty.all { it in catalogue } }) changed.receive()
+                }
+                val todo = synchronized(dirty) { dirty.toSet().also { dirty.clear() } }
+                // Read side by side: the listens are the long part, the songs and albums come in meanwhile.
+                kotlinx.coroutines.coroutineScope {
+                    val pl = if ("plays" in todo) async { dao.playList() } else null
+                    val al = if ("albums" in todo) async { dao.albumList() } else null
+                    val ars = if ("artists" in todo) async { dao.artists().first() } else null
+                    val trs = if ("tracks" in todo) async { dao.trackList() } else null
+                    if ("pets" in todo) pets = dao.petList()
+                    if ("goals" in todo) goals = dao.goalList()
+                    pl?.let { plays = it.await() }; al?.let { albums = it.await() }; ars?.let { artists = it.await() }; trs?.let { tracks = it.await() }
+                }
+                val t0 = System.currentTimeMillis()
+                val p = plays; val a = albums; val ar = artists; val tr = tracks; val pe = pets; val g = goals; val set = settingsNow.value
+                // What the den and the dock ask for first is worked out here too, not on the main thread.
+                st = withContext(Dispatchers.Default) { Studio(p, a, ar, tr, pe, g, set, clock ?: t0).also { it.warm() } }
+                built = System.currentTimeMillis(); took = built - t0
+                // A big library rests a while between two, so the lookups' stream of small writes doesn't keep it busy.
+                delay(maxOf(500L, (built - t0) * 2))
+            }
         }
         val studio = st ?: run { Box(Modifier.fillMaxSize().background(C.bg)); return@CompositionLocalProvider }
 

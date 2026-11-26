@@ -44,16 +44,16 @@ enum class Genre(val argb: Long, val form: Form) {
                 "r&b" in n || "soul" in n || "соул" in n || "funk" in n || "rnb" in n -> RNB
                 "jazz" in n || "джаз" in n || "swing" in n || "bossa" in n -> JAZZ
                 "blues" in n || "блюз" in n -> BLUES
-                "ambient" in n || "эмбиент" in n || "new age" in n || "lo-fi" in n || "lofi" in n || "chill" in n || "meditat" in n || "relax" in n -> AMBIENT
-                "dance" in n || "house" in n || "techno" in n || "trance" in n || "disco" in n || "edm" in n || "drum" in n || "dubstep" in n -> DANCE
+                "ambient" in n || "эмбиент" in n || "new age" in n || "нью-эйдж" in n || "релакс" in n || "медитат" in n || "lo-fi" in n || "lofi" in n || "chill" in n || "meditat" in n || "relax" in n -> AMBIENT
+                "dance" in n || "танцев" in n || "house" in n || "techno" in n || "trance" in n || "disco" in n || "edm" in n || "drum" in n || "dubstep" in n -> DANCE
                 "electr" in n || "электр" in n || "synth" in n || "idm" in n || "downtempo" in n || "trip" in n -> ELECTRONIC
-                "classical" in n || "класси" in n || "opera" in n || "опера" in n || "baroque" in n || "orchestr" in n || "piano" in n -> CLASSICAL
-                "soundtrack" in n || "score" in n || "саундтрек" in n || "film" in n || "game" in n || "anime" in n || "musical" in n -> SOUNDTRACK
-                "folk" in n || "фолк" in n || "singer/songwriter" in n || "songwriter" in n || "acoustic" in n || "bard" in n || "бард" in n -> FOLK
+                "classical" in n || "класси" in n || "оркестр" in n || "симфон" in n || "opera" in n || "опера" in n || "baroque" in n || "orchestr" in n || "piano" in n -> CLASSICAL
+                "soundtrack" in n || "score" in n || "саундтрек" in n || "кино" in n || "фильм" in n || "аниме" in n || "из игр" in n || n.startsWith("игр") || " игр" in n || n == "ost" || n.startsWith("ost ") || n.endsWith(" ost") || "film" in n || "game" in n || "anime" in n || "musical" in n -> SOUNDTRACK
+                "folk" in n || "фолк" in n || "фольк" in n || "народн" in n || "авторск" in n || "medieval" in n || "средневек" in n || "pagan" in n || "языч" in n || "singer/songwriter" in n || "songwriter" in n || "acoustic" in n || "bard" in n || "бард" in n -> FOLK
                 "country" in n || "кантри" in n || "americana" in n || "bluegrass" in n -> COUNTRY
-                "reggae" in n || "ska" in n || "dub" in n || "dancehall" in n -> REGGAE
+                "reggae" in n || "регги" in n || "ska" in n || "dub" in n || "dancehall" in n -> REGGAE
                 "latin" in n || "латин" in n || "salsa" in n || "reggaeton" in n || "tango" in n || "brazil" in n || "flamenco" in n -> LATIN
-                "world" in n || "african" in n || "afro" in n || "celtic" in n || "k-pop" == n || "j-pop" == n || "этни" in n -> WORLD
+                "world" in n || "музыка мира" in n || "этно" in n || "кельт" in n || "african" in n || "afro" in n || "celtic" in n || "k-pop" == n || "j-pop" == n || "этни" in n -> WORLD
                 "chanson" in n || "шансон" in n || "romance" in n || "эстрад" in n || "french pop" in n -> CHANSON
                 "children" in n || "kids" in n || "детск" in n -> KIDS
                 "rock" in n || "рок" in n || "britpop" in n || "psychedel" in n -> ROCK

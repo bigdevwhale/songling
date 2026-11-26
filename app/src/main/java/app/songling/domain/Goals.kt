@@ -128,9 +128,11 @@ object Quests {
         Quest.WISH -> w.wishesHeard
         Quest.HOURS -> w.minutes
         Quest.DECADES -> w.decades.size
-        Quest.FORGOTTEN -> w.plays.map { it.artist }.toSet().count { a ->
-            val before = st.plays.lastOrNull { it.artist == a && it.at < w.from }?.at ?: return@count false
-            w.from - before > 180 * 86_400_000L
+        Quest.FORGOTTEN -> {
+            // Each artist's last listen before the week, in one pass (not one pass over the whole history per artist).
+            val last = HashMap<String, Long>()
+            for (p in st.plays) { if (p.at >= w.from) break; last[p.artist] = p.at }
+            w.plays.map { it.artist }.toSet().count { a -> last[a]?.let { w.from - it > 180 * 86_400_000L } == true }
         }
         Quest.LONG -> st.sessions.count { it.from >= w.from && it.ms >= 45 * MIN }
         Quest.NIGHT -> w.plays.filter { st.hour(it.at).let { h -> h >= 22 || h < 3 } }.map { st.day(it.at) }.toSet().size

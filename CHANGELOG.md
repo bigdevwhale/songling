@@ -6,6 +6,21 @@ line "<!-- tg", then 2-4 short lines in Russian for users (what is new, what is 
 then close it like any HTML comment. The release notes carry it, and the chat bot posts those lines.
 -->
 
+## [1.18.3] - 2026-11-26
+
+### Fixed
+- **A big library took minutes to open (#64).** With a long Spotify history (100 000+ listens) the plectrum count looked through every listen once for each album heard whole – half a minute on a computer, minutes on a phone, before the den showed. Now it takes a moment. The screens are also worked out one at a time and only from the tables that changed: the player's writes and the catalogue's lookups (which run for hours after an import) no longer rebuild everything every few seconds, and what the den asks for first is worked out in the background, not on the main thread.
+- **Folk went to «other» (#64).** The Russian store's genre names – «Фольклор», «Народная музыка», «Авторская песня», «Музыка мира», «Этно», «Кельтская», «Нью-эйдж», «Танцевальная», «Регги» – weren't known; neither were the tags «medieval» and «pagan». Albums already on the shelf are read again once, and artists whose tags named no genre are looked up anew.
+- **The artist's genre was hard to find (#64).** It stood behind «edit»; now it's shown under the artist's name, and a tap on it opens the choice.
+- **Maestro and soundtracks (#63).** One's own genre left «closest to other» now also goes by names like «OST», «Кино», «Музыка из игр», «Аниме», «Оркестровая», «Симфоническая». A long track the catalogue calls ambient, classical or a soundtrack – a symphony, a game's score in one file – is no longer left out as a podcast, nor one moved into an album by hand.
+
+<!-- tg
+Большая библиотека (например, перенесённая история Spotify) открывается за секунды, а не минуты.
+Фолк больше не уходит в «другое»: приложение понимает «Фольклор», «Музыку мира», «Авторскую песню» и другие названия жанров.
+Жанр артиста теперь виден под его именем – нажми, чтобы поменять.
+Маэстро и свои жанры вроде «OST» или «Музыка из игр» засчитывают саундтреки, а длинные симфонии и саундтреки не отсекаются как подкасты.
+-->
+
 ## [1.18.2] - 2026-11-25
 
 ### Added

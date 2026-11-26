@@ -209,11 +209,14 @@ fun ArtistSheet(st: Studio, key: String, nav: Nav) {
             app.songling.ui.den.ArtistFace(st, key, 72.dp)
             Column(Modifier.weight(1f)) {
                 Text(a.name, style = T.Display)
-                // Its genre, then the styles inside it as the tags name them: «Метал: metalcore · electronicore».
-                if (a.styles.isNotBlank()) {
+                // Its genre, then the styles inside it as the tags name them: «Метал: metalcore · electronicore». Tapped, it
+                // opens the genre to change: hidden behind «edit», folk the catalogue called «other» looked fixed for good (#64).
+                run {
                     val top = tl?.albums?.maxByOrNull { st.byAlbum[it]?.ms ?: 0 }
                     val genre = genreName(st, a.own, a.genre ?: st.albums[top ?: ""]?.genre ?: a.tagGenre, ru)
-                    Text(listOfNotNull(genre?.let { "$it:" }, a.styles.split(',').joinToString(" · ")).joinToString(" "), style = T.Small)
+                    val line = if (a.styles.isBlank()) genre else listOfNotNull(genre?.let { "$it:" }, a.styles.split(',').joinToString(" · ")).joinToString(" ")
+                    Text(listOfNotNull(line, t("жанр…", "genre…").takeIf { line == null }).joinToString(""), style = if (line == null) T.Small.copy(color = C.faint) else T.Small,
+                        modifier = Modifier.clickable { edit = true }.padding(vertical = 2.dp))
                 }
                 // Not another line of the genre: a pill of its own, in the accent while they're here, grey once they're not.
                 lifeSpan(a, ru)?.let {

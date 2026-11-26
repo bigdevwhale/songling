@@ -126,7 +126,11 @@ object Feats {
         "новый год", "новогод", "рождеств", "ёлк", "елк", "ёлочк", "елочк", "дед мороз", "снегурочк", "с новым годом", "jingle bells", "бубенц",
     )
 
-    fun isCollab(artistName: String, title: String) = together.containsMatchIn(artistName) || featInTitle.containsMatchIn(title)
+    // Asked for every listen, by the feats and the magpie alike: each spelling is matched once.
+    private val collabSeen = java.util.concurrent.ConcurrentHashMap<String, Boolean>()
+    fun isCollab(artistName: String, title: String): Boolean = collabSeen.getOrPut(artistName + "\u0000" + title) {
+        together.containsMatchIn(artistName) || featInTitle.containsMatchIn(title)
+    }
     fun isFestive(title: String, album: String): Boolean {
         val t = (title + " " + album).lowercase()
         return festive.any { it in t }

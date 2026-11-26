@@ -15,6 +15,7 @@ import androidx.core.app.NotificationManagerCompat
 import app.songling.container
 import app.songling.data.Covers
 import app.songling.data.Keys
+import app.songling.domain.Genre
 import app.songling.data.MIN
 import app.songling.data.Play
 import app.songling.data.Settings
@@ -62,16 +63,20 @@ class Tracker(private val ctx: Context) {
 
     /**
      * Whether the song, its album or its artist was given a genre by hand. A three-hour ambient track tagged so is
-     * music, not a podcast, and «no long tracks» lets it through (#62).
+     * music, not a podcast, and «no long tracks» lets it through (#62). So is one the catalogue calls ambient, classical
+     * or a soundtrack: a symphony or a game's score in one file is long by nature (#63).
      */
     private suspend fun told(k: Cur): Boolean = k.told ?: run {
         val d = ctx.container.db.dao()
-        val t = d.track(Keys.track(k.artist, k.title))
-        val a = if (k.album.isEmpty()) null else d.album(Keys.album(k.artist, k.album))
+        val tk = Keys.track(k.artist, k.title)
+        val t = d.track(tk)
+        // The album the listen goes to, as [tick] puts it: one the song was moved to by hand first.
+        val a = d.albumByAlias("t:$tk") ?: if (k.album.isEmpty()) null else d.albumByAlias(Keys.album(k.artist, k.album)) ?: d.album(Keys.album(k.artist, k.album))
         val ar = d.artist(Keys.artist(k.artist))
-        val yes = (t != null && (t.pinned || t.own.isNotEmpty() || t.more.isNotEmpty())) ||
-            (a != null && (a.pinned || a.own.isNotEmpty() || a.more.isNotEmpty())) ||
-            (ar != null && (ar.genre != null || ar.own.isNotEmpty()))
+        val long = setOf(Genre.AMBIENT, Genre.CLASSICAL, Genre.SOUNDTRACK)
+        val yes = (t != null && (t.pinned || t.own.isNotEmpty() || t.more.isNotEmpty() || t.genre in long)) ||
+            (a != null && (a.pinned || a.own.isNotEmpty() || a.more.isNotEmpty() || a.genre in long)) ||
+            (ar != null && (ar.genre != null || ar.own.isNotEmpty() || ar.tagGenre in long))
         // Only a yes is kept: a genre told while the song plays lets it in from the next tick.
         yes.also { if (it) k.told = true }
     }

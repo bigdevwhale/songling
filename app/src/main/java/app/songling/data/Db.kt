@@ -212,6 +212,10 @@ interface MusicDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertArtist(a: Artist): Long
     @Upsert suspend fun upsert(a: Artist)
 
+    /** Artists whose tags named no genre the app knew, asked again (#64: «фольклор», «pagan», «medieval» weren't). */
+    @Query("UPDATE artists SET checked = 0 WHERE tagGenre IS NULL AND genre IS NULL AND own = ''")
+    suspend fun lookAgainUntagged()
+
     /** Artists never looked up, or looked up before the app knew to ask whether they're still alive. */
     @Query("SELECT * FROM artists WHERE checked = 0 OR gone = 0 OR ((country = '' OR tagGenre IS NULL) AND checked < :before) ORDER BY checked LIMIT :n")
     suspend fun uncheckedArtists(n: Int, before: Long): List<Artist>

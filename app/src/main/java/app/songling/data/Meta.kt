@@ -161,7 +161,7 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         if (hit == null) { dao.upsert(t.copy(checked = if (asked.failed) later else System.currentTimeMillis())); return }
         val albumKey = t.album.ifEmpty { Keys.album(t.artistName, hit.album) }
         dao.upsert(t.copy(checked = System.currentTimeMillis(), number = hit.number, length = if (t.length > 0) t.length else hit.length,
-            year = t.year ?: hit.year, genre = t.genre ?: Genre.of(hit.genreName), album = albumKey, albumName = t.albumName.ifEmpty { hit.album }))
+            year = t.year ?: hit.year, genre = t.genre?.takeIf { it != Genre.OTHER || t.pinned } ?: Genre.of(hit.genreName), album = albumKey, albumName = t.albumName.ifEmpty { hit.album }))
         if (t.album.isEmpty()) dao.placeTrack(t.key, albumKey, hit.album)
         if (dao.album(albumKey) == null) dao.insertAlbum(Album(albumKey, hit.album, t.artistName, tracks = hit.albumTracks, year = hit.year,
             genre = Genre.of(hit.genreName), genreName = hit.genreName, kind = kindOf(hit.album, hit.albumTracks)))
@@ -195,7 +195,8 @@ class Meta(private val ctx: Context, private val dao: MusicDao) {
         dao.upsert(now.copy(
             checked = System.currentTimeMillis(),
             year = if (now.pinned) now.year else now.year ?: hit.year,
-            genre = if (now.pinned) now.genre else now.genre ?: Genre.of(hit.genreName),
+            // «Other» is no answer: a name read better now (#64) takes its place.
+            genre = if (now.pinned) now.genre else now.genre?.takeIf { it != Genre.OTHER } ?: Genre.of(hit.genreName),
             genreName = hit.genreName, tracks = if (now.tracks > 0) now.tracks else hit.tracks, cover = cover,
             length = if (now.length > 0) now.length else length, kind = kindOf(hit.title + if (hit.kind == Kind.SINGLE) " - Single" else "", hit.tracks),
         ))

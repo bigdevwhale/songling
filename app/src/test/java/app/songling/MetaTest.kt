@@ -38,6 +38,22 @@ class MetaTest {
         assertEquals(Genre.PUNK, Genre.of("post-hardcore"))
     }
 
+    /** The Russian store's names and folk's tags were «other» (#64); own genres named so go by them (#63). */
+    @Test fun russianStoreNamesAndFolkTags() {
+        for (n in listOf("Фольклор", "Народная музыка", "Авторская песня", "medieval", "pagan folk", "Фолк-рок")) assertEquals(n, Genre.FOLK, Genre.of(n))
+        for (n in listOf("Музыка мира", "Этно", "Кельтская музыка")) assertEquals(n, Genre.WORLD, Genre.of(n))
+        assertEquals(Genre.AMBIENT, Genre.of("Нью-эйдж"))
+        assertEquals(Genre.DANCE, Genre.of("Танцевальная музыка"))
+        assertEquals(Genre.REGGAE, Genre.of("Регги"))
+        for (n in listOf("OST", "Музыка из игр", "Игровая", "Кино", "Аниме")) assertEquals(n, Genre.SOUNDTRACK, Genre.of(n))
+        for (n in listOf("Оркестровая", "Симфоническая")) assertEquals(n, Genre.CLASSICAL, Genre.of(n))
+        // What was read right before stays so.
+        assertEquals(Genre.METAL, Genre.of("folk metal"))
+        assertEquals(Genre.ROCK, Genre.of("Русский рок"))
+        assertEquals(Genre.POP, Genre.of("Поп"))
+        assertEquals(Genre.OTHER, Genre.of("Ghost"))
+    }
+
     /** An artist found under a transliterated name is matched by its aliases. */
     @Test fun matchesAliases() {
         val o = JSONObject("""{"name":"Король и Шут","sort-name":"Korol i Shut","aliases":[{"name":"KiSh"},{"name":"Korol I Shut"}]}""")

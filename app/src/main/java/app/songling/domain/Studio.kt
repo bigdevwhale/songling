@@ -491,9 +491,12 @@ class Studio(
         else -> 0.0
     }
 
+    /** When each album's whole runs began, so a listen looks only at its own album's (not every run of the library). */
+    private val runStarts: Map<String, List<Long>> by lazy { wholeRuns.groupBy({ it.first }, { it.second }) }
+
     private fun likes(sp: Species, p: Play): Boolean = when (sp) {
         Species.LYREBIRD -> liveFirst[p.artist] == p.at
-        Species.MUSICBOX -> wholeRuns.any { it.first == p.album && it.second <= p.at && p.at - it.second < 3 * 3_600_000L }
+        Species.MUSICBOX -> runStarts[p.album]?.any { it <= p.at && p.at - it < 3 * 3_600_000L } == true
         Species.LONGEAR -> p.headphones
         Species.CRICKET -> hour(p.at).let { it >= 22 || it < 4 }
         Species.LARK -> hour(p.at) in 5..9
@@ -603,7 +606,17 @@ class Studio(
     // ---------------------------------------------------------------- plectrums
 
     /** Whole albums (with the time of the run) heard by the player, not imported. */
-    private val liveWhole: Int get() = wholeRuns.count { (k, t) -> plays.any { it.album == k && it.at >= t && it.at < t + 3_600_000L && it.source != Source.IMPORT } }
+    private val liveWhole: Int get() {
+        // Each album's own live listens, in time order, so a run looks only at its album's (a long Spotify history has
+        // thousands of runs: one pass over every listen for each took half a minute).
+        val live = HashMap<String, MutableList<Long>>()
+        for (p in plays) if (p.source != Source.IMPORT && p.album.isNotEmpty()) live.getOrPut(p.album) { ArrayList() } += p.at
+        return wholeRuns.count { (k, t) ->
+            val times = live[k] ?: return@count false
+            val i = times.binarySearch(t).let { if (it >= 0) it else -it - 1 }
+            i < times.size && times[i] < t + 3_600_000L
+        }
+    }
 
     /** Achievements and how far each one got. */
     val feats: List<FeatState> by lazy { Feats.of(this) }
@@ -621,6 +634,12 @@ class Studio(
     }
 
     val plectrums: Int by lazy { max(0, earned - s.spent) }
+
+    /**
+     * Works out ahead what the first screens ask for (the plectrum count, the eggs, the feats), off the main thread: on a
+     * long history each takes a good part of a second.
+     */
+    fun warm() { hints; plectrums; recordsToBuy }
 
     /** What a record of [album] costs now: dearer with each one in the collection, half for an album heard whole. */
     fun recordPrice(album: String): Int = Records.price(s.records.size, (byAlbum[album]?.whole ?: 0) > 0)

@@ -131,6 +131,8 @@ data class Settings(
     val roomsSplit: Boolean = false,
     /** The record collection: album keys, in the order they were bought ([app.songling.domain.Records]). Every pet's. */
     val records: List<String> = emptyList(),
+    /** How the catalogue's genre names were last read over the library ([app.songling.AppContainer.readGenres], #64). */
+    val genresRead: Int = 0,
 ) {
     /** The room of the pet out now. */
     val room: Room get() = Room(bought, hidden, wall, posters)
@@ -162,7 +164,7 @@ data class Settings(
         .put("feats", JSONArray(feats.toList()))
         .put("lastfm", lastfm).put("lastfmFrom", lastfmFrom).put("lastfmAt", lastfmAt).put("lastfmError", lastfmError)
         .put("rooms", JSONObject().also { o -> rooms.forEach { (k, r) -> o.put(k, r.json()) } }).put("roomsSplit", roomsSplit)
-        .put("records", JSONArray(records))
+        .put("records", JSONArray(records)).put("genresRead", genresRead)
         .toString()
 
     companion object {
@@ -191,7 +193,7 @@ data class Settings(
                 posters = o.optJSONArray("posters")?.let { a -> List(2) { i -> a.optString(i, "") } } ?: d.posters,
                 lastfm = o.optString("lastfm"), lastfmFrom = o.optLong("lastfmFrom"), lastfmAt = o.optLong("lastfmAt"), lastfmError = o.optString("lastfmError"),
                 rooms = o.optJSONObject("rooms")?.let { r -> r.keys().asSequence().associateWith { k -> Room.of(r.getJSONObject(k)) } } ?: emptyMap(),
-                roomsSplit = o.optBoolean("roomsSplit"),
+                roomsSplit = o.optBoolean("roomsSplit"), genresRead = o.optInt("genresRead"),
                 records = o.optJSONArray("records")?.let { a -> (0 until a.length()).map { a.getString(it) }.filter { it.isNotEmpty() }.distinct() } ?: emptyList(),
             )
         }
